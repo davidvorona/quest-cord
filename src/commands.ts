@@ -32,7 +32,7 @@ class CommandBuilder {
         }
     }
 
-    private buildChoices(name: string, value: string) {
+    private buildChoices(name: string, value: number) {
         return {
             name,
             value
@@ -46,12 +46,12 @@ class CommandBuilder {
             const targets = this.targets as string[];
             const choices = targets.map((t, idx) => {
                 const targetDescription = `${t} ${idx + 1}`;
-                return this.buildChoices(targetDescription, idx.toString());
+                return this.buildChoices(targetDescription, idx);
             });
             builtCommands.push(new SlashCommandBuilder()
                 .setName("attack")
                 .setDescription("Strike at an enemy!")
-                .addStringOption((option) => {
+                .addIntegerOption((option) => {
                     return option
                         .setName("target")
                         .setDescription("Who do you want to attack?")

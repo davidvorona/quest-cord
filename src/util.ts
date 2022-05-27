@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { MonsterData } from "./types";
+import Monster from "./game/Monster";
 
 /**
  * Reads the file at the provided file path and returns stringified data.
@@ -44,3 +46,5 @@ export const loadNames = () => {
     const lastNames = readFile(lastNamesPath).trim().split("\n");
     return { firstNames, lastNames };
 };
+
+export const listToMonster = (data: MonsterData[]): Monster[] => data.map(m => new Monster(m));

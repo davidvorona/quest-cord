@@ -5,3 +5,7 @@ export const COMMAND_TYPE = {
 export const ACTIVITY = {
     ENCOUNTER: "encounter"
 };
+
+export const COMPENDIUM_SECTION = {
+    MONSTERS: "monsters"
+};

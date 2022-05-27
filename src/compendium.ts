@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { AnyObject } from "./types";
-import { parseJson, readFile } from "./util";
+import { parseJson, rand, readFile } from "./util";
 
 class Compendium {
     data: Record<string, AnyObject> = {};
@@ -18,6 +18,7 @@ class Compendium {
                 this.set(d, data.name, data);
             });
         });
+        console.info("Loaded compendium:", this.data);
     }
 
     section(key: string): void {
@@ -27,10 +28,25 @@ class Compendium {
     set(section: string, key: string, value: Record<string, AnyObject>): void {
         this.data[section][key] = value;
     }
+
+    pickRandom(section: string): AnyObject {
+        const sectionData: AnyObject = this.data[section];
+        console.log(sectionData);
+        const key = Object.keys(sectionData)[rand(Object.keys(sectionData).length)];
+        console.log(key);
+        return sectionData[key];
+    }
+
+    pickRandomList(section: string, length: number): AnyObject[] {
+        const list = [];
+        for (let i = 0; i < length; i++) {
+            list.push(this.pickRandom(section));
+        }
+        return list;
+    }
 }
 
 const compendium = new Compendium();
 compendium.load();
-console.info("Loaded compendium:", compendium);
 
 export default compendium;

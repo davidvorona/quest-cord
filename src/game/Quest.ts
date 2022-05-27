@@ -1,15 +1,16 @@
-import { createRandomId } from "../util";
+import { createRandomId, listToMonster } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
-import Monster from "./Monster";
 import Encounter from "./Encounter";
 import compendium from "../compendium";
+import { COMPENDIUM_SECTION } from "../constants";
+import { MonsterData } from "../types";
 
 export default class Quest {
     id: string;
 
     guildId: string;
 
-    pcs: PlayerCharacter[] = [];
+    pcs: Record<string, PlayerCharacter> = {};
 
     encounter?: Encounter;
 
@@ -22,16 +23,25 @@ export default class Quest {
     addPlayer(userId: string) {
         const baseCharacter = compendium.data.classes.Wizard;
         const pc = new PlayerCharacter(baseCharacter, userId);
-        this.pcs.push(pc);
+        this.pcs[userId] = pc;
     }
 
-    startEncounter(): void {
-        const goblin = new Monster(compendium.data.monsters.Goblin);
-        const encounter = new Encounter(this.pcs, [goblin]);
+    getPlayerByUserId(userId: string) {
+        return this.pcs[userId];
+    }
+
+    assertEncounterStarted() {
+        return !!this.encounter;
+    }
+
+    startEncounter() {
+        const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, 4) as MonsterData[];
+        const pcs = Object.values(this.pcs);
+        const encounter = new Encounter(pcs, listToMonster(list));
         this.encounter = encounter;
     }
 
-    getEncounter(): Encounter | undefined {
+    getEncounter() {
         return this.encounter;
     }
 }

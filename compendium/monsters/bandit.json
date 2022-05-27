@@ -1,0 +1,8 @@
+{
+    "name": "Bandit",
+    "lvl": 1,
+    "hp": 11,
+    "damage": 1,
+    "weapons": ["scimitar", "crossbow"],
+    "zones": ["forest", "cave", "mountain"]
+}

@@ -6,10 +6,22 @@ import Encounter from "./Encounter";
 import Quest from "./Quest";
 
 export default class QuestLord {
-    quests: Quest[] = [];
+    quests: Record<string, Quest> = {};
 
     constructor() {
         console.info("Summoning the Quest Lord...");
+    }
+
+    assertQuestStarted(guildId: string) {
+        if (!this.quests[guildId]) {
+            throw new Error("Quest not started, aborting");
+        }
+    }
+
+    assertQuestNotStarted(guildId: string) {
+        if (this.quests[guildId]) {
+            throw new Error("Quest already started, aborting");
+        }
     }
 
     async handleInteraction(interaction: Interaction) {
@@ -31,12 +43,14 @@ export default class QuestLord {
     }
 
     async startQuest(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId as string;
+        this.assertQuestNotStarted(guildId);
+    
         await interaction.reply({ 
             content: "Adventure calls you...",
             ephemeral: true
         });
 
-        const guildId = interaction.guildId as string;
         const userId = interaction.user.id;
 
         // Create quest for user(s)
@@ -44,7 +58,7 @@ export default class QuestLord {
         quest.addPlayer(userId);
 
         // Register new quest
-        this.quests.push(quest);
+        this.quests[guildId] = quest;
 
         // Start with basic encounter
         const textChannel = interaction.channel as TextChannel;
@@ -52,7 +66,6 @@ export default class QuestLord {
     }
 
     async startEncounter(guildId: string, channel: TextChannel, quest: Quest) {
-        // Start first quest encounter
         quest.startEncounter();
 
         // Get encounter data
@@ -72,6 +85,19 @@ export default class QuestLord {
     }
 
     async handleAttack(interaction: CommandInteraction): Promise<void> {
-        await interaction.reply("You attack the goblin for 5 damage!");
+        const guildId = interaction.guildId as string;
+        this.assertQuestStarted(guildId);
+
+        // Start first quest encounter
+        const quest = this.quests[guildId] as Quest;
+        quest.assertEncounterStarted();
+
+        const encounter = quest.encounter as Encounter;
+        const targetIdx = interaction.options.getInteger("target") as number;
+
+        const target = encounter.getMonsterByIndex(targetIdx);
+        const pc = quest.getPlayerByUserId(interaction.user.id);
+        
+        await interaction.reply(`You attack the ${target.state.name} for ${pc.state.damage} damage!`);
     }
 }

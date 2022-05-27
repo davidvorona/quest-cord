@@ -18,5 +18,9 @@ export default class Encounter {
         console.info("Encounter started...", pcs, "vs", monsters);
     }
 
+    getMonsterByIndex(index: number): Monster {
+        return this.monsters[index];
+    }
+
     getMonsterNames = () => this.monsters.map(m => m.state.name);
 }
