@@ -1,0 +1,23 @@
+{
+    "scene": {
+        "forest": [
+            "The trees grow oppressively around you as you continue on your journey. This forest is dark and looming, and not for the first time you feel like you are being watched.",
+            "The path leads throw a maze of trees, the sun shining between the branches. It is noon, and you can hear the gentle gurgling of a stream somewhere nearby.",
+            "The howl of a wolf in the distance knocks you out of your reverie as you traverse the winding path through the forest at night."
+        ],
+        "cave": [
+            "A bat rushes past you into the inky darkness of the cave. You walk past a stalagmite and see the eyes of hundreds of bats peering down from their roosts on the cave ceiling.",
+            "You climb ever downward, passing the occasional crystal structure jutting out of the deep stone walls of the cave. In the distance you can hear a furtive scratching."
+        ]
+    },
+    "encounter": {
+        "start": [
+            "Suddenly, $1 leap out from their hiding spots, blood lust in their eyes.",
+            "You hear the footsteps first. Whirling around, you turn to face $1.",
+            "You see $1 making their way towards you, and spring to action. Attack!"
+        ],
+        "end": [
+            "The $1 falls and the sounds of battle die down. Another day, another fight."
+        ]
+    }
+}

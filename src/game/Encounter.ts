@@ -17,4 +17,6 @@ export default class Encounter {
         this.turnOrder = [...pcs, ...monsters];
         console.info("Encounter started...", pcs, "vs", monsters);
     }
+
+    getMonsterNames = () => this.monsters.map(m => m.state.name);
 }

@@ -1,6 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-// const { ApplicationCommandOptionType } = require("discord-api-types/v9");
-
 module.exports = [
     {
         name: "ping",
