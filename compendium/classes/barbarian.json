@@ -1,0 +1,7 @@
+{
+    "name": "Barbarian",
+    "lvl": 1,
+    "hp": 16,
+    "damage": 2,
+    "weapons": ["club", "fists"]
+}

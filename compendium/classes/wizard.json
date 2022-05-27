@@ -1,0 +1,10 @@
+{
+    "name": "Wizard",
+    "lvl": 1,
+    "hp": 11,
+    "damage": 3,
+    "weapons": ["wand"],
+    "armor": {
+        "head": "wizard hat"
+    }
+}
