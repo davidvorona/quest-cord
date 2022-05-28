@@ -15,24 +15,33 @@ export interface AnyObject {
     [key: string]: string | number | any;
 }
 
+export interface LevelGain {
+    hp?: number;
+    damage?: number;
+    spells?: string[];
+}
+
 export interface CreatureData {
-    name: string,
-    lvl: number,
-    hp: number,
-    damage: number,
-    weapons: string[] 
+    name: string;
+    lvl: number;
+    hp: number;
+    damage: number;
+    weapons: string[]; 
 }
 
 export interface MonsterData extends CreatureData {
-    zones: string[]
+    zones: string[];
 }
 
 export interface BaseCharacter extends CreatureData {
-    armor: {
-        head: string,
-        chest: string,
-        leg: string,
-        feet: string,
+    armor?: {
+        head: string;
+        chest: string;
+        leg: string;
+        feet: string;
         finger: string
-    }
+    };
+    spells?: string[];
+    items?: string[];
+    levelGains: LevelGain[]
 }

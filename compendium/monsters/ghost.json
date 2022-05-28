@@ -1,0 +1,8 @@
+{
+    "name": "Ghost",
+    "lvl": 2,
+    "hp": 8,
+    "damage": 3,
+    "weapons": ["ghost blade", "scream"],
+    "zones": ["forest", "cave"]
+}

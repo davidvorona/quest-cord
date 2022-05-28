@@ -1,0 +1,8 @@
+{
+    "name": "Orc",
+    "lvl": 2,
+    "hp": 13,
+    "damage": 2,
+    "weapons": ["axe", "spear"],
+    "zones": ["forest", "cave", "mountain"]
+}

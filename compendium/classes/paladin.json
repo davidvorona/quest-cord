@@ -1,0 +1,30 @@
+{
+    "name": "Paladin",
+    "lvl": 1,
+    "hp": 13,
+    "damage": 2,
+    "weapons": ["sword", "shield"],
+    "armor": {
+        "chest": "chain mail"
+    },
+    "spells": {},
+    "lvlGains": [
+        {
+            "hp": 1,
+            "spells": ["lay on hands"]
+        },
+        {
+            "hp": 1,
+            "damage": 1
+        },
+        {
+            "hp": 1,
+            "spells": ["smite"]
+        },
+        {
+            "hp": 1,
+            "damage": 1,
+            "spells": ["retribution"]
+        }
+    ]
+}

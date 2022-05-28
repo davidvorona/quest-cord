@@ -17,7 +17,7 @@ const rest = new REST({ version: "9" }).setToken(TOKEN);
 
 interface CommandBuilderArgs {
     type: string;
-    targets?: string[]
+    targets?: string[];
 }
 
 class CommandBuilder {

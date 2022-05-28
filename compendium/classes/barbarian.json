@@ -3,5 +3,21 @@
     "lvl": 1,
     "hp": 16,
     "damage": 2,
-    "weapons": ["club", "fists"]
+    "weapons": ["club", "fists"],
+    "lvlGains": [
+        {
+            "hp": 2
+        },
+        {
+            "hp": 1,
+            "damage": 1
+        },
+        {
+            "hp": 2
+        },
+        {
+            "hp": 2,
+            "damage": 1
+        }
+    ]
 }
