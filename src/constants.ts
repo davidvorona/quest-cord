@@ -3,7 +3,8 @@ export const COMMAND_TYPE = {
 } as const;
 
 export const ACTIVITY = {
-    ENCOUNTER: "encounter"
+    ENCOUNTER: "encounter",
+    ATTACK: "attack"
 };
 
 export const COMPENDIUM_SECTION = {

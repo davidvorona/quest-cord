@@ -88,7 +88,6 @@ export default class QuestLord {
         const guildId = interaction.guildId as string;
         this.assertQuestStarted(guildId);
 
-        // Start first quest encounter
         const quest = this.quests[guildId] as Quest;
         quest.assertEncounterStarted();
 
@@ -97,7 +96,16 @@ export default class QuestLord {
 
         const target = encounter.getMonsterByIndex(targetIdx);
         const pc = quest.getPlayerByUserId(interaction.user.id);
-        
-        await interaction.reply(`You attack the ${target.state.name} for ${pc.state.damage} damage!`);
+
+        const damage = pc.state.damage;
+        target.setHp(target.state.hp - damage);
+
+        const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
+        const weapon = pc.state.weapons[0];
+        const text = textBuilder.build(weapon, target.state.name);
+        await interaction.reply(text);
+        if (interaction.channel) {
+            await interaction.channel.send(`You deal ${pc.state.damage} damage.`);
+        }
     }
 }

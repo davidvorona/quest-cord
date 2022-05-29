@@ -19,5 +19,19 @@
         "end": [
             "The $1 falls and the sounds of battle die down. Another day, another fight."
         ]
+    },
+    "attack": {
+        "melee": [
+            "You leap forward, striking at the $2 with your $1.",
+            "Wielding your $1, you attack the $2 with vigor.",
+            "With your $1 you carve into the $2.",
+            "You embed your $1 into the $2's shoulder."
+        ],
+        "range": [
+
+        ],
+        "magic": [
+
+        ]
     }
 }
