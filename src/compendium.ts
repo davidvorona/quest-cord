@@ -15,7 +15,7 @@ class Compendium {
             this.section(d);
             files.forEach((f) => {
                 const data = parseJson(readFile(path.join(sectionPath, f)));
-                this.set(d, data.name, data);
+                this.set(d, data.name.toLowerCase(), data);
             });
         });
         console.info("Loaded compendium:", this.data);
@@ -31,9 +31,7 @@ class Compendium {
 
     pickRandom(section: string): AnyObject {
         const sectionData: AnyObject = this.data[section];
-        console.log(sectionData);
         const key = Object.keys(sectionData)[rand(Object.keys(sectionData).length)];
-        console.log(key);
         return sectionData[key];
     }
 

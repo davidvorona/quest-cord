@@ -2,7 +2,9 @@ import { CommandInteraction, Interaction, TextChannel } from "discord.js";
 import setGuildCommands from "../commands";
 import { ACTIVITY, COMMAND_TYPE } from "../constants";
 import TextBuilder from "../text";
+import { getPlayersFromStartCommand, isEmpty } from "../util";
 import Encounter from "./Encounter";
+import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
 
 export default class QuestLord {
@@ -13,13 +15,13 @@ export default class QuestLord {
     }
 
     assertQuestStarted(guildId: string) {
-        if (!this.quests[guildId]) {
+        if (isEmpty(this.quests[guildId])) {
             throw new Error("Quest not started, aborting");
         }
     }
 
     assertQuestNotStarted(guildId: string) {
-        if (this.quests[guildId]) {
+        if (!isEmpty(this.quests[guildId])) {
             throw new Error("Quest already started, aborting");
         }
     }
@@ -32,11 +34,18 @@ export default class QuestLord {
         }
 
         if (!interaction.guildId) return;
-    
-        if (interaction.commandName === "play") {
+
+        // Mod manually starts a quest for users
+        if (interaction.commandName === "start") {
             await this.startQuest(interaction);
         }
 
+        // Users create characters to join quest
+        if (interaction.commandName === "play") {
+            await this.createCharacter(interaction);
+        }
+
+        // Users attack during a combat encounter
         if (interaction.commandName === "attack") {
             await this.handleAttack(interaction);
         }
@@ -45,24 +54,61 @@ export default class QuestLord {
     async startQuest(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId as string;
         this.assertQuestNotStarted(guildId);
-    
-        await interaction.reply({ 
-            content: "Adventure calls you...",
-            ephemeral: true
-        });
-
-        const userId = interaction.user.id;
 
         // Create quest for user(s)
         const quest = new Quest(guildId);
-        quest.addPlayer(userId);
+        const players = getPlayersFromStartCommand(interaction);
+        players.forEach(p => quest.addPlayer(p.id));
 
         // Register new quest
         this.quests[guildId] = quest;
 
-        // Start with basic encounter
-        const textChannel = interaction.channel as TextChannel;
-        this.startEncounter(guildId, textChannel, quest);
+        // Register guild commands for character creation
+        await setGuildCommands(guildId, { type: COMMAND_TYPE.NEW_QUEST });
+
+        await interaction.reply({
+            content: `Quest created for **${players.length}** players...`,
+            ephemeral: true
+        });
+
+        // Invite players to create characters and join the quest
+        if (interaction.channel) {
+            await interaction.channel.send(
+                `${players.join(" ")} Adventure calls you, **/play** to journey to *Discordia*...`
+            );
+        }
+    }
+
+    async createCharacter(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId as string;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId] as Quest;
+        const userId = interaction.user.id;
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+        } else if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+        } else {
+            const classId = interaction.options.getString("class") as string;
+            const pc = quest.createCharacter(userId, classId);
+            await interaction.reply({
+                content: `Character *${pc.getName()}*, level ${pc.state.lvl} ${classId}, created...`,
+                ephemeral: true
+            });
+        }
+
+        if (quest.areAllCharactersCreated()) {
+            await setGuildCommands(guildId);
+            const textChannel = interaction.channel as TextChannel;
+            await this.startEncounter(guildId, textChannel, quest);
+        }
     }
 
     async startEncounter(guildId: string, channel: TextChannel, quest: Quest) {
@@ -95,7 +141,7 @@ export default class QuestLord {
         const targetIdx = interaction.options.getInteger("target") as number;
 
         const target = encounter.getMonsterByIndex(targetIdx);
-        const pc = quest.getPlayerByUserId(interaction.user.id);
+        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
 
         const damage = pc.state.damage;
         target.setHp(target.state.hp - damage);

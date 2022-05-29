@@ -1,16 +1,16 @@
-import { createRandomId, listToMonster } from "../util";
+import { createRandomId, isEmpty, listToMonster } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./Encounter";
 import compendium from "../compendium";
 import { COMPENDIUM_SECTION } from "../constants";
-import { MonsterData } from "../types";
+import { BaseCharacter, MonsterData } from "../types";
 
 export default class Quest {
     id: string;
 
     guildId: string;
 
-    pcs: Record<string, PlayerCharacter> = {};
+    pcs: Record<string, PlayerCharacter | null> = {};
 
     encounter?: Encounter;
 
@@ -21,22 +21,43 @@ export default class Quest {
     }
 
     addPlayer(userId: string) {
-        const baseCharacter = compendium.data.classes.Wizard;
-        const pc = new PlayerCharacter(baseCharacter, userId);
-        this.pcs[userId] = pc;
+        this.pcs[userId] = null;
     }
 
     getPlayerByUserId(userId: string) {
         return this.pcs[userId];
     }
 
+    isUserInParty(userId: string) {
+        return Object.prototype.hasOwnProperty.call(this.pcs, userId);
+    }
+
+    createCharacter(userId: string, classId?: string) {
+        const classData = classId
+            ? compendium.data.classes[classId]
+            : compendium.pickRandom(COMPENDIUM_SECTION.CLASSES) as BaseCharacter;
+        const pc = new PlayerCharacter(classData, userId);
+        this.pcs[userId] = pc;
+        return pc;
+    }
+
+    isCharacterCreated(userId: string) {
+        return !isEmpty(this.pcs[userId]);
+    }
+
+    areAllCharactersCreated() {
+        return Object.values(this.pcs).every(pc => !isEmpty(pc));
+    }
+
     assertEncounterStarted() {
-        return !!this.encounter;
+        if (isEmpty(this.encounter)) {
+            throw new Error("Encounter is not started, aborting");
+        }
     }
 
     startEncounter() {
         const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, 4) as MonsterData[];
-        const pcs = Object.values(this.pcs);
+        const pcs = Object.values(this.pcs) as PlayerCharacter[];
         const encounter = new Encounter(pcs, listToMonster(list));
         this.encounter = encounter;
     }

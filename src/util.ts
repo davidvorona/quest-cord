@@ -1,8 +1,16 @@
 import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { CommandInteraction, GuildMember } from "discord.js";
 import { MonsterData } from "./types";
 import Monster from "./game/Monster";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isEmpty = (thing: any) =>
+    thing === null || thing === undefined
+    || (typeof thing === "string" && !thing)
+    || (Array.isArray(thing) && !thing.length)
+    || typeof thing === "object" && !Object.keys(thing).length;
 
 /**
  * Reads the file at the provided file path and returns stringified data.
@@ -37,8 +45,14 @@ export const parseJson = (dataJson: string): any => {
  */
 export const rand = (max: number) => Math.floor(Math.random() * Math.floor(max));
 
+/**
+ * Creates a random UUID using the crypto package.
+ */
 export const createRandomId = () => crypto.randomUUID();
 
+/**
+ * Loads first/last names from the .txt files.
+ */
 export const loadNames = () => {
     const firstNamesPath = path.join(__dirname, "../config/first-names.txt");
     const firstNames = readFile(firstNamesPath).trim().split("\n");
@@ -47,4 +61,29 @@ export const loadNames = () => {
     return { firstNames, lastNames };
 };
 
+/**
+ * Maps a list of monster data from the compendium to Monster instances.
+ */
 export const listToMonster = (data: MonsterData[]): Monster[] => data.map(m => new Monster(m));
+
+/**
+ * Extracts guild members from the /start command options. 
+ */
+export const getPlayersFromStartCommand = (interaction: CommandInteraction) => {
+    const players = [];
+    const getPlayer = (player: string) => interaction.options.getMentionable(player);
+    players.push(interaction.options.getMentionable("player1"));
+    if (getPlayer("player2")) {
+        players.push(getPlayer("player2"));
+    }
+    if (getPlayer("player3")) {
+        players.push(getPlayer("player3"));
+    }
+    if (getPlayer("player4")) {
+        players.push(getPlayer("player4"));
+    }
+    if (getPlayer("player5")) {
+        players.push(getPlayer("player5"));
+    }
+    return players as GuildMember[];
+};

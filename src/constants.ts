@@ -1,4 +1,5 @@
 export const COMMAND_TYPE = {
+    NEW_QUEST: "new_quest",
     ENCOUNTER: "encounter"
 } as const;
 
@@ -8,5 +9,6 @@ export const ACTIVITY = {
 };
 
 export const COMPENDIUM_SECTION = {
-    MONSTERS: "monsters"
+    MONSTERS: "monsters",
+    CLASSES: "classes"
 };
