@@ -1,11 +1,16 @@
-import { CommandInteraction, Interaction, TextChannel } from "discord.js";
+import { CommandInteraction, Interaction, MessageEmbed, TextChannel } from "discord.js";
 import setGuildCommands from "../commands";
 import { ACTIVITY, COMMAND_TYPE } from "../constants";
 import TextBuilder from "../text";
 import { getPlayersFromStartCommand, isEmpty } from "../util";
 import Encounter from "./Encounter";
+import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
+
+interface TurnCallback {
+    (): Promise<void>
+}
 
 export default class QuestLord {
     quests: Record<string, Quest> = {};
@@ -48,6 +53,10 @@ export default class QuestLord {
         // Users attack during a combat encounter
         if (interaction.commandName === "attack") {
             await this.handleAttack(interaction);
+        }
+
+        if (interaction.commandName === "use") {
+            await this.handleUse(interaction);
         }
     }
 
@@ -107,11 +116,14 @@ export default class QuestLord {
         if (quest.areAllCharactersCreated()) {
             await setGuildCommands(guildId);
             const textChannel = interaction.channel as TextChannel;
-            await this.startEncounter(guildId, textChannel, quest);
+            await this.startEncounter(guildId, textChannel);
         }
     }
 
-    async startEncounter(guildId: string, channel: TextChannel, quest: Quest) {
+    async startEncounter(guildId: string, channel: TextChannel) {
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId] as Quest;
         quest.startEncounter();
 
         // Get encounter data
@@ -123,35 +135,113 @@ export default class QuestLord {
         const text = textBuilder.build(monsterNames);
         await channel.send(text);
 
+        const turnOrder = encounter.getTurnOrderNames().reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
+        const embed = new MessageEmbed()
+            .setColor("#0099ff")
+            .setTitle("Turn order")
+            .setDescription(turnOrder);
+        await channel.send({ embeds: [embed] });
+
         // Register guild commands for encounter
         await setGuildCommands(guildId, {
             type: COMMAND_TYPE.ENCOUNTER,
             targets: monsterNames
         });
+
+        const currentTurn = encounter.getCurrentTurn();
+        if (currentTurn instanceof Monster) {
+            await this.handleMonsterTurn(guildId, channel);
+        }
     }
 
-    async handleAttack(interaction: CommandInteraction): Promise<void> {
+    async handleNextTurn(guildId: string, channel: TextChannel) {
+        const quest = this.quests[guildId] as Quest;
+        const encounter = quest.encounter as Encounter;
+
+        encounter.nextTurn();
+        const currentTurn = encounter.getCurrentTurn();
+    
+        if (currentTurn instanceof Monster) {
+            await channel.send(`It is now ${currentTurn.state.name}'s turn.`);
+            await this.handleMonsterTurn(guildId, channel);
+        } else if (currentTurn instanceof PlayerCharacter) {
+            await channel.send(`It is now ${currentTurn.getName()}'s turn.`);
+        }
+    }
+
+    async handleMonsterTurn(guildId: string, channel: TextChannel) {
+        const quest = this.quests[guildId] as Quest;
+        const encounter = quest.encounter as Encounter;
+
+        const currentTurn = encounter.getCurrentTurn();
+        if (currentTurn instanceof Monster) {
+            console.info("Monster does something...");
+            await this.handleNextTurn(guildId, channel);
+        }
+    }
+
+    async handlePlayerTurn(interaction: CommandInteraction, doPlayerTurn: TurnCallback) {
         const guildId = interaction.guildId as string;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId] as Quest;
         quest.assertEncounterStarted();
 
-        const encounter = quest.encounter as Encounter;
-        const targetIdx = interaction.options.getInteger("target") as number;
-
-        const target = encounter.getMonsterByIndex(targetIdx);
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-
-        const damage = pc.state.damage;
-        target.setHp(target.state.hp - damage);
-
-        const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
-        const weapon = pc.state.weapons[0];
-        const text = textBuilder.build(weapon, target.state.name);
-        await interaction.reply(text);
-        if (interaction.channel) {
-            await interaction.channel.send(`You deal ${pc.state.damage} damage.`);
+        const userId = interaction.user.id;
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "You are not on this quest. Destiny will call on you soon enough...",
+                ephemeral: true
+            });
+            return;
         }
+
+        const encounter = quest.encounter as Encounter;
+        const currentTurn = encounter.getCurrentTurn();
+        if (currentTurn instanceof PlayerCharacter && currentTurn.userId === userId) {
+            await doPlayerTurn();
+            const textChannel = interaction.channel as TextChannel;
+            await this.handleNextTurn(guildId, textChannel);
+        } else {
+            await interaction.reply({
+                content: "It's not your turn!",
+                ephemeral: true
+            });
+        }
+    }
+
+    async handleAttack(interaction: CommandInteraction): Promise<void> {
+        await this.handlePlayerTurn(interaction, async () => {
+            const guildId = interaction.guildId as string;
+            const quest = this.quests[guildId] as Quest;
+            const encounter = quest.encounter as Encounter;
+
+            const targetIdx = interaction.options.getInteger("target") as number;
+
+            const target = encounter.getMonsterByIndex(targetIdx);
+            const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+    
+            const damage = pc.state.damage;
+            target.setHp(target.state.hp - damage);
+    
+            const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
+            const weapon = pc.state.weapons[0];
+            const text = textBuilder.build(weapon, target.state.name);
+            await interaction.reply(text);
+            if (interaction.channel) {
+                await interaction.channel.send(`You deal ${pc.state.damage} damage.`);
+            }
+        });
+        
+    }
+
+    async handleUse(interaction: CommandInteraction): Promise<void> {
+        this.handlePlayerTurn(interaction, async () => {
+            // const guildId = interaction.guildId as string;
+            // const quest = this.quests[guildId] as Quest;
+            // const encounter = quest.encounter as Encounter;
+
+            await interaction.reply("You used an item!");
+        });
     }
 }

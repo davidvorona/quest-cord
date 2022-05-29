@@ -87,3 +87,9 @@ export const getPlayersFromStartCommand = (interaction: CommandInteraction) => {
     }
     return players as GuildMember[];
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const shuffleArray = (array: any[]) => array
+    .map(value => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
