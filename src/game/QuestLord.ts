@@ -2,13 +2,13 @@ import { CommandInteraction, Interaction, MessageEmbed, TextChannel } from "disc
 import setGuildCommands from "../commands";
 import { ACTIVITY, COMMAND_TYPE } from "../constants";
 import TextBuilder from "../text";
-import { getPlayersFromStartCommand, isEmpty } from "../util";
+import { getPlayersFromStartCommand, isEmpty, rand, sendTypingAndWaitRandom } from "../util";
 import Encounter from "./Encounter";
 import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
 
-interface TurnCallback {
+interface PlayerTurnCallback {
     (): Promise<void>
 }
 
@@ -130,6 +130,8 @@ export default class QuestLord {
         const encounter = quest.getEncounter() as Encounter;
         const monsterNames = encounter.getMonsterNames();
 
+        await sendTypingAndWaitRandom(channel, 3000);
+
         // Send text for the first encounter
         const textBuilder = new TextBuilder().setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
         const text = textBuilder.build(monsterNames);
@@ -149,8 +151,14 @@ export default class QuestLord {
         });
 
         const currentTurn = encounter.getCurrentTurn();
+
+        await sendTypingAndWaitRandom(channel, 3000);
+
         if (currentTurn instanceof Monster) {
+            await channel.send(`It is ${currentTurn.state.name}'s turn.`);
             await this.handleMonsterTurn(guildId, channel);
+        } else if (currentTurn instanceof PlayerCharacter) {
+            await channel.send(`It is ${currentTurn.getName()}'s turn.`);
         }
     }
 
@@ -160,6 +168,8 @@ export default class QuestLord {
 
         encounter.nextTurn();
         const currentTurn = encounter.getCurrentTurn();
+
+        await sendTypingAndWaitRandom(channel, 3000);
     
         if (currentTurn instanceof Monster) {
             await channel.send(`It is now ${currentTurn.state.name}'s turn.`);
@@ -175,12 +185,17 @@ export default class QuestLord {
 
         const currentTurn = encounter.getCurrentTurn();
         if (currentTurn instanceof Monster) {
-            console.info("Monster does something...");
+            const pcs = encounter.getPcs();
+            const target = pcs[rand(pcs.length)];
+            const damage = currentTurn.state.damage;
+            target.setHp(target.state.hp - damage);
+            await channel.send(`${currentTurn.state.name} deals ${damage} damage to ${target.getName()}.`);
+
             await this.handleNextTurn(guildId, channel);
         }
     }
 
-    async handlePlayerTurn(interaction: CommandInteraction, doPlayerTurn: TurnCallback) {
+    async handlePlayerTurn(interaction: CommandInteraction, doPlayerTurn: PlayerTurnCallback) {
         const guildId = interaction.guildId as string;
         this.assertQuestStarted(guildId);
 
@@ -236,7 +251,7 @@ export default class QuestLord {
     }
 
     async handleUse(interaction: CommandInteraction): Promise<void> {
-        this.handlePlayerTurn(interaction, async () => {
+        await this.handlePlayerTurn(interaction, async () => {
             // const guildId = interaction.guildId as string;
             // const quest = this.quests[guildId] as Quest;
             // const encounter = quest.encounter as Encounter;

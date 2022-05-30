@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { CommandInteraction, GuildMember } from "discord.js";
+import { CommandInteraction, GuildMember, TextChannel } from "discord.js";
 import { MonsterData } from "./types";
 import Monster from "./game/Monster";
 
@@ -93,3 +93,14 @@ export const shuffleArray = (array: any[]) => array
     .map(value => ({ value, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ value }) => value);
+
+export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const sendTypingAndWait = async (channel: TextChannel, ms: number) => {
+    await channel.sendTyping();
+    await delay(ms);
+};
+
+export const sendTypingAndWaitRandom = async (channel: TextChannel, ms: number) => {
+    await sendTypingAndWait(channel, rand(ms));
+};

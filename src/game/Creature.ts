@@ -9,4 +9,8 @@ export default class Creature {
         this.data = data;
         this.state = { ...data };
     }
+
+    setHp(hp: number) {
+        this.state.hp = hp;
+    }
 }

@@ -43,6 +43,8 @@ export default class Encounter {
         return c.state.name;
     });
 
+    getPcs = () => this.pcs;
+
     getMonsterNames = () => this.monsters.map(m => m.state.name);
 
     getPcNames = () => this.pcs.map(pc => pc.getName());
