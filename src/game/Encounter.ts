@@ -48,4 +48,12 @@ export default class Encounter {
     getMonsterNames = () => this.monsters.map(m => m.state.name);
 
     getPcNames = () => this.pcs.map(pc => pc.getName());
+
+    getTotalPcHp = () => this.pcs.reduce((acc, curr) => acc + curr.state.hp, 0);
+
+    getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.state.hp, 0);
+
+    isOver = () => {
+        return !this.getTotalPcHp() || !this.getTotalMonsterHp();
+    };
 }

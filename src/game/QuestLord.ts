@@ -166,6 +166,11 @@ export default class QuestLord {
         const quest = this.quests[guildId] as Quest;
         const encounter = quest.encounter as Encounter;
 
+        if (encounter.isOver()) {
+            await channel.send("Combat is over!");
+            return;
+        }
+
         encounter.nextTurn();
         const currentTurn = encounter.getCurrentTurn();
 

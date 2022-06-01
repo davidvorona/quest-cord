@@ -11,6 +11,6 @@ export default class Creature {
     }
 
     setHp(hp: number) {
-        this.state.hp = hp;
+        this.state.hp = hp > 0 ? hp : 0;
     }
 }
