@@ -1,0 +1,8 @@
+{
+    "id": "potion",
+    "name": "Potion",
+    "type": "consumable",
+    "effects": {
+        "hp": 2
+    }
+}

@@ -3,7 +3,7 @@ import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./Encounter";
 import compendium from "../compendium";
 import { COMPENDIUM_SECTION } from "../constants";
-import { BaseCharacter, MonsterData } from "../types";
+import { BaseMonster } from "../types";
 
 export default class Quest {
     id: string;
@@ -33,10 +33,8 @@ export default class Quest {
     }
 
     createCharacter(userId: string, classId?: string) {
-        const classData = classId
-            ? compendium.data.classes[classId]
-            : compendium.pickRandom(COMPENDIUM_SECTION.CLASSES) as BaseCharacter;
-        const pc = new PlayerCharacter(classData, userId);
+        const characterClass = compendium.spawnCharacterClass(classId);
+        const pc = new PlayerCharacter(userId, characterClass);
         this.pcs[userId] = pc;
         return pc;
     }
@@ -56,7 +54,7 @@ export default class Quest {
     }
 
     startEncounter() {
-        const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, 4) as MonsterData[];
+        const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, 4) as BaseMonster[];
         const pcs = Object.values(this.pcs) as PlayerCharacter[];
         const encounter = new Encounter(pcs, listToMonster(list));
         this.encounter = encounter;

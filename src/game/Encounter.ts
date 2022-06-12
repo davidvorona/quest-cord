@@ -38,20 +38,17 @@ export default class Encounter {
         }
     };
 
-    getTurnOrderNames = () => this.turnOrder.map((c) => {
-        if (c instanceof PlayerCharacter) return c.getName();
-        return c.state.name;
-    });
+    getTurnOrderNames = () => this.turnOrder.map(c => c.getName());
 
     getPcs = () => this.pcs;
 
-    getMonsterNames = () => this.monsters.map(m => m.state.name);
+    getMonsterNames = () => this.monsters.map(m => m.getName());
 
     getPcNames = () => this.pcs.map(pc => pc.getName());
 
-    getTotalPcHp = () => this.pcs.reduce((acc, curr) => acc + curr.state.hp, 0);
+    getTotalPcHp = () => this.pcs.reduce((acc, curr) => acc + curr.hp, 0);
 
-    getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.state.hp, 0);
+    getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
 
     isOver = () => {
         return !this.getTotalPcHp() || !this.getTotalMonsterHp();

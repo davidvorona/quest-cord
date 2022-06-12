@@ -105,10 +105,10 @@ export default class QuestLord {
                 ephemeral: true
             });
         } else {
-            const classId = interaction.options.getString("class") as string;
-            const pc = quest.createCharacter(userId, classId);
+            const optionClass = interaction.options.getString("class") as string;
+            const pc = quest.createCharacter(userId, optionClass);
             await interaction.reply({
-                content: `Character *${pc.getName()}*, level ${pc.state.lvl} ${classId}, created...`,
+                content: `Character *${pc.getName()}*, level ${pc.lvl} ${pc.getName()}, created...`,
                 ephemeral: true
             });
         }
@@ -118,6 +118,12 @@ export default class QuestLord {
             const textChannel = interaction.channel as TextChannel;
             await this.startEncounter(guildId, textChannel);
         }
+    }
+
+    async failQuest(guildId: string, channel: TextChannel): Promise<void> {
+        await setGuildCommands(guildId);
+        delete this.quests[guildId];
+        await channel.send("*Your party was slaughtered, and so ends this thread of destiny...*");
     }
 
     async startEncounter(guildId: string, channel: TextChannel) {
@@ -154,11 +160,9 @@ export default class QuestLord {
 
         await sendTypingAndWaitRandom(channel, 3000);
 
+        await channel.send(`It is ${currentTurn.getName()}'s turn.`);
         if (currentTurn instanceof Monster) {
-            await channel.send(`It is ${currentTurn.state.name}'s turn.`);
             await this.handleMonsterTurn(guildId, channel);
-        } else if (currentTurn instanceof PlayerCharacter) {
-            await channel.send(`It is ${currentTurn.getName()}'s turn.`);
         }
     }
 
@@ -167,7 +171,13 @@ export default class QuestLord {
         const encounter = quest.encounter as Encounter;
 
         if (encounter.isOver()) {
+            const isTpk = !encounter.getTotalPcHp();
             await channel.send("Combat is over!");
+            if (isTpk) {
+                await this.failQuest(guildId, channel);
+            } else {
+                await channel.send("The enemies lie dead at your feet...victory!");
+            }
             return;
         }
 
@@ -175,12 +185,10 @@ export default class QuestLord {
         const currentTurn = encounter.getCurrentTurn();
 
         await sendTypingAndWaitRandom(channel, 3000);
-    
+        
+        await channel.send(`It is now ${currentTurn.getName()}'s turn.`);
         if (currentTurn instanceof Monster) {
-            await channel.send(`It is now ${currentTurn.state.name}'s turn.`);
             await this.handleMonsterTurn(guildId, channel);
-        } else if (currentTurn instanceof PlayerCharacter) {
-            await channel.send(`It is now ${currentTurn.getName()}'s turn.`);
         }
     }
 
@@ -192,9 +200,9 @@ export default class QuestLord {
         if (currentTurn instanceof Monster) {
             const pcs = encounter.getPcs();
             const target = pcs[rand(pcs.length)];
-            const damage = currentTurn.state.damage;
-            target.setHp(target.state.hp - damage);
-            await channel.send(`${currentTurn.state.name} deals ${damage} damage to ${target.getName()}.`);
+            const damage = currentTurn.damage;
+            target.setHp(target.hp - damage);
+            await channel.send(`${currentTurn.getName()} deals ${damage} damage to ${target.getName()}.`);
 
             await this.handleNextTurn(guildId, channel);
         }
@@ -241,15 +249,15 @@ export default class QuestLord {
             const target = encounter.getMonsterByIndex(targetIdx);
             const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
     
-            const damage = pc.state.damage;
-            target.setHp(target.state.hp - damage);
+            const damage = pc.damage;
+            target.setHp(target.hp - damage);
     
             const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
-            const weapon = pc.state.weapons[0];
-            const text = textBuilder.build(weapon, target.state.name);
+            const weapon = pc.weapons[0];
+            const text = textBuilder.build(weapon, target.getName());
             await interaction.reply(text);
             if (interaction.channel) {
-                await interaction.channel.send(`You deal ${pc.state.damage} damage.`);
+                await interaction.channel.send(`You deal ${pc.damage} damage.`);
             }
         });
         

@@ -2,7 +2,7 @@ import path from "path";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { ConfigJson, AuthJson, AnyObject, BaseCharacter } from "./types";
+import { ConfigJson, AuthJson, AnyObject, ClassData } from "./types";
 import { parseJson, readFile } from "./util";
 import { COMMAND_TYPE } from "./constants";
 import compendium from "./compendium";
@@ -48,7 +48,7 @@ class CommandBuilder {
         switch (this.type) {
         case COMMAND_TYPE.NEW_QUEST: {
             const choices = Object.values(compendium.data.classes).map(
-                (c: BaseCharacter) => this.buildStringChoices(c.name, c.name.toLowerCase())
+                (c: ClassData) => this.buildStringChoices(c.name, c.id)
             );
             builtCommands.push(new SlashCommandBuilder()
                 .setName("play")
@@ -91,6 +91,11 @@ class CommandBuilder {
     }
 }
 
+
+// NOTE: It seems (at least for guild commands) that Discord rate-limits requests to the
+// PUT endpoint. The limit of clustered requests seems to be as low as 2, with the 3rd
+// hanging for some time before a response is returned.
+// TODO: is this true if the target guilds are different?
 export default async function setGuildCommands(guildId: string, args?: CommandBuilderArgs) {
     const builder = new CommandBuilder(args);
     const commands = builder.build();

@@ -1,13 +1,11 @@
 {
+    "id": "wizard",
     "name": "Wizard",
-    "lvl": 1,
-    "hp": 11,
-    "damage": 3,
-    "weapons": ["wand"],
-    "armor": {
-        "head": "wizard hat"
-    },
-    "spells": ["firebolt"],
+    "baseHp": 11,
+    "baseDamage": 3,
+    "startingWeapons": ["wand"],
+    "startingArmor": ["wizard_robes"],
+    "startingSpells": ["firebolt"],
     "lvlGains": [
         {
             "spells": ["cone of cold", "confuse"]

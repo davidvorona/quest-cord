@@ -10,5 +10,6 @@ export const ACTIVITY = {
 
 export const COMPENDIUM_SECTION = {
     MONSTERS: "monsters",
-    CLASSES: "classes"
+    CLASSES: "classes",
+    ITEMS: "items"
 };

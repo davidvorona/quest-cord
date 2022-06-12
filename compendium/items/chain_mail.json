@@ -1,0 +1,7 @@
+{
+    "id": "chain_mail",
+    "name": "Chain Mail",
+    "type": "armor",
+    "ac": 3,
+    "category": "heavy"
+}
