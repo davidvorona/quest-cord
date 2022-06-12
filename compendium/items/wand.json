@@ -1,0 +1,7 @@
+{
+    "id": "wand",
+    "name": "Wand",
+    "type": "weapon",
+    "damage": 1,
+    "properties": ["ranged"]
+}

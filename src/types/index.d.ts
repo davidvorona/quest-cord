@@ -21,27 +21,51 @@ export interface LevelGain {
     spells?: string[];
 }
 
-export interface CreatureData {
+export interface CharacterClass {
+    id: string;
     name: string;
+    baseHp: number;
+    baseDamage: number;
+    startingWeapons: string[];
+    startingArmor: string[];
+    startingSpells: string[];
+    startingItems: string[];
+    lvlGains: LevelGain[];
+}
+
+export interface PlayerCharacterState {
+    firstName: string;
+    lastName: string;
     lvl: number;
+    maxHp: number;
+    hp: number;
+    damage: number;
+    weapons: string[];
+    armor: string[];
+    spells: string[];
+    items: string[];
+}
+
+export interface BaseItem {
+    id: string;
+    name: string;
+    type: string;
+}
+
+export interface BaseCreature {
+    id: string;
+    name: string;
     hp: number;
     damage: number;
     weapons: string[]; 
 }
 
-export interface MonsterData extends CreatureData {
+export interface BaseMonster extends BaseCreature {
     zones: string[];
 }
 
-export interface BaseCharacter extends CreatureData {
-    armor?: {
-        head: string;
-        chest: string;
-        leg: string;
-        feet: string;
-        finger: string
-    };
+export interface BaseNonPlayerCharacter extends BaseCreature {
+    armor?: string[];
     spells?: string[];
     items?: string[];
-    levelGains: LevelGain[]
 }

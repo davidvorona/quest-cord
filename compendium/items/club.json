@@ -1,0 +1,7 @@
+{
+    "id": "club",
+    "name": "Club",
+    "type": "weapon",
+    "damage": 3,
+    "properties": ["two-handed"]
+}

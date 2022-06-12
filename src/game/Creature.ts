@@ -1,16 +1,31 @@
-import { CreatureData } from "../types";
+import { BaseCreature } from "../types";
 
 export default class Creature {
-    data: CreatureData;
+    id: string;
 
-    state: CreatureData;
+    name: string;
 
-    constructor(data: CreatureData) {
-        this.data = data;
-        this.state = { ...data };
+    maxHp: number;
+
+    hp: number;
+
+    damage: number;
+
+    weapons: string[];
+
+    constructor(data: BaseCreature) {
+        this.id = data.id;
+        this.name = data.name;
+        this.hp = this.maxHp = data.hp;
+        this.damage = data.damage;
+        this.weapons = data.weapons;
+    }
+
+    getName() {
+        return this.name;
     }
 
     setHp(hp: number) {
-        this.state.hp = hp > 0 ? hp : 0;
+        this.hp = hp > 0 ? hp : 0;
     }
 }

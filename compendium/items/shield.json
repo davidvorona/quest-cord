@@ -1,0 +1,9 @@
+{
+    "id": "shield",
+    "name": "Shield",
+    "type": "offhand",
+    "effects": {
+        "ac": 2
+    },
+    "properties": ["heavy"]
+}

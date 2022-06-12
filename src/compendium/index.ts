@@ -1,10 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { AnyObject } from "./types";
-import { parseJson, rand, readFile } from "./util";
+import { AnyObject, CharacterClass } from "../types";
+import { parseJson, rand, readFile } from "../util";
+import { COMPENDIUM_SECTION } from "../constants";
+import CompendiumFactory from "./factory";
 
 class Compendium {
     data: Record<string, AnyObject> = {};
+
+    factory = new CompendiumFactory();
 
     load() {
         const compendiumPath = path.join(__dirname, "../compendium");
@@ -15,7 +19,7 @@ class Compendium {
             this.section(d);
             files.forEach((f) => {
                 const data = parseJson(readFile(path.join(sectionPath, f)));
-                this.set(d, data.name.toLowerCase(), data);
+                this.set(d, data.id, data);
             });
         });
         console.info("Loaded compendium:", this.data);
@@ -41,6 +45,26 @@ class Compendium {
             list.push(this.pickRandom(section));
         }
         return list;
+    }
+
+    spawn(section: string, key: string): AnyObject {
+        const data = this.data[section][key];
+        const instance = this.factory.create(section, data);
+        return instance;
+    }
+
+    spawnRandom(section: string): AnyObject {
+        const instance = this.factory.create(section, this.pickRandom(section));
+        return instance;
+    }
+
+    spawnCharacterClass(key?: string): CharacterClass {
+        const section = COMPENDIUM_SECTION.CLASSES;
+        if (!key) {
+            return this.spawnRandom(section) as CharacterClass;
+        }
+        const data = this.data[section][key];
+        return (data ? this.spawn(section, data) : this.spawnRandom(section)) as CharacterClass;
     }
 }
 
