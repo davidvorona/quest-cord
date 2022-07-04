@@ -46,7 +46,7 @@ export default class PlayerCharacter {
         this.spells = state.spells || this.characterClass.startingSpells;
         this.items = state.items || this.characterClass.startingItems;
 
-        console.info("Character", this.getName(),  "created");
+        console.info("Character", this,  "created");
     }
 
     getName() {

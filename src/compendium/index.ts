@@ -11,7 +11,7 @@ class Compendium {
     factory = new CompendiumFactory();
 
     load() {
-        const compendiumPath = path.join(__dirname, "../compendium");
+        const compendiumPath = path.join(__dirname, "../../compendium");
         const dir = fs.readdirSync(compendiumPath);
         dir.forEach((d) => {
             const sectionPath = path.join(compendiumPath, d);
@@ -64,7 +64,7 @@ class Compendium {
             return this.spawnRandom(section) as CharacterClass;
         }
         const data = this.data[section][key];
-        return (data ? this.spawn(section, data) : this.spawnRandom(section)) as CharacterClass;
+        return (data ? this.spawn(section, key) : this.spawnRandom(section)) as CharacterClass;
     }
 }
 
