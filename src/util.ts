@@ -2,7 +2,7 @@ import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { CommandInteraction, GuildMember, TextChannel } from "discord.js";
-import { MonsterData } from "./types";
+import { BaseMonster } from "./types";
 import Monster from "./game/Monster";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +64,7 @@ export const loadNames = () => {
 /**
  * Maps a list of monster data from the compendium to Monster instances.
  */
-export const listToMonster = (data: MonsterData[]): Monster[] => data.map(m => new Monster(m));
+export const listToMonster = (data: BaseMonster[]): Monster[] => data.map(m => new Monster(m));
 
 /**
  * Extracts guild members from the /start command options. 

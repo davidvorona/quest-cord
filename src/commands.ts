@@ -2,7 +2,7 @@ import path from "path";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { ConfigJson, AuthJson, AnyObject, ClassData } from "./types";
+import { ConfigJson, AuthJson, AnyObject, CharacterClass } from "./types";
 import { parseJson, readFile } from "./util";
 import { COMMAND_TYPE } from "./constants";
 import compendium from "./compendium";
@@ -48,7 +48,7 @@ class CommandBuilder {
         switch (this.type) {
         case COMMAND_TYPE.NEW_QUEST: {
             const choices = Object.values(compendium.data.classes).map(
-                (c: ClassData) => this.buildStringChoices(c.name, c.id)
+                (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
             );
             builtCommands.push(new SlashCommandBuilder()
                 .setName("play")
