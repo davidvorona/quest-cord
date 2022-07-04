@@ -227,7 +227,15 @@ export default class QuestLord {
         const encounter = quest.encounter as Encounter;
         const currentTurn = encounter.getCurrentTurn();
         if (currentTurn instanceof PlayerCharacter && currentTurn.userId === userId) {
-            await doPlayerTurn();
+            try {
+                await doPlayerTurn();
+            } catch(e) {
+                const err = e instanceof Error ? e.message : "Unable to complete turn, try again.";
+                await interaction.reply({
+                    content: err,
+                    ephemeral: true
+                });
+            }
             const textChannel = interaction.channel as TextChannel;
             await this.handleNextTurn(guildId, textChannel);
         } else {
@@ -265,11 +273,15 @@ export default class QuestLord {
 
     async handleUse(interaction: CommandInteraction): Promise<void> {
         await this.handlePlayerTurn(interaction, async () => {
-            // const guildId = interaction.guildId as string;
-            // const quest = this.quests[guildId] as Quest;
-            // const encounter = quest.encounter as Encounter;
+            const guildId = interaction.guildId as string;
+            const quest = this.quests[guildId] as Quest;
 
-            await interaction.reply("You used an item!");
+            const item = interaction.options.getString("item") as string;
+            const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+
+            pc.useItem(item);
+
+            await interaction.reply(`You use a ${item}`);
         });
     }
 }

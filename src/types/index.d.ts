@@ -52,6 +52,17 @@ export interface BaseItem {
     type: string;
 }
 
+export interface Effects {
+    hp?: number;
+    maxHp?: number;
+    damage?: number;
+}
+
+export interface BaseConsumable extends BaseItem {
+    duration?: number;
+    effects: Effects;
+}
+
 export interface BaseCreature {
     id: string;
     name: string;

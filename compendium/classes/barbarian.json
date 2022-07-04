@@ -6,6 +6,7 @@
     "startingWeapons": ["club"],
     "startingArmor": [],
     "startingSpells": [],
+    "startingItems": ["potion"],
     "lvlGains": [
         {
             "hp": 2

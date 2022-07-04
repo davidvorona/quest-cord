@@ -6,6 +6,7 @@
     "startingWeapons": ["wand"],
     "startingArmor": ["wizard_robes"],
     "startingSpells": ["firebolt"],
+    "startingItems": ["potion"],
     "lvlGains": [
         {
             "spells": ["cone of cold", "confuse"]

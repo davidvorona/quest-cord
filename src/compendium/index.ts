@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { AnyObject, CharacterClass } from "../types";
+import { AnyObject, BaseItem, CharacterClass } from "../types";
 import { parseJson, rand, readFile } from "../util";
 import { COMPENDIUM_SECTION } from "../constants";
 import CompendiumFactory from "./factory";
@@ -65,6 +65,19 @@ class Compendium {
         }
         const data = this.data[section][key];
         return (data ? this.spawn(section, key) : this.spawnRandom(section)) as CharacterClass;
+    }
+
+    spawnItem(key: string): BaseItem {
+        const section = COMPENDIUM_SECTION.ITEMS;
+        const data = this.data[section][key];
+        if (!data) {
+            throw new Error("This item does not exist.");
+        }
+        return this.factory.create(section, data) as BaseItem;
+    }
+
+    spawnItems(keys: string[]): BaseItem[] {
+        return keys.map(i => this.spawnItem(i));
     }
 }
 

@@ -6,6 +6,7 @@
     "startingWeapons": ["sword", "shield"],
     "startingArmor": ["chain_mail"],
     "startingSpells": [],
+    "startingItems": ["potion"],
     "lvlGains": [
         {
             "hp": 1,

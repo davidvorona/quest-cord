@@ -1,6 +1,9 @@
-import { PlayerCharacterState } from "../types";
+import compendium from "../compendium";
+import { ITEM_TYPE } from "../constants";
+import { BaseItem, Effects, PlayerCharacterState } from "../types";
 import { rand, loadNames } from "../util";
 import CharacterClass from "./CharacterClass";
+import Consumable from "./Consumable";
 
 const { firstNames, lastNames } = loadNames();
 
@@ -27,7 +30,7 @@ export default class PlayerCharacter {
 
     spells: string[];
 
-    items: string[];
+    inventory: BaseItem[];
 
     constructor(userId: string, characterClass: CharacterClass, savedState?: PlayerCharacterState) {
         this.characterClass = characterClass;
@@ -44,7 +47,9 @@ export default class PlayerCharacter {
         this.weapons = state.weapons || this.characterClass.startingWeapons;
         this.armor = state.armor || this.characterClass.startingArmor;
         this.spells = state.spells || this.characterClass.startingSpells;
-        this.items = state.items || this.characterClass.startingItems;
+
+        const items = state.items || this.characterClass.startingItems;
+        this.inventory = compendium.spawnItems(items);
 
         console.info("Character", this,  "created");
     }
@@ -68,4 +73,19 @@ export default class PlayerCharacter {
     setHp = (hp: number) => {
         this.hp = hp > 0 ? hp : 0;
     };
+
+    useItem = (itemId: string) => {
+        const inventoryItem = this.inventory.find(i => i.id === itemId);
+        if (!inventoryItem) throw new Error("You do not have this item!");
+        if (inventoryItem.type === ITEM_TYPE.CONSUMABLE) {
+            const consumable = inventoryItem as Consumable; 
+            this.applyEffects(consumable.effects);
+        }
+    };
+
+    applyEffects(effects: Effects) {
+        if (effects.hp) {
+            this.setHp(this.hp + effects.hp);
+        }
+    }
 }

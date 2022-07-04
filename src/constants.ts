@@ -13,3 +13,7 @@ export const COMPENDIUM_SECTION = {
     CLASSES: "classes",
     ITEMS: "items"
 };
+
+export const ITEM_TYPE = {
+    CONSUMABLE: "consumable"
+};
