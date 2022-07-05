@@ -108,7 +108,7 @@ export default class QuestLord {
             const optionClass = interaction.options.getString("class") as string;
             const pc = quest.createCharacter(userId, optionClass);
             await interaction.reply({
-                content: `Character *${pc.getName()}*, level ${pc.lvl} ${pc.getName()}, created...`,
+                content: `Character *${pc.getName()}*, level ${pc.lvl} ${pc.characterClass.name}, created...`,
                 ephemeral: true
             });
         }
@@ -281,7 +281,7 @@ export default class QuestLord {
 
             pc.useItem(item);
 
-            await interaction.reply(`You use a ${item}`);
+            await interaction.reply(`You use a ${item}.`);
         });
     }
 }

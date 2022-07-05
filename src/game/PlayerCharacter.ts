@@ -51,7 +51,7 @@ export default class PlayerCharacter {
         const items = state.items || this.characterClass.startingItems;
         this.inventory = compendium.spawnItems(items);
 
-        console.info("Character", this,  "created");
+        console.info("Character", this.getName(),  "created");
     }
 
     getName() {
@@ -70,18 +70,24 @@ export default class PlayerCharacter {
             + lvlsGained.reduce((acc, curr) => curr.hp || 0, 0);
     }
 
-    setHp = (hp: number) => {
-        this.hp = hp > 0 ? hp : 0;
-    };
+    setHp(hp: number) {
+        if (hp < 0) {
+            return 0;
+        }
+        if (hp > this.maxHp) {
+            return this.maxHp;
+        }
+        return hp;
+    }
 
-    useItem = (itemId: string) => {
+    useItem(itemId: string) {
         const inventoryItem = this.inventory.find(i => i.id === itemId);
         if (!inventoryItem) throw new Error("You do not have this item!");
         if (inventoryItem.type === ITEM_TYPE.CONSUMABLE) {
             const consumable = inventoryItem as Consumable; 
             this.applyEffects(consumable.effects);
         }
-    };
+    }
 
     applyEffects(effects: Effects) {
         if (effects.hp) {

@@ -79,6 +79,16 @@ class CommandBuilder {
                         .addChoices(...choices);
                 })
             );
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("use")
+                .setDescription("Use an item")
+                .addStringOption((option) => {
+                    return option
+                        .setName("item")
+                        .setDescription("Which item do you want to use?")
+                        .setRequired(true);
+                })
+            );
             break;
         }
         default:
