@@ -86,6 +86,8 @@ export default class PlayerCharacter {
         if (inventoryItem.type === ITEM_TYPE.CONSUMABLE) {
             const consumable = inventoryItem as Consumable; 
             this.applyEffects(consumable.effects);
+            const removeIndex = this.inventory.indexOf(inventoryItem);
+            this.inventory.splice(removeIndex);
         }
     }
 

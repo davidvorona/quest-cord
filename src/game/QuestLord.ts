@@ -295,7 +295,9 @@ export default class QuestLord {
 
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
         const inventory = pc.getInventory();
-        const inventoryEmbed = inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
+        const inventoryEmbed = inventory.length
+            ? inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "")
+            : "Inventory is empty";
 
         const embed = new MessageEmbed()
             .setColor("#0099ff")
