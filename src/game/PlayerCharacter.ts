@@ -94,4 +94,8 @@ export default class PlayerCharacter {
             this.setHp(this.hp + effects.hp);
         }
     }
+
+    getInventory() {
+        return this.inventory.map(item => item.name);
+    }
 }

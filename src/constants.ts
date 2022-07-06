@@ -6,14 +6,14 @@ export const COMMAND_TYPE = {
 export const ACTIVITY = {
     ENCOUNTER: "encounter",
     ATTACK: "attack"
-};
+} as const;
 
 export const COMPENDIUM_SECTION = {
     MONSTERS: "monsters",
     CLASSES: "classes",
     ITEMS: "items"
-};
+} as const;
 
 export const ITEM_TYPE = {
     CONSUMABLE: "consumable"
-};
+} as const;

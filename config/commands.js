@@ -37,5 +37,9 @@ module.exports = [
                 type: ApplicationCommandOptionType.Mentionable
             }
         ]
+    },
+    {
+        name: "inventory",
+        description: "Show your current inventory"
     }
 ];

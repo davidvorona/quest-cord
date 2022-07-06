@@ -58,6 +58,10 @@ export default class QuestLord {
         if (interaction.commandName === "use") {
             await this.handleUse(interaction);
         }
+
+        if (interaction.commandName === "inventory") {
+            await this.printInventory(interaction);
+        }
     }
 
     async startQuest(interaction: CommandInteraction): Promise<void> {
@@ -282,6 +286,24 @@ export default class QuestLord {
             pc.useItem(item);
 
             await interaction.reply(`You use a ${item}.`);
+        });
+    }
+
+    async printInventory(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId as string;
+        const quest = this.quests[guildId] as Quest;
+
+        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+        const inventory = pc.getInventory();
+        const inventoryEmbed = inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
+
+        const embed = new MessageEmbed()
+            .setColor("#0099ff")
+            .setTitle("Your inventory")
+            .setDescription(inventoryEmbed);
+        await interaction.reply({
+            embeds: [embed],
+            ephemeral: true
         });
     }
 }
