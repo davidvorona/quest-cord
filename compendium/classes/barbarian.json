@@ -3,10 +3,13 @@
     "name": "Barbarian",
     "baseHp": 16,
     "baseDamage": 2,
-    "startingWeapons": ["club"],
-    "startingArmor": [],
+    "startingEquipment": {
+        "mainHand": "club"
+    },
+    "startingInventory": {
+        "potion": 1
+    },
     "startingSpells": [],
-    "startingItems": ["potion"],
     "lvlGains": [
         {
             "hp": 2

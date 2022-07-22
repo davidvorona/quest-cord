@@ -1,4 +1,4 @@
-import { LevelGain, CharacterClass as CharacterClassType } from "../types";
+import { LevelGain, CharacterClass as CharacterClassType, Equipment } from "../types";
 
 export default class CharacterClass {
     id: string;
@@ -9,13 +9,11 @@ export default class CharacterClass {
 
     baseDamage: number;
 
-    startingWeapons: string[];
-
-    startingArmor: string[];
+    startingEquipment: Equipment;
 
     startingSpells: string[];
 
-    startingItems: string[];
+    startingInventory: Record<string, number>;
 
     lvlGains: LevelGain[];
 
@@ -24,10 +22,9 @@ export default class CharacterClass {
         this.name = args.name;
         this.baseHp = args.baseHp;
         this.baseDamage = args.baseDamage;
-        this.startingWeapons = args.startingWeapons;
-        this.startingArmor = args.startingArmor;
+        this.startingEquipment = args.startingEquipment;
+        this.startingInventory = args.startingInventory;
         this.startingSpells = args.startingSpells;
-        this.startingItems = args.startingItems;
         this.lvlGains = args.lvlGains;
     }
 }

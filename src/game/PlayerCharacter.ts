@@ -1,6 +1,6 @@
 import compendium from "../compendium";
 import { ITEM_TYPE } from "../constants";
-import { BaseItem, Effects, PlayerCharacterState } from "../types";
+import { BaseItem, Effects, Equipment, PlayerCharacterState, QuantifiedItem } from "../types";
 import { rand, loadNames } from "../util";
 import CharacterClass from "./CharacterClass";
 import Consumable from "./Consumable";
@@ -24,13 +24,11 @@ export default class PlayerCharacter {
 
     damage: number;
 
-    weapons: string[];
+    inventory: Record<string, QuantifiedItem>;
 
-    armor: string[];
+    equipment: Equipment;
 
     spells: string[];
-
-    inventory: BaseItem[];
 
     constructor(userId: string, characterClass: CharacterClass, savedState?: PlayerCharacterState) {
         this.characterClass = characterClass;
@@ -44,12 +42,11 @@ export default class PlayerCharacter {
         this.maxHp = state.maxHp || this.computeMaxHp();
         this.hp = state.hp || this.maxHp;
         this.damage = state.damage || this.characterClass.baseDamage;
-        this.weapons = state.weapons || this.characterClass.startingWeapons;
-        this.armor = state.armor || this.characterClass.startingArmor;
+        this.equipment = state.equipment || this.characterClass.startingEquipment;
         this.spells = state.spells || this.characterClass.startingSpells;
 
-        const items = state.items || this.characterClass.startingItems;
-        this.inventory = compendium.spawnItems(items);
+        const inventory = state.inventory || this.characterClass.startingInventory;
+        this.inventory = compendium.spawnInventoryItems(inventory);
 
         console.info("Character", this.getName(),  "created");
     }
@@ -98,6 +95,6 @@ export default class PlayerCharacter {
     }
 
     getInventory() {
-        return this.inventory.map(item => item.name);
+        return this.inventory;
     }
 }

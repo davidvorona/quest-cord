@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { AnyObject, BaseItem, CharacterClass } from "../types";
+import { AnyObject, BaseItem, CharacterClass, QuantifiedItem } from "../types";
 import { parseJson, rand, readFile } from "../util";
 import { COMPENDIUM_SECTION } from "../constants";
 import CompendiumFactory from "./factory";
@@ -78,6 +78,18 @@ class Compendium {
 
     spawnItems(keys: string[]): BaseItem[] {
         return keys.map(i => this.spawnItem(i));
+    }
+
+    spawnInventoryItems(inventory: Record<string, number>): Record<string, QuantifiedItem> {
+        const result: Record<string, QuantifiedItem> = {};
+        Object.keys(inventory).forEach((itemId) => {
+            const item = this.spawnItem(itemId);
+            result[itemId] = {
+                ...item,
+                quantity: inventory[itemId]
+            };
+        });
+        return result;
     }
 }
 

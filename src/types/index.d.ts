@@ -21,15 +21,23 @@ export interface LevelGain {
     spells?: string[];
 }
 
+export interface Equipment {
+    main?: string;
+    offHand?: string;
+    head?: string;
+    body?: string;
+    feet?: string;
+    ring?: string;
+}
+
 export interface CharacterClass {
     id: string;
     name: string;
     baseHp: number;
     baseDamage: number;
-    startingWeapons: string[];
-    startingArmor: string[];
+    startingEquipment: Equipment;
+    startingInventory: Record<string, number>;
     startingSpells: string[];
-    startingItems: string[];
     lvlGains: LevelGain[];
 }
 
@@ -40,16 +48,19 @@ export interface PlayerCharacterState {
     maxHp: number;
     hp: number;
     damage: number;
-    weapons: string[];
-    armor: string[];
+    equipment: Equipment;
+    inventory: Record<string, number>;
     spells: string[];
-    items: string[];
 }
 
 export interface BaseItem {
     id: string;
     name: string;
     type: string;
+}
+
+export interface QuantifiedItem extends BaseItem {
+    quantity: number;
 }
 
 export interface Effects {

@@ -3,10 +3,15 @@
     "name": "Paladin",
     "baseHp": 13,
     "baseDamage": 2,
-    "startingWeapons": ["sword", "shield"],
-    "startingArmor": ["chain_mail"],
+    "startingEquipment": {
+        "main": "sword",
+        "offHand": "shield",
+        "body": "chain_mail"
+    },
+    "startingInventory": {
+        "potion": 1
+    },
     "startingSpells": [],
-    "startingItems": ["potion"],
     "lvlGains": [
         {
             "hp": 1,
