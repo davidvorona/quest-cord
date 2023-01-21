@@ -1,6 +1,7 @@
 export const COMMAND_TYPE = {
     NEW_QUEST: "new_quest",
-    ENCOUNTER: "encounter"
+    ENCOUNTER: "encounter",
+    TRAVEL: "travel"
 } as const;
 
 export const ACTIVITY = {
@@ -25,6 +26,20 @@ export const BIOME = {
     DESERT: "desert",
     JUNGLE: "jungle",
     MOUNTAINS: "mountains"
+} as const;
+
+export const DIRECTION = {
+    NORTH: "north",
+    SOUTH: "south",
+    EAST: "east",
+    WEST: "west"
+} as const;
+
+export const FORMATTED_DIRECTION = {
+    NORTH: "North",
+    SOUTH: "South",
+    EAST: "East",
+    WEST: "West"
 } as const;
 
 export const WORLD_DIMENSION = 40 as const;

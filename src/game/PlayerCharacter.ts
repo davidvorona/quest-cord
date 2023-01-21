@@ -71,13 +71,14 @@ export default class PlayerCharacter {
     }
 
     setHp(hp: number) {
+        let newHp = hp;
         if (hp < 0) {
-            return 0;
+            newHp = 0;
         }
         if (hp > this.maxHp) {
-            return this.maxHp;
+            newHp = this.maxHp;
         }
-        return hp;
+        this.hp = newHp;
     }
 
     useItem(itemId: string) {

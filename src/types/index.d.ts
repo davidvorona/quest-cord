@@ -90,3 +90,5 @@ export interface BaseNonPlayerCharacter extends BaseCreature {
     spells?: string[];
     items?: string[];
 }
+
+export type Direction = "north" | "south" | "east" | "west";

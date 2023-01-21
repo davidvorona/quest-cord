@@ -34,6 +34,10 @@ export default class Quest {
         return Object.prototype.hasOwnProperty.call(this.pcs, userId);
     }
 
+    getPartySize() {
+        return Object.keys(this.pcs).length;
+    }
+
     createCharacter(userId: string, classId?: string) {
         const characterClass = compendium.spawnCharacterClass(classId);
         const pc = new PlayerCharacter(userId, characterClass);
@@ -64,7 +68,8 @@ export default class Quest {
     }
 
     startEncounter() {
-        const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, 4) as BaseMonster[];
+        const partySize = this.getPartySize();
+        const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, partySize) as BaseMonster[];
         const pcs = Object.values(this.pcs) as PlayerCharacter[];
         const encounter = new Encounter(pcs, listToMonster(list));
         this.encounter = encounter;
@@ -72,5 +77,13 @@ export default class Quest {
 
     getEncounter() {
         return this.encounter;
+    }
+
+    endEncounter() {
+        this.encounter = undefined;
+    }
+
+    isInEncounter() {
+        return this.encounter !== undefined;
     }
 }

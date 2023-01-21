@@ -4,7 +4,7 @@ import { Routes } from "discord-api-types/v9";
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { ConfigJson, AuthJson, AnyObject, CharacterClass } from "./types";
 import { parseJson, readFile } from "./util";
-import { COMMAND_TYPE } from "./constants";
+import { COMMAND_TYPE, DIRECTION, FORMATTED_DIRECTION } from "./constants";
 import compendium from "./compendium";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -57,6 +57,25 @@ class CommandBuilder {
                     return option
                         .setName("class")
                         .setDescription("Pick a character class")
+                        .addChoices(...choices);
+                })
+            );
+            break;
+        }
+        case COMMAND_TYPE.TRAVEL: {
+            const choices = [
+                { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
+                { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
+                { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
+                { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
+            ];
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("travel")
+                .setDescription("What direction will you travel next?")
+                .addStringOption((option) => {
+                    return option
+                        .setName("direction")
+                        .setDescription("Pick the compass direction")
                         .addChoices(...choices);
                 })
             );

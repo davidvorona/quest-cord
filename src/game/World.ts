@@ -1,7 +1,7 @@
 import path from "path";
 import { createRandomId, rand, parseJson, readFile } from "../util";
-import { BiomesJson, Biome } from "../types";
-import { BIOME, REGION_DIMENSION, WORLD_DIMENSION } from "../constants";
+import { BiomesJson, Biome, Direction } from "../types";
+import { BIOME, DIRECTION, REGION_DIMENSION, WORLD_DIMENSION } from "../constants";
 const biomesPath = path.join(__dirname, "../../config/biomes.json");
 const biomesData = parseJson(readFile(biomesPath)) as BiomesJson;
 
@@ -31,7 +31,7 @@ class World {
      */
     faultAxis: number;
 
-    matrix: string[][];
+    matrix: Biome[][];
 
     constructor(guildId: string) {
         console.info("Generating new world...");
@@ -101,6 +101,28 @@ class World {
      */
     getRandomCoordinates(): [number, number] {
         return [rand(WORLD_DIMENSION), rand(WORLD_DIMENSION)];
+    }
+
+    getBiome(coordinates: [number, number]): Biome {
+        return this.matrix[coordinates[0]][coordinates[1]];
+    }
+
+    applyDirectionToCoordinates(direction: Direction, coordinates: [number, number]): [number, number] {
+        let x = coordinates[0];
+        let y = coordinates[1];
+        if (direction === DIRECTION.NORTH) {
+            y -= 1;
+        } else if (direction === DIRECTION.SOUTH) {
+            y += 1;
+        } else if (direction === DIRECTION.EAST) {
+            x += 1;
+        } else if (direction === DIRECTION.WEST) {
+            x -= 1;
+        }
+        if (x < 0 || x > WORLD_DIMENSION - 1 || y < 0 || y > WORLD_DIMENSION - 1) {
+            throw new Error(`(${x},${y}) are invalid coordinates`);
+        }
+        return [x, y];
     }
 
     /**
