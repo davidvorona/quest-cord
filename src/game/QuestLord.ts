@@ -7,16 +7,24 @@ import Encounter from "./Encounter";
 import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
+import World from "./World";
 
 interface PlayerTurnCallback {
     (): Promise<void>
 }
 
 export default class QuestLord {
+    worlds: Record<string, World> = {};
     quests: Record<string, Quest> = {};
 
     constructor() {
         console.info("Summoning the Quest Lord...");
+    }
+
+    assertWorldNotGenerated(guildId: string) {
+        if (!isEmpty(this.worlds[guildId])) {
+            throw new Error("World already generated, aborting");
+        }
     }
 
     assertQuestStarted(guildId: string) {
@@ -66,12 +74,22 @@ export default class QuestLord {
 
     async startQuest(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId as string;
-        this.assertQuestNotStarted(guildId);
+
+        // Create world for guild
+        this.assertWorldNotGenerated(guildId);
+        const world = new World(guildId);
+        const startingArea = world.getRandomCoordinates();
+
+        // Register new world
+        this.worlds[guildId] = world;
+
 
         // Create quest for user(s)
+        this.assertQuestNotStarted(guildId);
         const quest = new Quest(guildId);
         const players = getPlayersFromStartCommand(interaction);
         players.forEach(p => quest.addPlayer(p.id));
+        quest.setPartyCoordinates(startingArea);
 
         // Register new quest
         this.quests[guildId] = quest;
@@ -307,5 +325,14 @@ export default class QuestLord {
             embeds: [embed],
             ephemeral: true
         });
+    }
+
+    logMapDisplay(interaction: CommandInteraction) {
+        const guildId = interaction.guildId as string;
+        const world = this.worlds[guildId];
+        const quest = this.quests[guildId];
+
+        const map = world.stringify(quest.getPartyCoordinates());
+        console.info(map);
     }
 }

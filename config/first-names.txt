@@ -32,3 +32,4 @@ Iflip
 Onkord
 Prydag
 Almin
+Farcard

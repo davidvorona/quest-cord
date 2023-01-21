@@ -12,6 +12,8 @@ export default class Quest {
 
     pcs: Record<string, PlayerCharacter | null> = {};
 
+    coordinates: [number, number] = [0, 0];
+
     encounter?: Encounter;
 
     constructor(guildId: string) {
@@ -45,6 +47,14 @@ export default class Quest {
 
     areAllCharactersCreated() {
         return Object.values(this.pcs).every(pc => !isEmpty(pc));
+    }
+
+    setPartyCoordinates(coordinates: [number, number]) {
+        this.coordinates = coordinates;
+    }
+
+    getPartyCoordinates() {
+        return this.coordinates;
     }
 
     assertEncounterStarted() {

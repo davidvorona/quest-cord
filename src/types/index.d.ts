@@ -10,6 +10,16 @@ export interface ConfigJson {
     DATA_DIR: string;
 }
 
+export interface BiomeData {
+    depth?: number;
+    region: boolean;
+    emoji: string;
+}
+
+/* Stricture of JSON file with biome data */
+export type Biome = "forest" | "beach" | "desert" | "mountains" | "ocean" | "jungle";
+export type BiomesJson = Record<Biome, BiomeData>;
+
 export interface AnyObject {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: string | number | any;

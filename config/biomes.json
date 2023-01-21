@@ -1,0 +1,28 @@
+{
+    "beach": {
+        "region": false,
+        "depth": 1,
+        "emoji": "🏖 "
+    },
+    "desert": {
+        "region": true,
+        "emoji": "🏜 "
+    },
+    "forest": {
+        "region": true,
+        "emoji": "🌲"
+    },
+    "jungle": {
+        "region": true,
+        "emoji": "🌴"
+    },
+    "mountains": {
+        "region": true,
+        "emoji": "⛰ "
+    },
+    "ocean": {
+        "region": false,
+        "depth": 0,
+        "emoji": "🌊"
+    }
+}

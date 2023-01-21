@@ -17,3 +17,16 @@ export const COMPENDIUM_SECTION = {
 export const ITEM_TYPE = {
     CONSUMABLE: "consumable"
 } as const;
+
+export const BIOME = {
+    FOREST: "forest",
+    BEACH: "beach",
+    OCEAN: "ocean",
+    DESERT: "desert",
+    JUNGLE: "jungle",
+    MOUNTAINS: "mountains"
+} as const;
+
+export const WORLD_DIMENSION = 40 as const;
+
+export const REGION_DIMENSION = 4 as const;
