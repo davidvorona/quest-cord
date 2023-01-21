@@ -1,12 +1,12 @@
 {
     "id": "paladin",
     "name": "Paladin",
-    "baseHp": 13,
-    "baseDamage": 2,
-    "startingWeapons": ["sword", "shield"],
-    "startingArmor": ["chain_mail"],
-    "startingSpells": [],
-    "startingItems": ["potion"],
+    "hp": 13,
+    "damage": 2,
+    "weapons": ["sword", "shield"],
+    "armor": ["chain_mail"],
+    "spells": [],
+    "items": ["potion"],
     "lvlGains": [
         {
             "hp": 1,

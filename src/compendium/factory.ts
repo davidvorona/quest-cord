@@ -1,6 +1,6 @@
 import { AnyObject, BaseMonster, BaseItem, CharacterClass, BaseConsumable } from "../types";
 import { COMPENDIUM_SECTION, ITEM_TYPE } from "../constants";
-import Class from "../game/CharacterClass";
+import Character from "../game/Character";
 import Monster from "../game/Monster";
 import Item from "../game/Item";
 import Consumable from "../game/Consumable";
@@ -28,7 +28,7 @@ export default class CompendiumFactory {
         case COMPENDIUM_SECTION.MONSTERS:
             return new Monster(data as BaseMonster);
         case COMPENDIUM_SECTION.CLASSES:
-            return new Class(data as CharacterClass);
+            return new Character(data as CharacterClass);
         case COMPENDIUM_SECTION.ITEMS:
             return this.itemFactory.create(data as BaseItem);
         default:

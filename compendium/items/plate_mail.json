@@ -1,0 +1,7 @@
+{
+    "id": "plate_mail",
+    "name": "Plate Mail",
+    "type": "armor",
+    "ac": 4,
+    "category": "heavy"
+}

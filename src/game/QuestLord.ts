@@ -133,9 +133,9 @@ export default class QuestLord {
             });
         } else {
             const optionClass = interaction.options.getString("class", true);
-            const pc = quest.createCharacter(userId, optionClass);
+            const pc = quest.createPlayerCharacter(userId, optionClass);
             await interaction.reply({
-                content: `Character *${pc.getName()}*, level ${pc.lvl} ${pc.characterClass.name}, created...`,
+                content: `Character *${pc.getName()}*, level ${pc.lvl} ${pc.character.name}, created...`,
                 ephemeral: true
             });
         }
@@ -243,7 +243,7 @@ export default class QuestLord {
         const encounter = quest.encounter as Encounter;
 
         if (encounter.isOver()) {
-            const isTpk = !encounter.getTotalPcHp();
+            const isTpk = !encounter.getTotalCharacterHp();
             quest.endEncounter();
             await channel.send("Combat is over!");
             if (isTpk) {
@@ -273,8 +273,8 @@ export default class QuestLord {
 
         const currentTurn = encounter.getCurrentTurn();
         if (currentTurn instanceof Monster) {
-            const pcs = encounter.getPcs();
-            const target = pcs[rand(pcs.length)];
+            const chars = encounter.getCharacters();
+            const target = chars[rand(chars.length)];
             const damage = currentTurn.damage;
             target.setHp(target.hp - damage);
             await channel.send(`${currentTurn.getName()} deals ${damage} damage to ${target.getName()}.`);
@@ -332,15 +332,15 @@ export default class QuestLord {
             const target = encounter.getMonsterByIndex(targetIdx);
             const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
     
-            const damage = pc.damage;
+            const damage = pc.getCharacter().damage;
             target.setHp(target.hp - damage);
     
             const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
-            const weapon = pc.weapons[0];
+            const weapon = pc.getCharacter().weapons[0];
             const text = textBuilder.build(weapon, target.getName());
             await interaction.reply(text);
             if (interaction.channel) {
-                await interaction.channel.send(`You deal ${pc.damage} damage.`);
+                await interaction.channel.send(`You deal ${pc.getCharacter().damage} damage.`);
             }
         });
         
@@ -354,7 +354,7 @@ export default class QuestLord {
             const item = interaction.options.getString("item", true);
             const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
 
-            pc.useItem(item);
+            pc.getCharacter().useItem(item);
 
             await interaction.reply(`You use a ${item}.`);
         });
@@ -365,7 +365,7 @@ export default class QuestLord {
         const quest = this.quests[guildId];
 
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const inventory = pc.getInventory();
+        const inventory = pc.getCharacter().getInventory();
         const inventoryEmbed = inventory.length
             ? inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "")
             : "Inventory is empty";

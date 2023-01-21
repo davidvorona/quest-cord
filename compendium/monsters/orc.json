@@ -5,5 +5,5 @@
     "hp": 13,
     "damage": 2,
     "weapons": ["axe", "spear"],
-    "zones": ["forest", "cave", "mountain"]
+    "zones": ["forest", "cave", "mountains"]
 }

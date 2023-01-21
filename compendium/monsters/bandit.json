@@ -5,5 +5,5 @@
     "hp": 11,
     "damage": 1,
     "weapons": ["scimitar", "crossbow"],
-    "zones": ["forest", "cave", "mountain"]
+    "zones": ["forest", "cave", "mountains"]
 }

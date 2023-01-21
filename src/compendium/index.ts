@@ -1,8 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { AnyObject, BaseItem, CharacterClass } from "../types";
+import { AnyObject, BaseItem } from "../types";
 import { parseJson, rand, readFile } from "../util";
 import { COMPENDIUM_SECTION } from "../constants";
+import Character from "../game/Character";
 import CompendiumFactory from "./factory";
 
 class Compendium {
@@ -58,13 +59,13 @@ class Compendium {
         return instance;
     }
 
-    spawnCharacterClass(key?: string): CharacterClass {
+    spawnCharacter(key?: string): Character {
         const section = COMPENDIUM_SECTION.CLASSES;
         if (!key) {
-            return this.spawnRandom(section) as CharacterClass;
+            return this.spawnRandom(section) as Character;
         }
         const data = this.data[section][key];
-        return (data ? this.spawn(section, key) : this.spawnRandom(section)) as CharacterClass;
+        return (data ? this.spawn(section, key) : this.spawnRandom(section)) as Character;
     }
 
     spawnItem(key: string): BaseItem {

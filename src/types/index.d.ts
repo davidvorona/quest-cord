@@ -25,24 +25,6 @@ export interface AnyObject {
     [key: string]: string | number | any;
 }
 
-export interface LevelGain {
-    hp?: number;
-    damage?: number;
-    spells?: string[];
-}
-
-export interface CharacterClass {
-    id: string;
-    name: string;
-    baseHp: number;
-    baseDamage: number;
-    startingWeapons: string[];
-    startingArmor: string[];
-    startingSpells: string[];
-    startingItems: string[];
-    lvlGains: LevelGain[];
-}
-
 export interface PlayerCharacterState {
     firstName: string;
     lastName: string;
@@ -78,17 +60,30 @@ export interface BaseCreature {
     name: string;
     hp: number;
     damage: number;
-    weapons: string[]; 
+    weapons?: string[];
+    armor?: string[];
+    spells?: string[];
 }
 
 export interface BaseMonster extends BaseCreature {
+    lvl: number;
+    loot?: string[];
     zones: string[];
 }
 
 export interface BaseNonPlayerCharacter extends BaseCreature {
-    armor?: string[];
-    spells?: string[];
     items?: string[];
+}
+
+export interface LevelGain {
+    hp?: number;
+    damage?: number;
+    spells?: string[];
+}
+
+export interface CharacterClass extends BaseCreature {
+    items?: string[];
+    lvlGains: LevelGain[];
 }
 
 export type Direction = "north" | "south" | "east" | "west";
