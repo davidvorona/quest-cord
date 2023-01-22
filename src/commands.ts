@@ -5,7 +5,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { ConfigJson, AuthJson, AnyObject, CharacterClass } from "./types";
 import { parseJson, readFile } from "./util";
 import { COMMAND_TYPE, DIRECTION, FORMATTED_DIRECTION } from "./constants";
-import compendium from "./compendium";
+import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const defaultCommands = require("../config/commands");

@@ -1,24 +1,19 @@
-import { BaseMonster, BaseItem } from "../types";
-import Creature from "./Creature";
-import compendium from "../compendium";
+import { BaseMonster } from "../types";
+import Creature, { Equipment } from "./Creature";
+import Item from "./Item";
 
 export default class Monster extends Creature {
     lvl: number;
 
-    loot: BaseItem[];
+    loot: Item[];
 
     zones: string[];
 
-    constructor(args: BaseMonster) {
-        super(args);
+    constructor(args: BaseMonster, equipment: Equipment, loot: Item[] = []) {
+        super(args, equipment);
 
         this.lvl = args.lvl;
-
-        this.loot = Monster.createLoot(args.loot);
+        this.loot = loot;
         this.zones = args.zones;
-    }
-
-    private static createLoot(items: string[] = []) {
-        return compendium.spawnItems(items);
     }
 }

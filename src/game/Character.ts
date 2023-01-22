@@ -1,24 +1,19 @@
-import { LevelGain, CharacterClass, BaseItem } from "../types";
+import { LevelGain, CharacterClass } from "../types";
 import { ITEM_TYPE } from "../constants";
-import Creature from "./Creature";
+import Creature, { Equipment } from "./Creature";
 import Consumable from "./Consumable";
-import compendium from "../compendium";
+import Item from "./Item";
 
 export default class Character extends Creature {
     lvlGains: LevelGain[];
 
-    inventory: BaseItem[];
+    inventory: Item[] = [];
 
-    constructor(args: CharacterClass) {
-        super(args);
-
-        this.inventory = Character.createInventory(args.items);
+    constructor(args: CharacterClass, equipment: Equipment, inventory: Item[] = []) {
+        super(args, equipment);
 
         this.lvlGains = args.lvlGains;
-    }
-
-    private static createInventory(items: string[] = []) {
-        return compendium.spawnItems(items);
+        this.inventory = inventory;
     }
 
     useItem(itemId: string) {

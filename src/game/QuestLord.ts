@@ -1,6 +1,9 @@
 import { CommandInteraction, Interaction, MessageEmbed, TextChannel } from "discord.js";
 import setGuildCommands from "../commands";
 import { ACTIVITY, COMMAND_TYPE } from "../constants";
+import CompendiumReader from "../services/CompendiumReader";
+import ItemFactory from "../services/ItemFactory";
+import CreatureFactory from "../services/CreatureFactory";
 import TextBuilder from "../text";
 import { Direction } from "../types";
 import { getPlayersFromStartCommand, isEmpty, rand, sendTypingAndWaitRandom } from "../util";
@@ -9,6 +12,7 @@ import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
 import World from "./World";
+import Character from "./Character";
 
 interface PlayerTurnCallback {
     (): Promise<void>
@@ -16,10 +20,17 @@ interface PlayerTurnCallback {
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
+
     quests: Record<string, Quest> = {};
 
-    constructor() {
+    creatureFactory: CreatureFactory;
+
+    itemFactory: ItemFactory;
+
+    constructor(compendium: CompendiumReader) {
         console.info("Summoning the Quest Lord...");
+        this.itemFactory = new ItemFactory(compendium);
+        this.creatureFactory = new CreatureFactory(compendium, this.itemFactory);
     }
 
     assertWorldNotGenerated(guildId: string) {
@@ -133,7 +144,8 @@ export default class QuestLord {
             });
         } else {
             const optionClass = interaction.options.getString("class", true);
-            const pc = quest.createPlayerCharacter(userId, optionClass);
+            const character = this.creatureFactory.createCharacter(optionClass);
+            const pc = quest.createPlayerCharacter(userId, character);
             await interaction.reply({
                 content: `Character *${pc.getName()}*, level ${pc.lvl} ${pc.character.name}, created...`,
                 ephemeral: true
@@ -186,7 +198,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        quest.startEncounter();
+        const monsters = this.creatureFactory.createRandomMonsterList(quest.getPartySize());
+        quest.startEncounter(monsters);
 
         // Get encounter data
         const encounter = quest.getEncounter() as Encounter;
@@ -301,7 +314,8 @@ export default class QuestLord {
 
         const encounter = quest.encounter as Encounter;
         const currentTurn = encounter.getCurrentTurn();
-        if (currentTurn instanceof PlayerCharacter && currentTurn.userId === userId) {
+        const myPlayerCharacter = quest.getPlayerByUserId(interaction.user.id);
+        if (currentTurn instanceof Character && currentTurn === myPlayerCharacter?.getCharacter()) {
             try {
                 await doPlayerTurn();
             } catch(e) {
@@ -336,8 +350,9 @@ export default class QuestLord {
             target.setHp(target.hp - damage);
     
             const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
-            const weapon = pc.getCharacter().weapons[0];
-            const text = textBuilder.build(weapon, target.getName());
+            const weapon = pc.getCharacter().equipment.weapon;
+            const weaponName = weapon ? weapon.name : "fists";
+            const text = textBuilder.build(weaponName, target.getName());
             await interaction.reply(text);
             if (interaction.channel) {
                 await interaction.channel.send(`You deal ${pc.getCharacter().damage} damage.`);

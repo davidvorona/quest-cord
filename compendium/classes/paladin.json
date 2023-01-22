@@ -3,8 +3,11 @@
     "name": "Paladin",
     "hp": 13,
     "damage": 2,
-    "weapons": ["sword", "shield"],
-    "armor": ["chain_mail"],
+    "equipment": {
+        "weapon": "sword",
+        "offhand": "shield",
+        "armor": "chain_mail"
+    },
     "spells": [],
     "items": ["potion"],
     "lvlGains": [

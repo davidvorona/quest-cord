@@ -1,4 +1,14 @@
 import { BaseCreature, Effects } from "../types";
+import Item from "./Item";
+
+export interface Equipment {
+    weapon?: Item;
+    offhand?: Item;
+    helm?: Item;
+    armor?: Item;
+    cape?: Item;
+    boots?: Item;
+}
 
 export default class Creature {
     id: string;
@@ -11,20 +21,14 @@ export default class Creature {
 
     damage: number;
 
-    weapons: string[];
+    equipment: Equipment;
 
-    armor: string[];
-
-    spells: string[];
-
-    constructor(data: BaseCreature) {
+    constructor(data: BaseCreature, equipment: Equipment) {
         this.id = data.id;
         this.name = data.name;
         this.hp = this.maxHp = data.hp;
         this.damage = data.damage;
-        this.weapons = data.weapons || [];
-        this.armor = data.armor || [];
-        this.spells = data.spells || [];
+        this.equipment = equipment;
     }
 
     getName() {
@@ -46,12 +50,12 @@ export default class Creature {
         this.hp = newHp;
     }
 
-    getWeapon() {
-        // const weapon = this.weapons.find(w => !w.properties.includes("offhand"));
+    getWeapon(): Item | undefined {
+        return this.equipment.weapon;
     }
 
     attackWeapon() {
-        this.getWeapon();
+        const weapon = this.getWeapon();
     }
 
     applyEffects(effects: Effects) {

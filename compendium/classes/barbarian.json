@@ -3,8 +3,9 @@
     "name": "Barbarian",
     "hp": 16,
     "damage": 2,
-    "weapons": ["club"],
-    "armor": [],
+    "equipment": {
+        "weapon": "club"
+    },
     "spells": [],
     "items": ["elixir"],
     "lvlGains": [

@@ -25,19 +25,6 @@ export interface AnyObject {
     [key: string]: string | number | any;
 }
 
-export interface PlayerCharacterState {
-    firstName: string;
-    lastName: string;
-    lvl: number;
-    maxHp: number;
-    hp: number;
-    damage: number;
-    weapons: string[];
-    armor: string[];
-    spells: string[];
-    items: string[];
-}
-
 export interface BaseItem {
     id: string;
     name: string;
@@ -55,13 +42,21 @@ export interface BaseConsumable extends BaseItem {
     effects: Effects;
 }
 
+export interface BaseEquipment {
+    weapon?: string;
+    offhand?: string;
+    armor?: string;
+    helm?: string;
+    cape?: string;
+    boots?: string;
+}
+
 export interface BaseCreature {
     id: string;
     name: string;
     hp: number;
     damage: number;
-    weapons?: string[];
-    armor?: string[];
+    equipment: BaseEquipment;
     spells?: string[];
 }
 

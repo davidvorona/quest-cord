@@ -3,8 +3,10 @@
     "name": "Wizard",
     "hp": 11,
     "damage": 3,
-    "weapons": ["wand"],
-    "armor": ["wizard_robes"],
+    "equipment": {
+        "weapon": "wand",
+        "armor": "wizard_robes"
+    },
     "spells": ["firebolt"],
     "items": ["potion"],
     "lvlGains": [
