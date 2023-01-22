@@ -47,7 +47,8 @@ class World {
     }
 
     private static isDepth(depth: number, x: number, y: number) {
-        return x === depth  || y === depth || x === WORLD_DIMENSION - 1 - depth || y === WORLD_DIMENSION - 1 - depth;
+        return x === depth  || y === depth || x === WORLD_DIMENSION - 1 - depth
+            || y === WORLD_DIMENSION - 1 - depth;
     }
 
     private static isPerimeter(x: number, y: number) {
@@ -78,8 +79,9 @@ class World {
                 } else if (World.isDepth(1, x, y)) {
                     matrix[x][y] = BIOME.BEACH;
                 // Random biome region generation relies on iteration order: if the coordinate is
-                // the upper-left tile of a region, then set it to a random biome. This is the "seed"
-                // of the region, and must be set first per region for generation to function.
+                // the upper-left tile of a region, then set it to a random biome. This is the
+                // "seed" of the region, and must be set first per region for generation to
+                // function.
                 } else if (World.isRegionSeed(x, y)) {
                     const biomes = getRegionBiomes();
                     matrix[x][y] = biomes[rand(biomes.length)];
@@ -90,7 +92,8 @@ class World {
                  * | 7 8 9 |
                  * where '1' is the seed tile.
                  */
-                // If x is a seed coordinate but y is not, then get the biome from the tile above (y - 1).
+                // If x is a seed coordinate but y is not, then get the biome from the tile
+                // above (y - 1).
                 } else if (World.isSeedColumn(x)) {
                     matrix[x][y] = matrix[x][y - 1];
                 // Otherwise, use the biome of the tile to the left (x - 1).
@@ -113,7 +116,10 @@ class World {
         return this.matrix[coordinates[0]][coordinates[1]];
     }
 
-    applyDirectionToCoordinates(direction: Direction, coordinates: [number, number]): [number, number] {
+    applyDirectionToCoordinates(
+        direction: Direction,
+        coordinates: [number, number]
+    ): [number, number] {
         let x = coordinates[0];
         let y = coordinates[1];
         if (direction === DIRECTION.NORTH) {
@@ -166,7 +172,9 @@ class World {
      * of regions.
      */
     private smartGenerate() {
-        const matrix = Array(WORLD_DIMENSION).fill("forest").map(() => Array(WORLD_DIMENSION).fill("forest"));
+        const matrix = Array(WORLD_DIMENSION)
+            .fill("forest")
+            .map(() => Array(WORLD_DIMENSION).fill("forest"));
         // 1. Generate the perimeter of the world: mostly oceans and some mountains
         for (let d = 0; d < WORLD_DIMENSION; d++) {
             // Generate tiles along the x-axis at y = 0

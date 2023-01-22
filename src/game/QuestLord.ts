@@ -57,6 +57,8 @@ export default class QuestLord {
         }
     }
 
+    /* SLASH COMMAND HANDLING */
+
     async handleInteraction(interaction: Interaction) {
         try {
             if (!interaction.isCommand()) return;
@@ -72,30 +74,34 @@ export default class QuestLord {
                 await this.startQuest(interaction);
             }
 
-            // Users create characters to join quest
+            // User creates a character to join quest
             if (interaction.commandName === "play") {
                 await this.createCharacter(interaction);
             }
 
+            // User requests to travel in a direction
             if (interaction.commandName === "travel") {
                 await this.handleTravel(interaction);
             }
 
-            // Users attack during a combat encounter
-            if (interaction.commandName === "attack") {
-                await this.handleAttack(interaction);
+            // User acts during an encounter
+            if (interaction.commandName === "action") {
+                await this.handleAction(interaction);
             }
 
+            // User uses an item in their inventory
             if (interaction.commandName === "use") {
                 await this.handleUse(interaction);
             }
 
+            // User wants to look at their inventory
             if (interaction.commandName === "inventory") {
                 await this.printInventory(interaction);
             }
         } catch (err) {
             if (interaction instanceof CommandInteraction) {
-                console.error(`Failed to process '/${interaction.commandName}' command due to: ${err}`);
+                console.error(`Failed to process '/${interaction.commandName}' command `
+                    + `due to: ${err}`);
                 await interaction.reply({
                     content: "Failed to handle command, please try again later.",
                     ephemeral: true
@@ -184,9 +190,13 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         const world = this.worlds[guildId];
-        // Travel can only happen between encounters - this is already enforced by the available commands
+        // Travel can only happen between encounters - this is already enforced by the
+        // available commands
         if (quest.isInEncounter()) {
-            await interaction.reply({ content: "You cannot travel during an encounter.", ephemeral: true });
+            await interaction.reply({ 
+                content: "You cannot travel during an encounter.",
+                ephemeral: true
+            });
         } else {
             const direction = interaction.options.getString("direction", true) as Direction;
             try {
@@ -212,6 +222,85 @@ export default class QuestLord {
         }
     }
 
+    private async handleAction(interaction: CommandInteraction): Promise<void> {
+        await this.handlePlayerTurn(interaction, async () => {
+            const subcommand = interaction.options.getSubcommand();
+            if (subcommand === "attack") {
+                await this.handleAttack(interaction);
+            }
+            if (subcommand === "cast") {
+                await this.handleCastSpell(interaction);
+            }
+        });
+    }
+
+    private async handleUse(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId as string;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+        async function useItem() {
+            try {
+                const item = interaction.options.getString("item", true);
+                pc.getCharacter().useItem(item);
+                await interaction.reply(`You use a ${item}.`);
+            } catch (err) {
+                await interaction.reply({
+                    content: "You do not have this item!",
+                    ephemeral: true
+                });
+            }
+        }
+
+        const encounter = quest.getEncounter();
+        if (encounter) {
+            if (encounter.getCurrentTurn() === pc.getCharacter()) {
+                await useItem();
+            } else {
+                await interaction.reply({
+                    content: "You can only use an item on your turn.",
+                    ephemeral: true
+                });
+            }
+        } else {
+            await useItem();
+        }   
+    }
+
+    private async printInventory(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId as string;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+
+        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+        const inventory = pc.getCharacter().getInventory();
+        const inventoryEmbed = inventory.length
+            ? inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "")
+            : "Inventory is empty";
+
+        const embed = new MessageEmbed()
+            .setColor("#0099ff")
+            .setTitle("Your inventory")
+            .setDescription(inventoryEmbed);
+        await interaction.reply({
+            embeds: [embed],
+            ephemeral: true
+        });
+    }
+
+    private logMapDisplay(interaction: CommandInteraction) {
+        const guildId = interaction.guildId as string;
+        const world = this.worlds[guildId];
+        const quest = this.quests[guildId];
+
+        const map = world.stringify(quest.getPartyCoordinates());
+        console.info(map);
+    }
+    
+    /* GAME METHODS */
+
     private async failQuest(guildId: string, channel: TextChannel): Promise<void> {
         // TODO: Do we want to remove the world as well?
         await setGuildCommands(guildId);
@@ -232,11 +321,13 @@ export default class QuestLord {
         await sendTypingAndWaitRandom(channel, 3000);
 
         // Send text for the first encounter
-        const textBuilder = new TextBuilder().setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
+        const textBuilder = new TextBuilder()
+            .setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
         const text = textBuilder.build(monsterNames);
         await channel.send(text);
 
-        const turnOrder = encounter.getTurnOrderNames().reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
+        const turnOrder = encounter.getTurnOrderNames()
+            .reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
         const embed = new MessageEmbed()
             .setColor("#0099ff")
             .setTitle("Turn order")
@@ -272,8 +363,9 @@ export default class QuestLord {
         const quest = this.quests[guildId];
 
         const partyBiome = world.getBiome(quest.getPartyCoordinates());
-        await channel.send(`You take stock of your surroundings - currently you're in the ${partyBiome}. `
-            + "Where would you like to go? Use **/travel** to choose a direction.");
+        await channel.send("You take stock of your surroundings - currently you're "
+            + `in the ${partyBiome}. Where would you like to go? Use **/travel** to `
+            + "choose a direction.");
     }
 
     private async handleNextTurn(guildId: string, channel: TextChannel) {
@@ -314,13 +406,17 @@ export default class QuestLord {
             const target = chars[rand(chars.length)];
             const damage = currentTurn.damage;
             target.setHp(target.hp - damage);
-            await channel.send(`${currentTurn.getName()} deals ${damage} damage to ${target.getName()}.`);
+            await channel.send(`${currentTurn.getName()} deals ${damage} damage `
+                + `to ${target.getName()}.`);
 
             await this.handleNextTurn(guildId, channel);
         }
     }
 
-    private async handlePlayerTurn(interaction: CommandInteraction, doPlayerTurn: PlayerTurnCallback) {
+    private async handlePlayerTurn(
+        interaction: CommandInteraction,
+        doPlayerTurn: PlayerTurnCallback
+    ) {
         const guildId = interaction.guildId as string;
         this.assertQuestStarted(guildId);
 
@@ -348,6 +444,7 @@ export default class QuestLord {
                     content: err,
                     ephemeral: true
                 });
+                return;
             }
             const textChannel = interaction.channel as TextChannel;
             await this.handleNextTurn(guildId, textChannel);
@@ -360,73 +457,30 @@ export default class QuestLord {
     }
 
     private async handleAttack(interaction: CommandInteraction): Promise<void> {
-        await this.handlePlayerTurn(interaction, async () => {
-            const guildId = interaction.guildId as string;
-            const quest = this.quests[guildId];
-            const encounter = quest.encounter as Encounter;
-
-            const targetIdx = interaction.options.getInteger("target") as number;
-
-            const target = encounter.getMonsterByIndex(targetIdx);
-            const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-    
-            const damage = pc.getCharacter().damage;
-            target.setHp(target.hp - damage);
-    
-            const textBuilder = new TextBuilder().setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
-            const weapon = pc.getCharacter().equipment.weapon;
-            const weaponName = weapon ? weapon.name : "fists";
-            const text = textBuilder.build(weaponName, target.getName());
-            await interaction.reply(text);
-            if (interaction.channel) {
-                await interaction.channel.send(`You deal ${pc.getCharacter().damage} damage.`);
-            }
-        });
-        
-    }
-
-    private async handleUse(interaction: CommandInteraction): Promise<void> {
-        await this.handlePlayerTurn(interaction, async () => {
-            const guildId = interaction.guildId as string;
-            const quest = this.quests[guildId];
-
-            const item = interaction.options.getString("item", true);
-            const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-
-            pc.getCharacter().useItem(item);
-
-            await interaction.reply(`You use a ${item}.`);
-        });
-    }
-
-    private async printInventory(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId as string;
-        this.assertQuestStarted(guildId);
-
         const quest = this.quests[guildId];
+        const encounter = quest.encounter as Encounter;
 
+        const targetIdx = interaction.options.getInteger("target") as number;
+
+        const target = encounter.getMonsterByIndex(targetIdx);
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const inventory = pc.getCharacter().getInventory();
-        const inventoryEmbed = inventory.length
-            ? inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "")
-            : "Inventory is empty";
 
-        const embed = new MessageEmbed()
-            .setColor("#0099ff")
-            .setTitle("Your inventory")
-            .setDescription(inventoryEmbed);
-        await interaction.reply({
-            embeds: [embed],
-            ephemeral: true
-        });
+        const damage = pc.getCharacter().damage;
+        target.setHp(target.hp - damage);
+
+        const textBuilder = new TextBuilder()
+            .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
+        const weapon = pc.getCharacter().equipment.weapon;
+        const weaponName = weapon ? weapon.name : "fists";
+        const text = textBuilder.build(weaponName, target.getName());
+        await interaction.reply(text);
+        if (interaction.channel) {
+            await interaction.channel.send(`You deal ${pc.getCharacter().damage} damage.`);
+        }
     }
 
-    private logMapDisplay(interaction: CommandInteraction) {
-        const guildId = interaction.guildId as string;
-        const world = this.worlds[guildId];
-        const quest = this.quests[guildId];
-
-        const map = world.stringify(quest.getPartyCoordinates());
-        console.info(map);
+    private async handleCastSpell(interaction: CommandInteraction): Promise<void> {
+        await interaction.reply("You try to cast a spell but it's not working...");
     }
 }

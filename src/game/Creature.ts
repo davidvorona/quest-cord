@@ -54,10 +54,6 @@ export default class Creature {
         return this.equipment.weapon;
     }
 
-    attackWeapon() {
-        const weapon = this.getWeapon();
-    }
-
     applyEffects(effects: Effects) {
         if (effects.hp) {
             this.setHp(this.hp + effects.hp);

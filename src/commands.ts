@@ -57,6 +57,7 @@ class CommandBuilder {
                     return option
                         .setName("class")
                         .setDescription("Pick a character class")
+                        .setRequired(true)
                         .addChoices(...choices);
                 })
             );
@@ -76,8 +77,13 @@ class CommandBuilder {
                     return option
                         .setName("direction")
                         .setDescription("Pick the compass direction")
+                        .setRequired(true)
                         .addChoices(...choices);
                 })
+            );
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("inventory")
+                .setDescription("Show your current inventory")
             );
             break;
         }
@@ -88,17 +94,6 @@ class CommandBuilder {
                 return this.buildIntegerChoices(targetDescription, idx);
             });
             builtCommands.push(new SlashCommandBuilder()
-                .setName("attack")
-                .setDescription("Strike at an enemy!")
-                .addIntegerOption((option) => {
-                    return option
-                        .setName("target")
-                        .setDescription("Who do you want to attack?")
-                        .setRequired(true)
-                        .addChoices(...choices);
-                })
-            );
-            builtCommands.push(new SlashCommandBuilder()
                 .setName("use")
                 .setDescription("Use an item")
                 .addStringOption((option) => {
@@ -107,6 +102,37 @@ class CommandBuilder {
                         .setDescription("Which item do you want to use?")
                         .setRequired(true);
                 })
+            );
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("action")
+                .setDescription("Act on your turn")
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("attack")
+                        .setDescription("Strike at an enemy!")
+                        .addIntegerOption((option) => {
+                            return option
+                                .setName("target")
+                                .setDescription("Who do you want to attack?")
+                                .setRequired(true)
+                                .addChoices(...choices);
+                        });
+                })
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("cast")
+                        .setDescription("Cast a spell")
+                        .addStringOption((option) => {
+                            return option
+                                .setName("spell")
+                                .setDescription("Which spell do you want to cast?")
+                                .setRequired(true);
+                        });
+                })
+            );
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("inventory")
+                .setDescription("Show your current inventory")
             );
             break;
         }
