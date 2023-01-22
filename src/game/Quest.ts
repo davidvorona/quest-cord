@@ -5,9 +5,9 @@ import Character from "./Character";
 import Monster from "./Monster";
 
 export default class Quest {
-    id: string;
+    readonly id: string;
 
-    guildId: string;
+    readonly guildId: string;
 
     pcs: Record<string, PlayerCharacter | null> = {};
 
@@ -74,9 +74,8 @@ export default class Quest {
     }
 
     startEncounter(monsters: Monster[]) {
-        const characters = this.getCharacters();
-        const encounter = new Encounter(characters, monsters);
-        this.encounter = encounter;
+        this.encounter = new Encounter(this.getCharacters(), monsters);
+        return this.encounter;
     }
 
     getEncounter() {

@@ -11,7 +11,7 @@ export interface Equipment {
 }
 
 export default class Creature {
-    id: string;
+    readonly id: string;
 
     name: string;
 

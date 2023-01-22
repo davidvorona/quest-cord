@@ -3,11 +3,11 @@ import Creature, { Equipment } from "./Creature";
 import Item from "./Item";
 
 export default class Monster extends Creature {
-    lvl: number;
+    readonly lvl: number;
 
-    loot: Item[];
+    readonly loot: Item[];
 
-    zones: string[];
+    readonly zones: string[];
 
     constructor(args: BaseMonster, equipment: Equipment, loot: Item[] = []) {
         super(args, equipment);

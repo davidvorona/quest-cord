@@ -5,7 +5,7 @@ import Consumable from "./Consumable";
 import Item from "./Item";
 
 export default class Character extends Creature {
-    lvlGains: LevelGain[];
+    readonly lvlGains: LevelGain[];
 
     inventory: Item[] = [];
 

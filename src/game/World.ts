@@ -18,18 +18,18 @@ function getRegionBiomes() {
  * should support multiple concurrent questing parties.
  */
 class World {
-    id: string;
+    readonly id: string;
+
+    readonly guildId: string;
 
     name: string;
-
-    guildId: string;
 
     /**
      * The fault axis determines the direction that mountain ranges form. Faults on the
      * y-axis would generate north-south mountain ranges, whereas fault on the x-axis
      * would generate east-west mountain ranges. 
      */
-    faultAxis: number;
+    readonly faultAxis: number;
 
     matrix: Biome[][];
 
@@ -83,7 +83,13 @@ class World {
                 } else if (World.isRegionSeed(x, y)) {
                     const biomes = getRegionBiomes();
                     matrix[x][y] = biomes[rand(biomes.length)];
-                // Because of the iteration order, biomes will generate outward from the "seed":
+                /**
+                 * Because of the iteration order, biomes will generate outward from the "seed":
+                 * | 1 2 3 |
+                 * | 4 5 6 |
+                 * | 7 8 9 |
+                 * where '1' is the seed tile.
+                 */
                 // If x is a seed coordinate but y is not, then get the biome from the tile above (y - 1).
                 } else if (World.isSeedColumn(x)) {
                     matrix[x][y] = matrix[x][y - 1];
