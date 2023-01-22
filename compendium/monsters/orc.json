@@ -4,6 +4,9 @@
     "lvl": 2,
     "hp": 13,
     "damage": 2,
-    "weapons": ["axe", "spear"],
-    "zones": ["forest", "cave", "mountain"]
+    "equipment": {
+        "weapon": "axe"
+    },
+    "loot": ["axe", "skull"],
+    "zones": ["forest", "cave", "mountains"]
 }

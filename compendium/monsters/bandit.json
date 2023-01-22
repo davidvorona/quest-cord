@@ -4,6 +4,9 @@
     "lvl": 1,
     "hp": 11,
     "damage": 1,
-    "weapons": ["scimitar", "crossbow"],
-    "zones": ["forest", "cave", "mountain"]
+    "equipment": {
+        "weapon": "scimitar"
+    },
+    "loot": ["scimitar"],
+    "zones": ["forest", "cave", "mountains"]
 }

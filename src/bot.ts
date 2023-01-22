@@ -1,6 +1,7 @@
 import path from "path";
 import { Client, Guild, Intents } from "discord.js";
 import QuestLord from "./game/QuestLord";
+import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 import { parseJson, readFile } from "./util";
 import { AuthJson } from "./types";
 import setGuildCommands from "./commands";
@@ -8,7 +9,7 @@ import setGuildCommands from "./commands";
 const authPath = path.join(__dirname, "../config/auth.json");
 const { TOKEN } = parseJson(readFile(authPath)) as AuthJson;
 
-const questLord = new QuestLord();
+const questLord = new QuestLord(compendium);
 
 const client = new Client({
     intents: [

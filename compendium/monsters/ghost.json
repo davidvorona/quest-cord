@@ -4,6 +4,10 @@
     "lvl": 2,
     "hp": 8,
     "damage": 3,
-    "weapons": ["ghost blade", "scream"],
+    "equipment": {
+        "weapon": "ghost_blade"
+    },
+    "spells": ["scream"],
+    "loot": ["silver_necklace"],
     "zones": ["forest", "cave"]
 }

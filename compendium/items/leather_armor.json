@@ -1,0 +1,7 @@
+{
+    "id": "leather_armor",
+    "name": "Leather Armor",
+    "type": "armor",
+    "ac": 1,
+    "category": "light"
+}

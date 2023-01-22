@@ -1,0 +1,7 @@
+{
+    "id": "axe",
+    "name": "Axe",
+    "type": "weapon",
+    "damage": 3,
+    "properties": ["two-handed"]
+}

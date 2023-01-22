@@ -1,9 +1,8 @@
-import { createRandomId, isEmpty, listToMonster } from "../util";
+import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./Encounter";
-import compendium from "../compendium";
-import { COMPENDIUM_SECTION } from "../constants";
-import { BaseMonster } from "../types";
+import Character from "./Character";
+import Monster from "./Monster";
 
 export default class Quest {
     id: string;
@@ -38,11 +37,10 @@ export default class Quest {
         return Object.keys(this.pcs).length;
     }
 
-    createCharacter(userId: string, classId?: string) {
-        const characterClass = compendium.spawnCharacterClass(classId);
-        const pc = new PlayerCharacter(userId, characterClass);
-        this.pcs[userId] = pc;
-        return pc;
+    createPlayerCharacter(userId: string, character: Character) {
+        const playerCharacter = new PlayerCharacter(userId, character);
+        this.pcs[userId] = playerCharacter;
+        return playerCharacter;
     }
 
     isCharacterCreated(userId: string) {
@@ -51,6 +49,14 @@ export default class Quest {
 
     areAllCharactersCreated() {
         return Object.values(this.pcs).every(pc => !isEmpty(pc));
+    }
+
+    getCharacters(): Character[] {
+        const characters: Character[] = [];
+        Object.values(this.pcs).forEach((pc) => {
+            if (pc) characters.push(pc.getCharacter());
+        });
+        return characters;
     }
 
     setPartyCoordinates(coordinates: [number, number]) {
@@ -67,11 +73,9 @@ export default class Quest {
         }
     }
 
-    startEncounter() {
-        const partySize = this.getPartySize();
-        const list = compendium.pickRandomList(COMPENDIUM_SECTION.MONSTERS, partySize) as BaseMonster[];
-        const pcs = Object.values(this.pcs) as PlayerCharacter[];
-        const encounter = new Encounter(pcs, listToMonster(list));
+    startEncounter(monsters: Monster[]) {
+        const characters = this.getCharacters();
+        const encounter = new Encounter(characters, monsters);
         this.encounter = encounter;
     }
 

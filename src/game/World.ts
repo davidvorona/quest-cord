@@ -178,8 +178,10 @@ class World {
             matrix[last][last - d] = this.randomizePerimeterTile(previousTile, last, last - d);
         }
         // 2. Generate mountains within the world along fault axis
-        // 3. Generate biomes around the mountains within the world
-        // 4. Fill in remaining space with appropriate biomes
+        // 3. Generate rivers from mountains that end at perimeter
+        // 4. Generate biomes around the mountains within the world
+        // 5. Fill in remaining space with appropriate biomes
+        // 6. Add lakes and other non-biome tiles to biomes
         return matrix;
     }
 

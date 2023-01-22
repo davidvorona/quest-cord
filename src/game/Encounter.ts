@@ -1,12 +1,10 @@
-import PlayerCharacter from "./PlayerCharacter";
+import Character from "./Character";
 import Monster from "./Monster";
 import Creature from "./Creature";
 import { shuffleArray } from "../util";
 
 export default class Encounter {
-    pcs: PlayerCharacter[];
-
-    npcs = [];
+    characters: Character[];
 
     monsters: Monster[] = [];
 
@@ -14,13 +12,13 @@ export default class Encounter {
 
     turnOrder: Creature[] = [];
 
-    constructor(pcs: PlayerCharacter[], monsters: Monster[]) {
-        this.pcs = pcs;
+    constructor(characters: Character[], monsters: Monster[]) {
+        this.characters = characters;
         this.monsters = monsters;
-        this.turnOrder = shuffleArray([...pcs, ...monsters]);
+        this.turnOrder = shuffleArray([...characters, ...monsters]);
         console.info(
             "Encounter started...",
-            this.getPcNames(), "vs", this.getMonsterNames()
+            this.getCharacterNames(), "vs", this.getMonsterNames()
         );
     }
 
@@ -40,17 +38,17 @@ export default class Encounter {
 
     getTurnOrderNames = () => this.turnOrder.map(c => c.getName());
 
-    getPcs = () => this.pcs;
+    getCharacters = () => this.characters;
 
     getMonsterNames = () => this.monsters.map(m => m.getName());
 
-    getPcNames = () => this.pcs.map(pc => pc.getName());
+    getCharacterNames = () => this.characters.map(char => char.getName());
 
-    getTotalPcHp = () => this.pcs.reduce((acc, curr) => acc + curr.hp, 0);
+    getTotalCharacterHp = () => this.characters.reduce((acc, curr) => acc + curr.hp, 0);
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
 
     isOver = () => {
-        return !this.getTotalPcHp() || !this.getTotalMonsterHp();
+        return !this.getTotalCharacterHp() || !this.getTotalMonsterHp();
     };
 }
