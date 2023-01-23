@@ -4,7 +4,7 @@ import { Routes } from "discord-api-types/v9";
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { ConfigJson, AuthJson, AnyObject, CharacterClass } from "./types";
 import { parseJson, readFile } from "./util";
-import { COMMAND_TYPE, DIRECTION, FORMATTED_DIRECTION } from "./constants";
+import { CommandType, DIRECTION, FORMATTED_DIRECTION } from "./constants";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -17,12 +17,12 @@ const { CLIENT_ID } = parseJson(readFile(configPath)) as ConfigJson;
 const rest = new REST({ version: "9" }).setToken(TOKEN);
 
 interface CommandBuilderArgs {
-    type: string;
+    type: number;
     targets?: string[];
 }
 
 class CommandBuilder {
-    type?: string;
+    type?: number;
 
     targets?: string[];
 
@@ -43,10 +43,27 @@ class CommandBuilder {
         return { name, value };
     }
 
+    private buildItemCommands() {
+        return [
+            new SlashCommandBuilder()
+                .setName("use")
+                .setDescription("Use an item")
+                .addStringOption((option) => {
+                    return option
+                        .setName("item")
+                        .setDescription("Which item do you want to use?")
+                        .setRequired(true);
+                }),
+            new SlashCommandBuilder()
+                .setName("inventory")
+                .setDescription("Show your current inventory")
+        ];
+    }
+
     build(): AnyObject[] {
         const builtCommands = [];
         switch (this.type) {
-        case COMMAND_TYPE.NEW_QUEST: {
+        case CommandType.NewQuest: {
             const choices = Object.values(compendium.data.classes).map(
                 (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
             );
@@ -63,7 +80,7 @@ class CommandBuilder {
             );
             break;
         }
-        case COMMAND_TYPE.TRAVEL: {
+        case CommandType.Questing: {
             const choices = [
                 { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
                 { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
@@ -81,28 +98,15 @@ class CommandBuilder {
                         .addChoices(...choices);
                 })
             );
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("inventory")
-                .setDescription("Show your current inventory")
-            );
+            builtCommands.push(...this.buildItemCommands());
             break;
         }
-        case COMMAND_TYPE.ENCOUNTER: {
+        case CommandType.Combat: {
             const targets = this.targets as string[];
             const choices = targets.map((t, idx) => {
                 const targetDescription = `${t} ${idx + 1}`;
                 return this.buildIntegerChoices(targetDescription, idx);
             });
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("use")
-                .setDescription("Use an item")
-                .addStringOption((option) => {
-                    return option
-                        .setName("item")
-                        .setDescription("Which item do you want to use?")
-                        .setRequired(true);
-                })
-            );
             builtCommands.push(new SlashCommandBuilder()
                 .setName("action")
                 .setDescription("Act on your turn")
@@ -130,10 +134,7 @@ class CommandBuilder {
                         });
                 })
             );
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("inventory")
-                .setDescription("Show your current inventory")
-            );
+            builtCommands.push(...this.buildItemCommands());
             break;
         }
         default:

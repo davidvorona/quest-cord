@@ -2,12 +2,14 @@ import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./Encounter";
 import Character from "./Character";
-import Monster from "./Monster";
+import Narrator from "./Narrator";
 
 export default class Quest {
     readonly id: string;
 
     readonly guildId: string;
+
+    readonly narrator: Narrator;
 
     pcs: Record<string, PlayerCharacter | null> = {};
 
@@ -15,10 +17,15 @@ export default class Quest {
 
     encounter?: Encounter;
 
-    constructor(guildId: string) {
+    constructor(guildId: string, narrator: Narrator) {
         console.info("Accepting new quest...");
         this.id = createRandomId();
         this.guildId = guildId;
+        this.narrator = narrator;
+    }
+
+    getNarrator() {
+        return this.narrator;
     }
 
     addPlayer(userId: string) {
@@ -73,9 +80,8 @@ export default class Quest {
         }
     }
 
-    startEncounter(monsters: Monster[]) {
-        this.encounter = new Encounter(this.getCharacters(), monsters);
-        return this.encounter;
+    startEncounter(encounter: Encounter) {
+        this.encounter = encounter;
     }
 
     getEncounter() {

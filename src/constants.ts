@@ -1,8 +1,8 @@
-export const COMMAND_TYPE = {
-    NEW_QUEST: "new_quest",
-    ENCOUNTER: "encounter",
-    TRAVEL: "travel"
-} as const;
+export enum CommandType {
+    NewQuest,
+    Questing,
+    Combat
+}
 
 export const ACTIVITY = {
     ENCOUNTER: "encounter",

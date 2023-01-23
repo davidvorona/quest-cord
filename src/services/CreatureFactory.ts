@@ -7,10 +7,12 @@ import { rand } from "../util";
 import CompendiumReader from "./CompendiumReader";
 import ItemFactory from "./ItemFactory";
 
+interface MonsterData {
+    [monsterId: string]: BaseMonster
+}
+
 interface CreatureData {
-    monsters: {
-        [monsterId: string]: BaseMonster
-    },
+    monsters: MonsterData;
     classes: {
         [classId: string]: CharacterClass
     }
@@ -63,7 +65,7 @@ class CreatureFactory {
         return hydrated;
     }
 
-    createRandomMonster(): Monster {
+    private createRandomMonster(): Monster {
         const key = Object.keys(this.data.monsters)[rand(Object.keys(this.data.monsters).length)];
         return this.createMonster(key);
     }
@@ -74,6 +76,30 @@ class CreatureFactory {
             list.push(this.createRandomMonster());
         }
         return list;
+    }
+
+    private pickRandomMonster(monsters: MonsterData) {
+        const key = Object.keys(monsters)[rand(Object.keys(monsters).length)];
+        return this.createMonster(key);
+    }
+
+    private pickRandomMonsterList(monsters: MonsterData, length: number) {
+        const list: Monster[] = [];
+        for (let i = 0; i < length; i++) {
+            list.push(this.pickRandomMonster(monsters));
+        }
+        return list;
+    }
+
+    createRandomBiomeTypeMonsterList(length: number, biome: string) {
+        const biomeMonsters: MonsterData = {};
+        Object.keys(this.data.monsters).forEach((m) => {
+            const monsterData = this.data.monsters[m];
+            if (monsterData.zones.includes(biome)) {
+                biomeMonsters[m] = monsterData;
+            }
+        });
+        return this.pickRandomMonsterList(biomeMonsters, length);
     }
 }
 

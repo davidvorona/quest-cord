@@ -1,18 +1,32 @@
-import { CommandInteraction, Interaction, MessageEmbed, TextChannel } from "discord.js";
+import {
+    CommandInteraction,
+    Interaction,
+    MessageEmbed,
+    GuildTextBasedChannel,
+    TextChannel
+} from "discord.js";
 import setGuildCommands from "../commands";
-import { ACTIVITY, COMMAND_TYPE } from "../constants";
+import { CommandType } from "../constants";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
+import EncounterBuilder from "../services/EncounterBuilder";
 import CreatureFactory from "../services/CreatureFactory";
-import TextBuilder from "../text";
 import { Direction } from "../types";
-import { getPlayersFromStartCommand, isEmpty, rand, sendTypingAndWaitRandom } from "../util";
-import Encounter from "./Encounter";
+import { getPlayersFromStartCommand, isEmpty, rand } from "../util";
+import Encounter from "./CombatEncounter";
 import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
 import World from "./World";
 import Character from "./Character";
+import TurnBasedEncounter from "./TurnBasedEncounter";
+import Narrator from "./Narrator";
+import CombatEncounter from "./CombatEncounter";
+
+type QuestLordInteraction = CommandInteraction & {
+    guildId: string;
+    channel: GuildTextBasedChannel;
+};
 
 interface PlayerTurnCallback {
     (): Promise<void>
@@ -27,10 +41,13 @@ export default class QuestLord {
 
     itemFactory: ItemFactory;
 
+    encounterBuilder: EncounterBuilder;
+
     constructor(compendium: CompendiumReader) {
         console.info("Summoning the Quest Lord...");
         this.itemFactory = new ItemFactory(compendium);
         this.creatureFactory = new CreatureFactory(compendium, this.itemFactory);
+        this.encounterBuilder = new EncounterBuilder(this.creatureFactory);
     }
 
     private assertWorldGenerated(guildId: string) {
@@ -57,6 +74,12 @@ export default class QuestLord {
         }
     }
 
+    private static isValidInteraction(
+        interaction: CommandInteraction
+    ): interaction is QuestLordInteraction {
+        return interaction.inGuild() && interaction.channel instanceof TextChannel;
+    }
+
     /* SLASH COMMAND HANDLING */
 
     async handleInteraction(interaction: Interaction) {
@@ -67,7 +90,7 @@ export default class QuestLord {
                 await interaction.reply("pong!");
             }
 
-            if (!interaction.guildId) return;
+            if (!QuestLord.isValidInteraction(interaction)) return;
 
             // Mod manually starts a quest for users
             if (interaction.commandName === "start") {
@@ -112,8 +135,8 @@ export default class QuestLord {
         }
     }
 
-    private async startQuest(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId as string;
+    private async startQuest(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
         this.assertWorldNotGenerated(guildId);
         this.assertQuestNotStarted(guildId);
 
@@ -121,9 +144,11 @@ export default class QuestLord {
         const world = new World(guildId);
         this.worlds[guildId] = world;
 
+        // Create narrator for quest
+        const narrator = new Narrator(guildId, interaction.channel);
 
         // Create quest for user(s)
-        const quest = new Quest(guildId);
+        const quest = new Quest(guildId, narrator);
         const players = getPlayersFromStartCommand(interaction);
         players.forEach(p => quest.addPlayer(p.id));
         quest.setPartyCoordinates(world.getRandomCoordinates());
@@ -131,27 +156,29 @@ export default class QuestLord {
         // Register new quest
         this.quests[guildId] = quest;
 
-        // Register guild commands for character creation
-        await setGuildCommands(guildId, { type: COMMAND_TYPE.NEW_QUEST });
+        // Defer reply in case guild commands take a while
+        await interaction.deferReply({ ephemeral: true });
 
-        await interaction.reply({
+        // Register guild commands for character creation
+        await setGuildCommands(guildId, { type: CommandType.NewQuest });
+
+        await narrator.ponderAndReply(interaction, {
             content: `Quest created for **${players.length}** players...`,
             ephemeral: true
         });
 
         // Invite players to create characters and join the quest
-        if (interaction.channel) {
-            await interaction.channel.send(
-                `${players.join(" ")} Adventure calls you, **/play** to journey to *Discordia*...`
-            );
-        }
+        await narrator.ponderAndDescribe(
+            `${players.join(" ")} Adventure calls you, **/play** to journey to *Discordia*...`
+        );
     }
 
-    private async createCharacter(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId as string;
+    private async createCharacter(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
+        const narrator = quest.getNarrator();
         const userId = interaction.user.id;
         // Ensure user is in questing party
         if (!quest.isUserInParty(userId)) {
@@ -171,7 +198,7 @@ export default class QuestLord {
             const pc = quest.createPlayerCharacter(userId, character);
             // The name of the base character is the class name, the character name
             // is attached to the PlayerCharacter object
-            await interaction.reply({
+            await narrator.ponderAndReply(interaction, {
                 content: `Character *${pc.getName()}*, level ${pc.lvl} ${optionClass}, created...`,
                 ephemeral: true
             });
@@ -179,17 +206,23 @@ export default class QuestLord {
 
         // If adding this character completes the party, then start the quest with an encounter
         if (quest.areAllCharactersCreated()) {
-            const textChannel = interaction.channel as TextChannel;
-            await this.startEncounter(guildId, textChannel);
+            await narrator.describeNewParty(quest.getCharacters());
+
+            const world = this.worlds[guildId];
+            const partyBiome = world.getBiome(quest.getPartyCoordinates());
+            await narrator.describeSurroundings(partyBiome);
+
+            await this.startEncounter(guildId);
         }
     }
 
-    private async handleTravel(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId as string;
+    private async handleTravel(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
         const world = this.worlds[guildId];
+        const narrator = quest.getNarrator();
         // Travel can only happen between encounters - this is already enforced by the
         // available commands
         if (quest.isInEncounter()) {
@@ -205,24 +238,22 @@ export default class QuestLord {
                 const biome = world.getBiome(coordinates);
                 // Apply the cardinal direction to the party's coordinates, this method throws an
                 // error if the delta would move the party off the world
-                const newCoordinates = world.applyDirectionToCoordinates(direction, coordinates);
-                quest.setPartyCoordinates(newCoordinates);
-                const newBiome = world.getBiome(newCoordinates);
-                const newBiomeClause = biome === newBiome
-                    ? `You make your way further into the ${newBiome}`
-                    : `You find yourself in a ${newBiome}`;
-                await interaction.reply(`You choose to travel ${direction}. ${newBiomeClause}.`);
+                const [x, y] = world.applyDirectionToCoordinates(direction, coordinates);
+                quest.setPartyCoordinates([x, y]);
+
+                const newBiome = world.getBiome([x, y]);
+                await narrator.ponderAndReply(interaction, `You choose to travel ${direction}.`);
+                await narrator.describeTravel(biome, newBiome);
 
                 // Now that the party has reached a new location, start the next encounter
-                const textChannel = interaction.channel as TextChannel;
-                await this.startEncounter(guildId, textChannel);
+                await this.startEncounter(guildId);
             } catch (err) {
                 await interaction.reply(`You cannot travel further ${direction}.`);
             }
         }
     }
 
-    private async handleAction(interaction: CommandInteraction): Promise<void> {
+    private async handleAction(interaction: QuestLordInteraction): Promise<void> {
         await this.handlePlayerTurn(interaction, async () => {
             const subcommand = interaction.options.getSubcommand();
             if (subcommand === "attack") {
@@ -234,8 +265,8 @@ export default class QuestLord {
         });
     }
 
-    private async handleUse(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId as string;
+    private async handleUse(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
@@ -244,7 +275,8 @@ export default class QuestLord {
             try {
                 const item = interaction.options.getString("item", true);
                 pc.getCharacter().useItem(item);
-                await interaction.reply(`You use a ${item}.`);
+                const narrator = quest.getNarrator();
+                await narrator.ponderAndReply(interaction, `You use the ${item}.`);
             } catch (err) {
                 await interaction.reply({
                     content: "You do not have this item!",
@@ -254,8 +286,9 @@ export default class QuestLord {
         }
 
         const encounter = quest.getEncounter();
-        if (encounter) {
-            if (encounter.getCurrentTurn() === pc.getCharacter()) {
+        if (encounter && encounter instanceof TurnBasedEncounter) {
+            if (encounter.getCurrentTurn() === pc.getCharacter()
+            ) {
                 await useItem();
             } else {
                 await interaction.reply({
@@ -268,8 +301,8 @@ export default class QuestLord {
         }   
     }
 
-    private async printInventory(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId as string;
+    private async printInventory(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
@@ -290,8 +323,8 @@ export default class QuestLord {
         });
     }
 
-    private logMapDisplay(interaction: CommandInteraction) {
-        const guildId = interaction.guildId as string;
+    private logMapDisplay(interaction: QuestLordInteraction) {
+        const guildId = interaction.guildId;
         const world = this.worlds[guildId];
         const quest = this.quests[guildId];
 
@@ -301,104 +334,102 @@ export default class QuestLord {
     
     /* GAME METHODS */
 
-    private async failQuest(guildId: string, channel: TextChannel): Promise<void> {
-        // TODO: Do we want to remove the world as well?
+    private async failQuest(guildId: string): Promise<void> {
+        const quest = this.quests[guildId];
+        const narrator = quest.getNarrator();
+        await narrator.ponderAndDescribe(
+            "*Your party was slaughtered, and so ends this thread of destiny...*"
+        );
         await setGuildCommands(guildId);
         delete this.quests[guildId];
-        await channel.send("*Your party was slaughtered, and so ends this thread of destiny...*");
     }
 
-    private async startEncounter(guildId: string, channel: TextChannel) {
+    private async startEncounter(guildId: string) {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        const monsters = this.creatureFactory.createRandomMonsterList(quest.getPartySize());
-        const encounter = quest.startEncounter(monsters);
+        const world = this.worlds[guildId];
 
-        // Get names of monsters in encounter
-        const monsterNames = encounter.getMonsterNames();
+        // Build an encounter and start it for the quest
+        const biome = world.getBiome(quest.getPartyCoordinates());
+        const encounter = this.encounterBuilder.build(biome, quest.getCharacters());
+        quest.startEncounter(encounter);
 
-        await sendTypingAndWaitRandom(channel, 3000);
+        // TODO: This needs to be handled elsewhere
+        if (encounter instanceof CombatEncounter) {
+            const monsterNames = encounter.getMonsterNames();
+            await setGuildCommands(guildId, {
+                type: CommandType.Combat,
+                targets: monsterNames
+            });
+        } else {
+            await setGuildCommands(guildId, { type: CommandType.Questing });
+        }
 
-        // Send text for the first encounter
-        const textBuilder = new TextBuilder()
-            .setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
-        const text = textBuilder.build(monsterNames);
-        await channel.send(text);
+        // Narrate the encounter
+        const narrator = quest.getNarrator();
+        await narrator.describeEncounter(encounter, "start");
 
-        const turnOrder = encounter.getTurnOrderNames()
-            .reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
-        const embed = new MessageEmbed()
-            .setColor("#0099ff")
-            .setTitle("Turn order")
-            .setDescription(turnOrder);
-        await channel.send({ embeds: [embed] });
-
-        // Register guild commands for encounter
-        await setGuildCommands(guildId, {
-            type: COMMAND_TYPE.ENCOUNTER,
-            targets: monsterNames
-        });
-
-        const currentTurn = encounter.getCurrentTurn();
-
-        await sendTypingAndWaitRandom(channel, 3000);
-        
-        // If a monster goes first, handle its turn
-        await channel.send(`It is ${currentTurn.getName()}'s turn.`);
-        if (currentTurn instanceof Monster) {
-            await this.handleMonsterTurn(guildId, channel);
+        if (encounter instanceof TurnBasedEncounter) {
+            const currentTurn = encounter.getCurrentTurn();            
+            // If a monster goes first, handle its turn
+            await narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
+            if (currentTurn instanceof Monster) {
+                await this.handleMonsterTurn(guildId);
+            }
+        } else {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
         }
     }
 
-    private async promptForTravel(guildId: string, channel: TextChannel) {
+    private async promptForTravel(guildId: string) {
         this.assertQuestStarted(guildId);
 
         // Register guild commands for travel
-        await setGuildCommands(guildId, { type: COMMAND_TYPE.TRAVEL });
-
-        await sendTypingAndWaitRandom(channel, 3000);
+        await setGuildCommands(guildId, { type: CommandType.Questing });
 
         const world = this.worlds[guildId];
         const quest = this.quests[guildId];
 
+        // Describe surroundings
+        const narrator = quest.getNarrator();
         const partyBiome = world.getBiome(quest.getPartyCoordinates());
-        await channel.send("You take stock of your surroundings - currently you're "
-            + `in the ${partyBiome}. Where would you like to go? Use **/travel** to `
+        await narrator.describeSurroundings(partyBiome);
+        await narrator.ponderAndDescribe("Where would you like to go? Use **/travel** to "
             + "choose a direction.");
     }
 
-    private async handleNextTurn(guildId: string, channel: TextChannel) {
+    private async handleNextTurn(guildId: string) {
         const quest = this.quests[guildId];
         const encounter = quest.encounter as Encounter;
+        const narrator = quest.getNarrator();
 
         if (encounter.isOver()) {
             const isTpk = !encounter.getTotalCharacterHp();
+            await narrator.describeEncounter(encounter, "end");
             quest.endEncounter();
-            await channel.send("Combat is over!");
             if (isTpk) {
-                await this.failQuest(guildId, channel);
+                await this.failQuest(guildId);
             } else {
-                await channel.send("The enemies lie dead at your feet...victory!");
-                await this.promptForTravel(guildId, channel);
+                await this.promptForTravel(guildId);
             }
             return;
         }
 
         encounter.nextTurn();
         const currentTurn = encounter.getCurrentTurn();
-
-        await sendTypingAndWaitRandom(channel, 3000);
         
-        await channel.send(`It is now ${currentTurn.getName()}'s turn.`);
+        await narrator.ponderAndDescribe(`It is now ${currentTurn.getName()}'s turn.`);
         if (currentTurn instanceof Monster) {
-            await this.handleMonsterTurn(guildId, channel);
+            await this.handleMonsterTurn(guildId);
         }
     }
 
-    private async handleMonsterTurn(guildId: string, channel: TextChannel) {
+    private async handleMonsterTurn(guildId: string) {
         const quest = this.quests[guildId];
         const encounter = quest.encounter as Encounter;
+        const narrator = quest.getNarrator();
 
         const currentTurn = encounter.getCurrentTurn();
         if (currentTurn instanceof Monster) {
@@ -406,18 +437,18 @@ export default class QuestLord {
             const target = chars[rand(chars.length)];
             const damage = currentTurn.damage;
             target.setHp(target.hp - damage);
-            await channel.send(`${currentTurn.getName()} deals ${damage} damage `
+            await narrator.ponderAndDescribe(`${currentTurn.getName()} deals ${damage} damage `
                 + `to ${target.getName()}.`);
 
-            await this.handleNextTurn(guildId, channel);
+            await this.handleNextTurn(guildId);
         }
     }
 
     private async handlePlayerTurn(
-        interaction: CommandInteraction,
+        interaction: QuestLordInteraction,
         doPlayerTurn: PlayerTurnCallback
     ) {
-        const guildId = interaction.guildId as string;
+        const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
@@ -446,8 +477,7 @@ export default class QuestLord {
                 });
                 return;
             }
-            const textChannel = interaction.channel as TextChannel;
-            await this.handleNextTurn(guildId, textChannel);
+            await this.handleNextTurn(guildId);
         } else {
             await interaction.reply({
                 content: "It's not your turn!",
@@ -456,31 +486,32 @@ export default class QuestLord {
         }
     }
 
-    private async handleAttack(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId as string;
+    private async handleAttack(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
         const quest = this.quests[guildId];
         const encounter = quest.encounter as Encounter;
 
-        const targetIdx = interaction.options.getInteger("target") as number;
+        const targetIdx = interaction.options.getInteger("target", true);
 
         const target = encounter.getMonsterByIndex(targetIdx);
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
 
+        const narrator = quest.getNarrator();
+        await narrator.ponderAndReply(interaction, "You prepare to attack the creature...");
         const damage = pc.getCharacter().damage;
         target.setHp(target.hp - damage);
 
-        const textBuilder = new TextBuilder()
-            .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
-        const weapon = pc.getCharacter().equipment.weapon;
-        const weaponName = weapon ? weapon.name : "fists";
-        const text = textBuilder.build(weaponName, target.getName());
-        await interaction.reply(text);
-        if (interaction.channel) {
-            await interaction.channel.send(`You deal ${pc.getCharacter().damage} damage.`);
-        }
+        await narrator.describeAttack(pc.getCharacter(), target);
     }
 
-    private async handleCastSpell(interaction: CommandInteraction): Promise<void> {
-        await interaction.reply("You try to cast a spell but it's not working...");
+    private async handleCastSpell(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        const quest = this.quests[guildId];
+        const narrator = quest.getNarrator();
+
+        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+        const spell = interaction.options.getString("spell", true);
+        await narrator.ponderAndReply(interaction, "You prepare to cast the spell...");
+        await narrator.describeCastSpell(pc.getCharacter(), spell);
     }
 }

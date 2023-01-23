@@ -1,6 +1,6 @@
 {
-    "id": "potion",
-    "name": "Potion",
+    "id": "elixir",
+    "name": "Elixir",
     "type": "consumable",
     "effects": {
         "damage": 1

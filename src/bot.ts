@@ -23,8 +23,6 @@ client.on("ready", async () => {
             console.info("Logged in as", client.user.tag);
         }
         if (client.application) {
-            console.info("Clearing any existing global application (/) commands");
-            client.application.commands.set([]);
             await Promise.all(client.guilds.cache.map(async (guild: Guild) => {
                 await setGuildCommands(guild.id);
             }));

@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { CommandInteraction, GuildMember, TextChannel } from "discord.js";
+import { CommandInteraction, GuildMember, TextBasedChannel } from "discord.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isEmpty = (thing: any) =>
@@ -42,6 +42,14 @@ export const parseJson = (dataJson: string): any => {
  * @returns 
  */
 export const rand = (max: number) => Math.floor(Math.random() * Math.floor(max));
+
+/**
+ * Returns a random element from the given list.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const randInList = (list: unknown[]) => {
+    return list[rand(list.length)];
+};
 
 /**
  * Creates a random UUID using the crypto package.
@@ -89,11 +97,11 @@ export const shuffleArray = (array: any[]) => array
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const sendTypingAndWait = async (channel: TextChannel, ms: number) => {
+export const sendTypingAndWait = async (channel: TextBasedChannel , ms: number) => {
     await channel.sendTyping();
     await delay(ms);
 };
 
-export const sendTypingAndWaitRandom = async (channel: TextChannel, ms: number) => {
+export const sendTypingAndWaitRandom = async (channel: TextBasedChannel, ms: number) => {
     await sendTypingAndWait(channel, rand(ms));
 };

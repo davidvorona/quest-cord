@@ -1,4 +1,5 @@
 import { BaseCreature, Effects } from "../types";
+import { createRandomId } from "../util";
 import Item from "./Item";
 
 export interface Equipment {
@@ -11,6 +12,8 @@ export interface Equipment {
 }
 
 export default class Creature {
+    readonly baseId: string;
+
     readonly id: string;
 
     name: string;
@@ -24,7 +27,8 @@ export default class Creature {
     equipment: Equipment;
 
     constructor(data: BaseCreature, equipment: Equipment) {
-        this.id = data.id;
+        this.baseId = data.id;
+        this.id = createRandomId();
         this.name = data.name;
         this.hp = this.maxHp = data.hp;
         this.damage = data.damage;
