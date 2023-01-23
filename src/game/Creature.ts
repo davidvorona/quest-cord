@@ -1,9 +1,10 @@
 import { BaseCreature, Effects } from "../types";
 import { createRandomId } from "../util";
 import Item from "./Item";
+import Weapon from "./Weapon";
 
 export interface Equipment {
-    weapon?: Item;
+    weapon?: Weapon;
     offhand?: Item;
     helm?: Item;
     armor?: Item;
@@ -54,7 +55,7 @@ export default class Creature {
         this.hp = newHp;
     }
 
-    getWeapon(): Item | undefined {
+    getWeapon() {
         return this.equipment.weapon;
     }
 

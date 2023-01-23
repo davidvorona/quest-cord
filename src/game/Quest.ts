@@ -58,7 +58,7 @@ export default class Quest {
         return Object.values(this.pcs).every(pc => !isEmpty(pc));
     }
 
-    getCharacters(): Character[] {
+    getCharacters() {
         const characters: Character[] = [];
         Object.values(this.pcs).forEach((pc) => {
             if (pc) characters.push(pc.getCharacter());
@@ -92,7 +92,7 @@ export default class Quest {
         this.encounter = undefined;
     }
 
-    isInEncounter() {
+    isInEncounter(): this is { encounter: Encounter } {
         return this.encounter !== undefined;
     }
 }

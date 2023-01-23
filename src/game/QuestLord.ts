@@ -13,7 +13,6 @@ import EncounterBuilder from "../services/EncounterBuilder";
 import CreatureFactory from "../services/CreatureFactory";
 import { Direction } from "../types";
 import { getPlayersFromStartCommand, isEmpty, rand } from "../util";
-import Encounter from "./CombatEncounter";
 import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
@@ -402,17 +401,21 @@ export default class QuestLord {
 
     private async handleNextTurn(guildId: string) {
         const quest = this.quests[guildId];
-        const encounter = quest.encounter as Encounter;
-        const narrator = quest.getNarrator();
+        
+        if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
+            throw new Error("There is no active turn-based encounter, aborting");
+        }
 
+        const narrator = quest.getNarrator();
+        const encounter = quest.encounter;
         if (encounter.isOver()) {
-            const isTpk = !encounter.getTotalCharacterHp();
+            const isSuccess = encounter.isSuccess();
             await narrator.describeEncounter(encounter, "end");
             quest.endEncounter();
-            if (isTpk) {
-                await this.failQuest(guildId);
-            } else {
+            if (isSuccess) {
                 await this.promptForTravel(guildId);
+            } else {
+                await this.failQuest(guildId);
             }
             return;
         }
@@ -428,19 +431,26 @@ export default class QuestLord {
 
     private async handleMonsterTurn(guildId: string) {
         const quest = this.quests[guildId];
-        const encounter = quest.encounter as Encounter;
+
+        if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
+            throw new Error("There is no active turn-based encounter, aborting");
+        }
+
+        const encounter = quest.encounter;
         const narrator = quest.getNarrator();
 
-        const currentTurn = encounter.getCurrentTurn();
-        if (currentTurn instanceof Monster) {
-            const chars = encounter.getCharacters();
-            const target = chars[rand(chars.length)];
-            const damage = currentTurn.damage;
-            target.setHp(target.hp - damage);
-            await narrator.ponderAndDescribe(`${currentTurn.getName()} deals ${damage} damage `
-                + `to ${target.getName()}.`);
+        if (encounter instanceof CombatEncounter) {
+            const currentTurn = encounter.getCurrentTurn();
+            if (currentTurn instanceof Monster) {
+                const chars = encounter.getCharacters();
+                const target = chars[rand(chars.length)];
+                const damage = encounter.calculateDamage(currentTurn);
+                target.setHp(target.hp - damage);
+                await narrator.ponderAndDescribe(`${currentTurn.getName()} deals ${damage} damage `
+                    + `to ${target.getName()}.`);
 
-            await this.handleNextTurn(guildId);
+                await this.handleNextTurn(guildId);
+            }
         }
     }
 
@@ -452,7 +462,6 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        quest.assertEncounterStarted();
 
         const userId = interaction.user.id;
         if (!quest.isUserInParty(userId)) {
@@ -462,8 +471,18 @@ export default class QuestLord {
             });
             return;
         }
+        if (
+            !quest.isInEncounter()
+            || !(quest.encounter instanceof TurnBasedEncounter)
+        ) {
+            await interaction.reply({
+                content: "You are not currently in a turn-based encounter.",
+                ephemeral: true
+            });
+            return;
+        }
 
-        const encounter = quest.encounter as Encounter;
+        const encounter = quest.encounter;
         const currentTurn = encounter.getCurrentTurn();
         const myPlayerCharacter = quest.getPlayerByUserId(interaction.user.id);
         if (currentTurn instanceof Character && currentTurn === myPlayerCharacter?.getCharacter()) {
@@ -489,8 +508,12 @@ export default class QuestLord {
     private async handleAttack(interaction: QuestLordInteraction): Promise<void> {
         const guildId = interaction.guildId;
         const quest = this.quests[guildId];
-        const encounter = quest.encounter as Encounter;
 
+        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
+            throw new Error("There is no active combat encounter, aborting");
+        }
+
+        const encounter = quest.encounter;
         const targetIdx = interaction.options.getInteger("target", true);
 
         const target = encounter.getMonsterByIndex(targetIdx);
@@ -498,7 +521,7 @@ export default class QuestLord {
 
         const narrator = quest.getNarrator();
         await narrator.ponderAndReply(interaction, "You prepare to attack the creature...");
-        const damage = pc.getCharacter().damage;
+        const damage = encounter.calculateDamage(pc.getCharacter());
         target.setHp(target.hp - damage);
 
         await narrator.describeAttack(pc.getCharacter(), target);

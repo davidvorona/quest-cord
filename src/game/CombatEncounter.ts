@@ -2,6 +2,7 @@ import TurnBasedEncounter from "./TurnBasedEncounter";
 import Character from "./Character";
 import Monster from "./Monster";
 import { shuffleArray } from "../util";
+import Creature from "./Creature";
 
 export default class CombatEncounter extends TurnBasedEncounter {
     monsters: Monster[] = [];
@@ -26,7 +27,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
 
-    isOver = () => {
-        return !this.getTotalCharacterHp() || !this.getTotalMonsterHp();
-    };
+    isOver = () => !this.getTotalCharacterHp() || !this.getTotalMonsterHp();
+
+    isSuccess = () => !this.getTotalMonsterHp();
+
+    calculateDamage(attacker: Creature): number {
+        const baseDamage = attacker.damage;
+        const weapon = attacker.getWeapon();
+        const weaponDamage = weapon ? weapon.damage : 0;
+        return baseDamage + weaponDamage;
+    }
 }

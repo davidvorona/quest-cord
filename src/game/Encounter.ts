@@ -14,8 +14,8 @@ export default class Encounter {
 
     getCharacterNames = () => this.characters.map(char => char.getName());
 
-    getTurnBased = () => this.turnBased;
-
     // TODO: Implement actual win conditions for each encounter type
     isOver = () => true;
+
+    isSuccess = () => true;
 }

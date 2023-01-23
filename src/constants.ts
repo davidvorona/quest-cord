@@ -16,7 +16,8 @@ export const COMPENDIUM_SECTION = {
 } as const;
 
 export const ITEM_TYPE = {
-    CONSUMABLE: "consumable"
+    CONSUMABLE: "consumable",
+    WEAPON: "weapon"
 } as const;
 
 export const BIOME = {

@@ -6,6 +6,8 @@ import { CharacterClass, BaseMonster, BaseEquipment } from "../types";
 import { rand } from "../util";
 import CompendiumReader from "./CompendiumReader";
 import ItemFactory from "./ItemFactory";
+import Weapon from "../game/Weapon";
+import Item from "../game/Item";
 
 interface MonsterData {
     [monsterId: string]: BaseMonster
@@ -60,7 +62,9 @@ class CreatureFactory {
         let slot: keyof BaseEquipment;
         for (slot in equipment) {
             const itemId = equipment[slot];
-            hydrated[slot] = itemId ? this.itemFactory.create(itemId) : undefined;
+            hydrated[slot] = itemId
+                ? this.itemFactory.create(itemId) as Weapon & Item
+                : undefined;
         }
         return hydrated;
     }

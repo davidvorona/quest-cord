@@ -31,6 +31,11 @@ export interface BaseItem {
     type: string;
 }
 
+export interface BaseWeapon extends BaseItem {
+    damage: number;
+    properties?: string[];
+}
+
 export interface Effects {
     hp?: number;
     maxHp?: number;
