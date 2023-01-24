@@ -20,7 +20,6 @@
     "discord.js": "^13.6.0"
   },
   "devDependencies": {
-    "@types/cron": "^1.7.3",
     "@typescript-eslint/eslint-plugin": "^5.16.0",
     "@typescript-eslint/parser": "^5.16.0",
     "eslint": "^8.12.0",
