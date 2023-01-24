@@ -3,14 +3,20 @@ import { ITEM_TYPE } from "../constants";
 import Creature, { Equipment } from "./Creature";
 import Consumable from "./Consumable";
 import Item from "./Item";
+import Spell from "./Spell";
 
 export default class Character extends Creature {
     readonly lvlGains: LevelGain[];
 
     inventory: Item[] = [];
 
-    constructor(args: CharacterClass, equipment: Equipment, inventory: Item[] = []) {
-        super(args, equipment);
+    constructor(
+        args: CharacterClass,
+        equipment: Equipment,
+        spells: Spell[],
+        inventory: Item[] = []
+    ) {
+        super(args, equipment, spells);
 
         this.lvlGains = args.lvlGains;
         this.inventory = inventory;

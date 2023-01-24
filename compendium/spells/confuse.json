@@ -1,0 +1,7 @@
+{
+    "id": "confuse",
+    "name": "Confuse",
+    "effects": {
+        "status": "confused"
+    }
+}

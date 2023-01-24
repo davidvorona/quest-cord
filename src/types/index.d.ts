@@ -40,6 +40,14 @@ export interface Effects {
     hp?: number;
     maxHp?: number;
     damage?: number;
+    status?: string;
+}
+
+export interface BaseSpell {
+    id: string;
+    name: string;
+    damage?: number;
+    effects?: Effects
 }
 
 export interface BaseConsumable extends BaseItem {

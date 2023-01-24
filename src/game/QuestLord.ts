@@ -21,6 +21,7 @@ import Character from "./Character";
 import TurnBasedEncounter from "./TurnBasedEncounter";
 import Narrator from "./Narrator";
 import CombatEncounter from "./CombatEncounter";
+import SpellFactory from "../services/SpellFactory";
 
 type QuestLordInteraction = CommandInteraction & {
     guildId: string;
@@ -40,12 +41,15 @@ export default class QuestLord {
 
     itemFactory: ItemFactory;
 
+    spellFactory: SpellFactory;
+
     encounterBuilder: EncounterBuilder;
 
     constructor(compendium: CompendiumReader) {
         console.info("Summoning the Quest Lord...");
         this.itemFactory = new ItemFactory(compendium);
-        this.creatureFactory = new CreatureFactory(compendium, this.itemFactory);
+        this.spellFactory = new SpellFactory(compendium);
+        this.creatureFactory = new CreatureFactory(compendium, this.itemFactory, this.spellFactory);
         this.encounterBuilder = new EncounterBuilder(this.creatureFactory);
     }
 
@@ -524,7 +528,7 @@ export default class QuestLord {
         const damage = encounter.calculateDamage(pc.getCharacter());
         target.setHp(target.hp - damage);
 
-        await narrator.describeAttack(pc.getCharacter(), target);
+        await narrator.describeAttack(pc.getCharacter(), target, damage);
     }
 
     private async handleCastSpell(interaction: QuestLordInteraction): Promise<void> {

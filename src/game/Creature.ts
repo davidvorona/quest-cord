@@ -2,6 +2,7 @@ import { BaseCreature, Effects } from "../types";
 import { createRandomId } from "../util";
 import Item from "./Item";
 import Weapon from "./Weapon";
+import Spell from "./Spell";
 
 export interface Equipment {
     weapon?: Weapon;
@@ -27,13 +28,16 @@ export default class Creature {
 
     equipment: Equipment;
 
-    constructor(data: BaseCreature, equipment: Equipment) {
+    spells: Spell[];
+
+    constructor(data: BaseCreature, equipment: Equipment, spells: Spell[]) {
         this.baseId = data.id;
         this.id = createRandomId();
         this.name = data.name;
         this.hp = this.maxHp = data.hp;
         this.damage = data.damage;
         this.equipment = equipment;
+        this.spells = spells;
     }
 
     getName() {

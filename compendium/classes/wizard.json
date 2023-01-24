@@ -7,11 +7,11 @@
         "weapon": "wand",
         "armor": "wizard_robes"
     },
-    "spells": ["firebolt"],
+    "spells": ["fire_bolt"],
     "items": ["potion"],
     "lvlGains": [
         {
-            "spells": ["cone of cold", "confuse"]
+            "spells": ["cone_of_cold", "confuse"]
         },
         {
             "hp": 1,

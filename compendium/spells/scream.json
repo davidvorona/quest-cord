@@ -1,0 +1,7 @@
+{
+    "id": "scream",
+    "name": "Scream",
+    "effects": {
+        "status": "frightened"
+    }
+}

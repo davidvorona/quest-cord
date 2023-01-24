@@ -12,7 +12,8 @@ export const ACTIVITY = {
 export const COMPENDIUM_SECTION = {
     MONSTERS: "monsters",
     CLASSES: "classes",
-    ITEMS: "items"
+    ITEMS: "items",
+    SPELLS: "spells"
 } as const;
 
 export const ITEM_TYPE = {

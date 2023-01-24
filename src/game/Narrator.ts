@@ -69,14 +69,14 @@ class Narrator {
         await this.ponderAndDescribe("Welcome to *Discordia*!");
     }
 
-    async describeAttack(attacker: Creature, target: Creature) {
+    async describeAttack(attacker: Creature, target: Creature, damage: number) {
         const textBuilder = new TextBuilder()
             .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
         const weapon = attacker.equipment.weapon;
         const weaponName = weapon ? weapon.name : "fists";
         const text = textBuilder.build(weaponName, target.getName());
         await this.ponderAndDescribe(text);
-        await this.ponderAndDescribe(`You deal ${attacker.damage} damage.`);
+        await this.ponderAndDescribe(`You deal ${damage} damage.`);
     }
 
     async describeCastSpell(attacker: Creature, spell: string) {

@@ -8,6 +8,7 @@ import CompendiumReader from "./CompendiumReader";
 import ItemFactory from "./ItemFactory";
 import Weapon from "../game/Weapon";
 import Item from "../game/Item";
+import SpellFactory from "./SpellFactory";
 
 interface MonsterData {
     [monsterId: string]: BaseMonster
@@ -25,11 +26,18 @@ class CreatureFactory {
 
     itemFactory: ItemFactory;
 
+    spellFactory: SpellFactory;
+
     data: CreatureData;
 
-    constructor(compendiumReader: CompendiumReader, itemFactory: ItemFactory) {
+    constructor(
+        compendiumReader: CompendiumReader,
+        itemFactory: ItemFactory,
+        spellFactory: SpellFactory
+    ) {
         this.compendium = compendiumReader;
         this.itemFactory = itemFactory;
+        this.spellFactory = spellFactory;
         const classes = this.compendium.read(COMPENDIUM_SECTION.CLASSES);
         const monsters = this.compendium.read(COMPENDIUM_SECTION.MONSTERS);
         this.data = { classes, monsters };
@@ -42,7 +50,8 @@ class CreatureFactory {
         }
         const equipment = this.hydrateEquipment(data.equipment);
         const inventory = this.itemFactory.hydrateList(data.items);
-        const character = new Character(data, equipment, inventory);
+        const spells = this.spellFactory.hydrateList(data.spells);
+        const character = new Character(data, equipment, spells, inventory);
         return character;
     }
 
@@ -53,7 +62,8 @@ class CreatureFactory {
         }
         const equipment = this.hydrateEquipment(data.equipment);
         const loot = this.itemFactory.hydrateList(data.loot);
-        const monster = new Monster(data, equipment, loot);
+        const spells = this.spellFactory.hydrateList(data.spells);
+        const monster = new Monster(data, equipment, spells, loot);
         return monster;
     }
 
