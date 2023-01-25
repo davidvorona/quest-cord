@@ -1,7 +1,8 @@
 export enum CommandType {
     NewQuest,
     Questing,
-    Combat
+    Combat,
+    Stealth
 }
 
 export const ACTIVITY = {

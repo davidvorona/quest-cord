@@ -12,7 +12,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.monsters = monsters;
         this.turnOrder = shuffleArray([...characters, ...monsters]);
         console.info(
-            "Encounter started...",
+            "Combat encounter started...",
             this.getCharacterNames(), "vs", this.getMonsterNames()
         );
     }

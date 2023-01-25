@@ -12,6 +12,7 @@ import CombatEncounter from "./CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
 import Creature from "./Creature";
 import Character from "./Character";
+import StealthEncounter from "./StealthEncounter";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -84,34 +85,49 @@ class Narrator {
             + "the enemy and deals 0 damage.");
     }
 
-    async describeEncounter(encounter: Encounter, status: string) {
+    async explainEncounter(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
-            if (status === "start") {
-                // Get names of monsters in encounter
-                const monsterNames = encounter.getMonsterNames();
-                const textBuilder = new TextBuilder()
-                    .setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
-                await this.ponderAndDescribe(textBuilder.build(monsterNames));
-                // Send an embed of the turn order
-                const turnOrder = encounter.getTurnOrderNames()
-                    .reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
-                const embed = new MessageEmbed()
-                    .setColor("#0099ff")
-                    .setTitle("Turn order")
-                    .setDescription(turnOrder);
-                await this.ponderAndDescribe({ embeds: [embed] });
-            }
-            if (status === "end") {
-                await this.ponderAndDescribe("Combat is over!");
-                const isTpk = !encounter.getTotalCharacterHp();
-                const text = isTpk
-                    ? "Your party lies dead and dying at the feet of your foes."
-                    : "The enemies lie dead at your feet...victory!";
-                await this.ponderAndDescribe(text);
-            }
+            await this.ponderAndDescribe("On your turn, you can act with the **/action** command. "
+                + "You can also use items with **/use**.");
+        } else if (encounter instanceof StealthEncounter) {
+            await this.ponderAndDescribe("Choose between a stealthy approach with the **/sneak** "
+                + "command, or surprise your enemies with **/surprise**!");
         } else {
-            await this.ponderAndDescribe("Woah! You run into the craziest encounter and barely "
-                + "escape with your lives!");
+            await this.ponderAndDescribe("You can travel with the **/travel** command.");
+        }
+    }
+
+    async describeEncounter(encounter: Encounter) {
+        if (encounter instanceof CombatEncounter) {
+            // Get names of monsters in encounter
+            const monsterNames = encounter.getMonsterNames();
+            const textBuilder = new TextBuilder()
+                .setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
+            await this.ponderAndDescribe(textBuilder.build(monsterNames));
+            // Send an embed of the turn order
+            const turnOrder = encounter.getTurnOrderNames()
+                .reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
+            const embed = new MessageEmbed()
+                .setColor("#0099ff")
+                .setTitle("Turn order")
+                .setDescription(turnOrder);
+            await this.ponderAndDescribe({ embeds: [embed] });
+        } else if (encounter instanceof StealthEncounter) {
+            await this.ponderAndDescribe("You peer forward and see a group of monsters. "
+                + "They don't seem to see your party yet.");
+        } else {
+            await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
+        }
+    }
+
+    async describeEncounterOver(encounter: Encounter) {
+        if (encounter instanceof CombatEncounter) {
+            await this.ponderAndDescribe("Combat is over!");
+            const isTpk = !encounter.getTotalCharacterHp();
+            const text = isTpk
+                ? "Your party lies dead and dying at the feet of your foes."
+                : "The enemies lie dead at your feet...victory!";
+            await this.ponderAndDescribe(text);
         }
     }
 

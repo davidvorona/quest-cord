@@ -22,6 +22,7 @@ import TurnBasedEncounter from "./TurnBasedEncounter";
 import Narrator from "./Narrator";
 import CombatEncounter from "./CombatEncounter";
 import SpellFactory from "../services/SpellFactory";
+import StealthEncounter from "./StealthEncounter";
 
 type QuestLordInteraction = CommandInteraction & {
     guildId: string;
@@ -113,6 +114,14 @@ export default class QuestLord {
             // User acts during an encounter
             if (interaction.commandName === "action") {
                 await this.handleAction(interaction);
+            }
+
+            if (interaction.commandName === "sneak") {
+                await this.handleSneak(interaction);
+            }
+
+            if (interaction.commandName === "surprise") {
+                await this.handleSurprise(interaction);
             }
 
             // User uses an item in their inventory
@@ -304,6 +313,43 @@ export default class QuestLord {
         }   
     }
 
+    private async handleSneak(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
+            throw new Error("There is no active stealth encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        await narrator.ponderAndReply(interaction, "You sneak past the enemies.");
+        const encounter = quest.encounter;
+        if (encounter.isOver()) {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
+        }
+    }
+
+    private async handleSurprise(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
+            throw new Error("There is no active stealth encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        await narrator.ponderAndReply(interaction, "You're about to mount a surprise attack "
+            + "when you reconsider, and decide to sneak past instead.");
+        const encounter = quest.encounter;
+        if (encounter.isOver()) {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
+        }
+    }
+
     private async printInventory(interaction: QuestLordInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
@@ -365,24 +411,24 @@ export default class QuestLord {
                 type: CommandType.Combat,
                 targets: monsterNames
             });
+        } else if (encounter instanceof StealthEncounter) {
+            const monsterNames = encounter.getMonsterNames();
+            await setGuildCommands(guildId, {
+                type: CommandType.Stealth,
+                targets: monsterNames
+            });
         } else {
             await setGuildCommands(guildId, { type: CommandType.Questing });
         }
 
         // Narrate the encounter
         const narrator = quest.getNarrator();
-        await narrator.describeEncounter(encounter, "start");
+        await narrator.describeEncounter(encounter);
+        await narrator.explainEncounter(encounter);
 
+        // If it's a turn-based encounter, then prompt for or handle the first turn
         if (encounter instanceof TurnBasedEncounter) {
-            const currentTurn = encounter.getCurrentTurn();            
-            // If a monster goes first, handle its turn
-            await narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
-            if (currentTurn instanceof Monster) {
-                await this.handleMonsterTurn(guildId);
-            }
-        } else {
-            quest.endEncounter();
-            await this.promptForTravel(guildId);
+            await this.handleTurn(guildId);
         }
     }
 
@@ -403,6 +449,23 @@ export default class QuestLord {
             + "choose a direction.");
     }
 
+    private async handleTurn(guildId: string) {
+        const quest = this.quests[guildId];
+        
+        if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
+            throw new Error("There is no active turn-based encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        const encounter = quest.encounter;
+        const currentTurn = encounter.getCurrentTurn();            
+        await narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
+        // If its a monster's turn, invoke its handler
+        if (currentTurn instanceof Monster) {
+            await this.handleMonsterTurn(guildId);
+        }
+    }
+
     private async handleNextTurn(guildId: string) {
         const quest = this.quests[guildId];
         
@@ -414,7 +477,7 @@ export default class QuestLord {
         const encounter = quest.encounter;
         if (encounter.isOver()) {
             const isSuccess = encounter.isSuccess();
-            await narrator.describeEncounter(encounter, "end");
+            await narrator.describeEncounterOver(encounter);
             quest.endEncounter();
             if (isSuccess) {
                 await this.promptForTravel(guildId);
@@ -425,12 +488,8 @@ export default class QuestLord {
         }
 
         encounter.nextTurn();
-        const currentTurn = encounter.getCurrentTurn();
-        
-        await narrator.ponderAndDescribe(`It is now ${currentTurn.getName()}'s turn.`);
-        if (currentTurn instanceof Monster) {
-            await this.handleMonsterTurn(guildId);
-        }
+
+        await this.handleTurn(guildId);
     }
 
     private async handleMonsterTurn(guildId: string) {

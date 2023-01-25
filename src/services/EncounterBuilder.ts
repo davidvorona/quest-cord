@@ -3,6 +3,7 @@ import Encounter from "../game/Encounter";
 import CombatEncounter from "../game/CombatEncounter";
 import { randInList } from "../util";
 import CreatureFactory from "./CreatureFactory";
+import StealthEncounter from "../game/StealthEncounter";
 
 const EncounterType = {
     Combat: "Combat",      // Typical combat encounter
@@ -27,6 +28,11 @@ class EncounterBuilder {
             const monsters = this.creatureFactory
                 .createRandomBiomeTypeMonsterList(characters.length, biome);
             return new CombatEncounter(characters, monsters);
+        }
+        case (EncounterType.Stealth): {
+            const monsters = this.creatureFactory
+                .createRandomBiomeTypeMonsterList(characters.length, biome);
+            return new StealthEncounter(characters, monsters);
         }
         default:
             return new Encounter(characters);

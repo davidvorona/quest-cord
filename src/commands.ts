@@ -137,6 +137,18 @@ class CommandBuilder {
             builtCommands.push(...this.buildItemCommands());
             break;
         }
+        case CommandType.Stealth: {
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("sneak")
+                .setDescription("Try to sneak past the enemies")
+            );
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("surprise")
+                .setDescription("Surprise the enemies and attack!")
+            );
+            builtCommands.push(...this.buildItemCommands());
+            break;
+        }
         default:
             break;
         }
