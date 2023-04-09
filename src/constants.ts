@@ -2,7 +2,10 @@ export enum CommandType {
     NewQuest,
     Questing,
     Combat,
-    Stealth
+    Stealth,
+    Social,
+    Merchant,
+    Lookout
 }
 
 export const ACTIVITY = {
@@ -14,7 +17,8 @@ export const COMPENDIUM_SECTION = {
     MONSTERS: "monsters",
     CLASSES: "classes",
     ITEMS: "items",
-    SPELLS: "spells"
+    SPELLS: "spells",
+    NPCS: "npcs"
 } as const;
 
 export const ITEM_TYPE = {

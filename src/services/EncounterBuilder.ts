@@ -1,9 +1,12 @@
 import Character from "../game/Character";
 import Encounter from "../game/Encounter";
 import CombatEncounter from "../game/CombatEncounter";
-import { randInList } from "../util";
-import CreatureFactory from "./CreatureFactory";
 import StealthEncounter from "../game/StealthEncounter";
+import SocialEncounter from "../game/SocialEncounter";
+import MerchantEncounter from "../game/MerchantEncounter";
+import LookoutEncounter from "../game/LookoutEncounter";
+import CreatureFactory from "./CreatureFactory";
+import { randInList } from "../util";
 
 const EncounterType = {
     Combat: "Combat",      // Typical combat encounter
@@ -33,6 +36,20 @@ class EncounterBuilder {
             const monsters = this.creatureFactory
                 .createRandomBiomeTypeMonsterList(characters.length, biome);
             return new StealthEncounter(characters, monsters);
+        }
+        case (EncounterType.Social): {
+            const npcs = this.creatureFactory.createRandomNpcList(1);
+            return new SocialEncounter(characters, npcs);
+        }
+        case (EncounterType.Merchant): {
+            const merchant = this.creatureFactory.createRandomMerchant();
+            return new MerchantEncounter(characters, merchant);
+        }
+        case (EncounterType.Lookout): {
+            return new LookoutEncounter(characters);
+        }
+        case (EncounterType.Nothing): {
+            return new Encounter(characters);
         }
         default:
             return new Encounter(characters);

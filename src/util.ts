@@ -52,6 +52,13 @@ export const randInList = (list: unknown[]) => {
 };
 
 /**
+ * Returns a random key in an object.
+ */
+export const randKey = (object: Record<string, unknown>) => {
+    return Object.keys(object)[rand(Object.keys(object).length)];
+};
+
+/**
  * Creates a random UUID using the crypto package.
  */
 export const createRandomId = () => crypto.randomUUID();

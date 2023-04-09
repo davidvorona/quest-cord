@@ -4,6 +4,7 @@ import Consumable from "../game/Consumable";
 import { BaseItem, BaseConsumable, BaseWeapon } from "../types";
 import CompendiumReader from "./CompendiumReader";
 import Weapon from "../game/Weapon";
+import { randKey } from "../util";
 
 class ItemFactory {
     compendium: CompendiumReader;
@@ -32,6 +33,19 @@ class ItemFactory {
 
     hydrateList(itemIds: string[] = []) {
         return itemIds.map(id => this.create(id));
+    }
+
+    private createRandomItem(): Item {
+        const key = randKey(this.data);
+        return this.create(key);
+    }
+
+    createRandomItemList(length: number) {
+        const list: Item[] = [];
+        for (let i = 0; i < length; i++) {
+            list.push(this.createRandomItem());
+        }
+        return list;
     }
 }
 

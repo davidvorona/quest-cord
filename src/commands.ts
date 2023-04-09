@@ -149,6 +149,34 @@ class CommandBuilder {
             builtCommands.push(...this.buildItemCommands());
             break;
         }
+        case CommandType.Social: {
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("talk")
+                .setDescription("Beg, bully, or bandy your way forward")
+            );
+            builtCommands.push(...this.buildItemCommands());
+            break;
+        }
+        case CommandType.Merchant: {
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("buy")
+                .setDescription("Buy items from the merchant's stock")
+            );
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("sell")
+                .setDescription("Sell items to the merchant")
+            );
+            builtCommands.push(...this.buildItemCommands());
+            break;
+        }
+        case CommandType.Lookout: {
+            builtCommands.push(new SlashCommandBuilder()
+                .setName("lookout")
+                .setDescription("Take in your surroundings from a vantage point")
+            );
+            builtCommands.push(...this.buildItemCommands());
+            break;
+        }
         default:
             break;
         }

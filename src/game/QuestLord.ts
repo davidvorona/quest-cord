@@ -23,6 +23,9 @@ import Narrator from "./Narrator";
 import CombatEncounter from "./CombatEncounter";
 import SpellFactory from "../services/SpellFactory";
 import StealthEncounter from "./StealthEncounter";
+import SocialEncounter from "./SocialEncounter";
+import MerchantEncounter from "./MerchantEncounter";
+import LookoutEncounter from "./LookoutEncounter";
 
 type QuestLordInteraction = CommandInteraction & {
     guildId: string;
@@ -124,6 +127,22 @@ export default class QuestLord {
                 await this.handleSurprise(interaction);
             }
 
+            if (interaction.commandName === "talk") {
+                await this.handleTalk(interaction);
+            }
+
+            if (interaction.commandName === "buy") {
+                this.handleBuy(interaction);
+            }
+
+            if (interaction.commandName === "sell") {
+                await this.handleSell(interaction);
+            }
+
+            if (interaction.commandName === "lookout") {
+                await this.handleLookout(interaction);
+            }
+
             // User uses an item in their inventory
             if (interaction.commandName === "use") {
                 await this.handleUse(interaction);
@@ -206,7 +225,7 @@ export default class QuestLord {
             });
         } else {
             const optionClass = interaction.options.getString("class", true);
-            const character = this.creatureFactory.createCharacter(optionClass);
+            const character = this.creatureFactory.createClassCharacter(optionClass);
             const pc = quest.createPlayerCharacter(userId, character);
             // The name of the base character is the class name, the character name
             // is attached to the PlayerCharacter object
@@ -244,24 +263,29 @@ export default class QuestLord {
             });
         } else {
             const direction = interaction.options.getString("direction", true) as Direction;
+            const coordinates = quest.getPartyCoordinates();
+            // Store current biome string in a variable for use
+            const biome = world.getBiome(coordinates);
+
+            let x, y;
             try {
-                const coordinates = quest.getPartyCoordinates();
-                // Store current biome string in a variable for use
-                const biome = world.getBiome(coordinates);
                 // Apply the cardinal direction to the party's coordinates, this method throws an
                 // error if the delta would move the party off the world
-                const [x, y] = world.applyDirectionToCoordinates(direction, coordinates);
-                quest.setPartyCoordinates([x, y]);
-
-                const newBiome = world.getBiome([x, y]);
-                await narrator.ponderAndReply(interaction, `You choose to travel ${direction}.`);
-                await narrator.describeTravel(biome, newBiome);
-
-                // Now that the party has reached a new location, start the next encounter
-                await this.startEncounter(guildId);
+                [x, y] = world.applyDirectionToCoordinates(direction, coordinates);
             } catch (err) {
                 await interaction.reply(`You cannot travel further ${direction}.`);
+                return;
             }
+
+            // Set the new coordinates, and continue
+            quest.setPartyCoordinates([x, y]);
+
+            const newBiome = world.getBiome([x, y]);
+            await narrator.ponderAndReply(interaction, `You choose to travel ${direction}.`);
+            await narrator.describeTravel(biome, newBiome);
+
+            // Now that the party has reached a new location, start the next encounter
+            await this.startEncounter(guildId);
         }
     }
 
@@ -299,8 +323,7 @@ export default class QuestLord {
 
         const encounter = quest.getEncounter();
         if (encounter && encounter instanceof TurnBasedEncounter) {
-            if (encounter.getCurrentTurn() === pc.getCharacter()
-            ) {
+            if (encounter.getCurrentTurn() === pc.getCharacter()) {
                 await useItem();
             } else {
                 await interaction.reply({
@@ -344,6 +367,84 @@ export default class QuestLord {
         await narrator.ponderAndReply(interaction, "You're about to mount a surprise attack "
             + "when you reconsider, and decide to sneak past instead.");
         const encounter = quest.encounter;
+        if (encounter.isOver()) {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
+        }
+    }
+
+    private async handleTalk(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (!quest.isInEncounter() || !(quest.encounter instanceof SocialEncounter)) {
+            throw new Error("There is no active social encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        const encounter = quest.encounter;
+        const npcName = encounter.getNpcNames()[0];
+        await narrator.ponderAndReply(interaction, "You walk up to the figure, and "
+            + `strike up a conversation. Their name is ${npcName}. After some pleasant `
+            + "talk, you bid farewell and continue on your way.");
+        if (encounter.isOver()) {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
+        }
+    }
+
+    private async handleBuy(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
+            throw new Error("There is no active merchant encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        const encounter = quest.encounter;
+        await narrator.ponderAndReply(interaction, "You offer to pay gold for the merchant's "
+            + "goods. Unfortunately, he's out of stock!");
+        if (encounter.isOver()) {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
+        }
+    }
+
+    private async handleSell(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
+            throw new Error("There is no active merchant encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        const encounter = quest.encounter;
+        await narrator.ponderAndReply(interaction, "You offer to sell the merchant some of your "
+            + "loot. Unfortunately, he's out of gold!");
+        if (encounter.isOver()) {
+            quest.endEncounter();
+            await this.promptForTravel(guildId);
+        }
+    }
+
+    private async handleLookout(interaction: QuestLordInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (!quest.isInEncounter() || !(quest.encounter instanceof LookoutEncounter)) {
+            throw new Error("There is no active lookout encounter, aborting");
+        }
+
+        const narrator = quest.getNarrator();
+        const encounter = quest.encounter;
+        await narrator.ponderAndReply(interaction, "You take in the view, expanding your "
+            + "map in all directions.");
         if (encounter.isOver()) {
             quest.endEncounter();
             await this.promptForTravel(guildId);
@@ -417,7 +518,20 @@ export default class QuestLord {
                 type: CommandType.Stealth,
                 targets: monsterNames
             });
+        } else if (encounter instanceof SocialEncounter) {
+            await setGuildCommands(guildId, {
+                type: CommandType.Social
+            });
+        } else if (encounter instanceof MerchantEncounter) {
+            await setGuildCommands(guildId, {
+                type: CommandType.Merchant
+            });
+        } else if (encounter instanceof LookoutEncounter) {
+            await setGuildCommands(guildId, {
+                type: CommandType.Lookout
+            });
         } else {
+            quest.endEncounter();
             await setGuildCommands(guildId, { type: CommandType.Questing });
         }
 

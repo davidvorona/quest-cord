@@ -13,6 +13,9 @@ import { sendTypingAndWaitRandom, delay, rand } from "../util";
 import Creature from "./Creature";
 import Character from "./Character";
 import StealthEncounter from "./StealthEncounter";
+import SocialEncounter from "./SocialEncounter";
+import MerchantEncounter from "./MerchantEncounter";
+import LookoutEncounter from "./LookoutEncounter";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -92,6 +95,14 @@ class Narrator {
         } else if (encounter instanceof StealthEncounter) {
             await this.ponderAndDescribe("Choose between a stealthy approach with the **/sneak** "
                 + "command, or surprise your enemies with **/surprise**!");
+        } else if (encounter instanceof SocialEncounter) {
+            await this.ponderAndDescribe("Talk to the figure with the **/talk** command.");
+        } else if (encounter instanceof MerchantEncounter) {
+            await this.ponderAndDescribe("Trade with the merchant using the **/buy** or "
+                + "**/sell** commands!");
+        } else if (encounter instanceof LookoutEncounter) {
+            await this.ponderAndDescribe("Take advantage of the view, and uncover more of the map "
+                + "with the **/lookout** command!");
         } else {
             await this.ponderAndDescribe("You can travel with the **/travel** command.");
         }
@@ -115,6 +126,15 @@ class Narrator {
         } else if (encounter instanceof StealthEncounter) {
             await this.ponderAndDescribe("You peer forward and see a group of monsters. "
                 + "They don't seem to see your party yet.");
+        } else if (encounter instanceof SocialEncounter) {
+            await this.ponderAndDescribe("Up ahead, you see a figure standing. They seem "
+                + "friendly.");
+        } else if (encounter instanceof MerchantEncounter) {
+            await this.ponderAndDescribe("You've come across a merchant. Hooray for "
+                + "mutually beneficial trade!");
+        } else if (encounter instanceof LookoutEncounter) {
+            await this.ponderAndDescribe("You find yourself at a vantage point, giving you "
+                + "a great view of land around you.");
         } else {
             await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
         }

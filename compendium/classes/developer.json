@@ -1,0 +1,12 @@
+{
+    "id": "developer",
+    "name": "Developer",
+    "hp": 100,
+    "damage": 5,
+    "equipment": {
+        "weapon": "sword"
+    },
+    "spells": [],
+    "items": ["elixir", "potion"],
+    "lvlGains": []
+}

@@ -1,0 +1,11 @@
+{
+    "id": "traveler",
+    "name": "Traveler",
+    "hp": 6,
+    "damage": 1,
+    "equipment": {
+        "weapon": "sword",
+        "armor": "leather_armor"
+    },
+    "items": ["torch"]
+}
