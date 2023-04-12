@@ -470,11 +470,7 @@ export default class QuestLord {
             .setColor(0x0099FF)
             .setDescription("What do you want to buy?");
         const merchant = quest.encounter.getMerchant();
-        const stock = new Set(merchant.getCharacter().getInventory());
-        const options = [...stock].map((n: string) => ({
-            label: n,
-            value: n.toLowerCase()
-        }));
+        const options = merchant.getCharacter().getInventory().getInteractionOptions();
         const row = new ActionRowBuilder<StringSelectMenuBuilder>()
             .addComponents(
                 new StringSelectMenuBuilder()
@@ -521,11 +517,7 @@ export default class QuestLord {
             .setColor(0x0099FF)
             .setDescription("What do you want to sell?");
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const inventory = pc.getCharacter().getInventory();
-        const options = inventory.map((n: string) => ({
-            label: n,
-            value: n.toLowerCase()
-        }));
+        const options = pc.getCharacter().getInventory().getInteractionOptions();
         const row = new ActionRowBuilder<StringSelectMenuBuilder>()
             .addComponents(
                 new StringSelectMenuBuilder()
@@ -585,9 +577,10 @@ export default class QuestLord {
         const quest = this.quests[guildId];
 
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const inventory = pc.getCharacter().getInventory();
-        const inventoryEmbed = inventory.length
-            ? inventory.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "")
+        const quantities = pc.getCharacter().getInventory().getQuantities();
+        const inventoryEmbed = quantities.length
+            ? quantities.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** `
+                + `${curr.item.name}: ${curr.quantity}`, "")
             : "Inventory is empty";
 
         const embed = new EmbedBuilder()
@@ -780,11 +773,7 @@ export default class QuestLord {
             .setColor(0x0099FF)
             .setDescription("Which item are you using?");
         const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const inventory = pc.getCharacter().getInventory();
-        const options = inventory.map((n: string) => ({
-            label: n,
-            value: n.toLowerCase()
-        }));
+        const options = pc.getCharacter().getInventory().getInteractionOptions();
         const row = new ActionRowBuilder<StringSelectMenuBuilder>()
             .addComponents(
                 new StringSelectMenuBuilder()
