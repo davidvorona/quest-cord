@@ -1,5 +1,5 @@
 import path from "path";
-import { Client, Guild, Intents } from "discord.js";
+import { Client, Guild, IntentsBitField, Events } from "discord.js";
 import QuestLord from "./game/QuestLord";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 import { parseJson, readFile } from "./util";
@@ -13,11 +13,11 @@ const questLord = new QuestLord(compendium);
 
 const client = new Client({
     intents: [
-        Intents.FLAGS.GUILDS
+        IntentsBitField.Flags.Guilds
     ]
 });
 
-client.on("ready", async () => {
+client.on(Events.ClientReady, async () => {
     try {
         if (client.user) {
             console.info("Logged in as", client.user.tag);
@@ -32,12 +32,12 @@ client.on("ready", async () => {
     }
 });
 
-client.on("guildCreate", async (guild: Guild) => {
+client.on(Events.GuildCreate, async (guild: Guild) => {
     // Registers the default commands when the bot joins a guild
     await setGuildCommands(guild.id);
 });
 
-client.on("interactionCreate", (interaction) =>
+client.on(Events.InteractionCreate, (interaction) =>
     questLord.handleInteraction(interaction));
 
 client.login(TOKEN);

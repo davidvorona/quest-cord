@@ -1,9 +1,11 @@
 import {
-    MessageEmbed,
     TextBasedChannel,
-    MessageOptions,
-    CommandInteraction,
-    InteractionReplyOptions
+    BaseMessageOptions,
+    ChatInputCommandInteraction,
+    InteractionReplyOptions,
+    EmbedBuilder,
+    StringSelectMenuInteraction,
+    InteractionUpdateOptions
 } from "discord.js";
 import Encounter from "./Encounter";
 import TextBuilder from "../text";
@@ -35,13 +37,13 @@ class Narrator {
         this.channel = channel;
     }
 
-    async ponderAndDescribe(payload: string | MessageOptions) {
+    async ponderAndDescribe(payload: string | BaseMessageOptions) {
         await sendTypingAndWaitRandom(this.channel, Narrator.TIME_TO_PONDER);
         await this.channel.send(payload);
     }
 
     async ponderAndReply(
-        interaction: CommandInteraction,
+        interaction: ChatInputCommandInteraction,
         payload: string | InteractionReplyOptions
     ) {
         const ephemeral = typeof payload !== "string" ? payload.ephemeral : false;
@@ -50,6 +52,17 @@ class Narrator {
         }
         await delay(rand(Narrator.TIME_TO_PONDER));
         await interaction.editReply(payload);
+    }
+
+    async ponderAndUpdate(
+        interaction: StringSelectMenuInteraction,
+        payload: string | InteractionUpdateOptions
+    ) {
+        if (interaction.deferred) {
+            await interaction.deferUpdate();
+        }
+        await delay(rand(Narrator.TIME_TO_PONDER));
+        await interaction.update(payload);
     }
 
     async describeNewParty(party: Character[]) {
@@ -118,7 +131,7 @@ class Narrator {
             // Send an embed of the turn order
             const turnOrder = encounter.getTurnOrderNames()
                 .reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
-            const embed = new MessageEmbed()
+            const embed = new EmbedBuilder()
                 .setColor("#0099ff")
                 .setTitle("Turn order")
                 .setDescription(turnOrder);

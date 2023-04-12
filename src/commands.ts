@@ -1,20 +1,16 @@
 import path from "path";
-import { REST } from "@discordjs/rest";
-import { Routes } from "discord-api-types/v9";
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { ConfigJson, AuthJson, AnyObject, CharacterClass } from "./types";
+import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { ConfigJson, AuthJson, CharacterClass } from "./types";
 import { parseJson, readFile } from "./util";
-import { CommandType, DIRECTION, FORMATTED_DIRECTION } from "./constants";
+import { DIRECTION, FORMATTED_DIRECTION } from "./constants";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const defaultCommands = require("../config/commands");
 const authPath = path.join(__dirname, "../config/auth.json");
 const { TOKEN } = parseJson(readFile(authPath)) as AuthJson;
 const configPath = path.join(__dirname, "../config/config.json");
 const { CLIENT_ID } = parseJson(readFile(configPath)) as ConfigJson;
 
-const rest = new REST({ version: "9" }).setToken(TOKEN);
+const rest = new REST({ version: "10" }).setToken(TOKEN);
 
 interface CommandBuilderArgs {
     type: number;
@@ -43,31 +39,61 @@ class CommandBuilder {
         return { name, value };
     }
 
-    private buildItemCommands() {
-        return [
-            new SlashCommandBuilder()
-                .setName("use")
-                .setDescription("Use an item")
-                .addStringOption((option) => {
-                    return option
-                        .setName("item")
-                        .setDescription("Which item do you want to use?")
-                        .setRequired(true);
-                }),
-            new SlashCommandBuilder()
-                .setName("inventory")
-                .setDescription("Show your current inventory")
+    build() {
+        const classChoices = Object.values(compendium.data.classes).map(
+            (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
+        );
+        const directionChoices = [
+            { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
+            { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
+            { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
+            { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
         ];
-    }
-
-    build(): AnyObject[] {
-        const builtCommands = [];
-        switch (this.type) {
-        case CommandType.NewQuest: {
-            const choices = Object.values(compendium.data.classes).map(
-                (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
-            );
-            builtCommands.push(new SlashCommandBuilder()
+        return [
+            // /ping
+            new SlashCommandBuilder()
+                .setName("ping")
+                .setDescription("Replies with pong!")
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            // /start
+            new SlashCommandBuilder()
+                .setName("start")
+                .setDescription("Start a quest for a party")
+                .addChannelOption((option) => {
+                    return option
+                        .setName("channel")
+                        .setDescription("Pick a channel for this quest")
+                        .setRequired(true);
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player1")
+                        .setDescription("Player 1")
+                        .setRequired(true);
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player2")
+                        .setDescription("Player 2");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player3")
+                        .setDescription("Player 3");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player4")
+                        .setDescription("Player 4");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player5")
+                        .setDescription("Player 5");
+                })
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            // /play
+            new SlashCommandBuilder()
                 .setName("play")
                 .setDescription("Create a character and embark on a quest")
                 .addStringOption((option) => {
@@ -75,19 +101,22 @@ class CommandBuilder {
                         .setName("class")
                         .setDescription("Pick a character class")
                         .setRequired(true)
-                        .addChoices(...choices);
-                })
-            );
-            break;
-        }
-        case CommandType.Questing: {
-            const choices = [
-                { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
-                { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
-                { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
-                { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
-            ];
-            builtCommands.push(new SlashCommandBuilder()
+                        .addChoices(...classChoices);
+                }),
+            // /inventory
+            new SlashCommandBuilder()
+                .setName("inventory")
+                .setDescription("Show your current inventory"),
+            // /status
+            new SlashCommandBuilder()
+                .setName("status")
+                .setDescription("Show your character's current status"),
+            // /map
+            new SlashCommandBuilder()
+                .setName("map")
+                .setDescription("Display the map"),
+            // /travel
+            new SlashCommandBuilder()
                 .setName("travel")
                 .setDescription("What direction will you travel next?")
                 .addStringOption((option) => {
@@ -95,94 +124,65 @@ class CommandBuilder {
                         .setName("direction")
                         .setDescription("Pick the compass direction")
                         .setRequired(true)
-                        .addChoices(...choices);
-                })
-            );
-            builtCommands.push(...this.buildItemCommands());
-            break;
-        }
-        case CommandType.Combat: {
-            const targets = this.targets as string[];
-            const choices = targets.map((t, idx) => {
-                const targetDescription = `${t} ${idx + 1}`;
-                return this.buildIntegerChoices(targetDescription, idx);
-            });
-            builtCommands.push(new SlashCommandBuilder()
+                        .addChoices(...directionChoices);
+                }),
+            // /action
+            new SlashCommandBuilder()
                 .setName("action")
-                .setDescription("Act on your turn")
+                .setDescription("What do you want to do?")
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("use")
+                        .setDescription("Use an item in your inventory");
+                })
+                // /action attack
                 .addSubcommand((subcommand) => {
                     return subcommand
                         .setName("attack")
-                        .setDescription("Strike at an enemy!")
-                        .addIntegerOption((option) => {
-                            return option
-                                .setName("target")
-                                .setDescription("Who do you want to attack?")
-                                .setRequired(true)
-                                .addChoices(...choices);
-                        });
+                        .setDescription("Strike at an enemy!");
                 })
+                // /action cast
                 .addSubcommand((subcommand) => {
                     return subcommand
                         .setName("cast")
-                        .setDescription("Cast a spell")
-                        .addStringOption((option) => {
-                            return option
-                                .setName("spell")
-                                .setDescription("Which spell do you want to cast?")
-                                .setRequired(true);
-                        });
+                        .setDescription("Cast a spell");
                 })
-            );
-            builtCommands.push(...this.buildItemCommands());
-            break;
-        }
-        case CommandType.Stealth: {
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("sneak")
-                .setDescription("Try to sneak past the enemies")
-            );
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("surprise")
-                .setDescription("Surprise the enemies and attack!")
-            );
-            builtCommands.push(...this.buildItemCommands());
-            break;
-        }
-        case CommandType.Social: {
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("talk")
-                .setDescription("Beg, bully, or bandy your way forward")
-            );
-            builtCommands.push(...this.buildItemCommands());
-            break;
-        }
-        case CommandType.Merchant: {
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("buy")
-                .setDescription("Buy items from the merchant's stock")
-            );
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("sell")
-                .setDescription("Sell items to the merchant")
-            );
-            builtCommands.push(...this.buildItemCommands());
-            break;
-        }
-        case CommandType.Lookout: {
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("lookout")
-                .setDescription("Take in your surroundings from a vantage point")
-            );
-            builtCommands.push(...this.buildItemCommands());
-            break;
-        }
-        default:
-            break;
-        }
-        return [
-            ...defaultCommands,
-            ...builtCommands
+                // /action sneak
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("sneak")
+                        .setDescription("Try to sneak past the enemies");
+                })
+                // /action surprise
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("surprise")
+                        .setDescription("Surprise the enemies and attack!");
+                })
+                // /action talk
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("talk")
+                        .setDescription("Beg, bully, or bandy your way forward");
+                })
+                // /action buy
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("buy")
+                        .setDescription("Buy items from the merchant's stock");
+                })
+                // /action sell
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("sell")
+                        .setDescription("Sell items to the merchant");
+                })
+                // /action lookout
+                .addSubcommand((subcommand) => {
+                    return subcommand
+                        .setName("lookout")
+                        .setDescription("Take in your surroundings from a vantage point");
+                })
         ];
     }
 }

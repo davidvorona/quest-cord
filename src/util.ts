@@ -1,7 +1,13 @@
 import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { CommandInteraction, GuildMember, TextBasedChannel } from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    GuildMember,
+    PermissionsBitField,
+    TextBasedChannel
+} from "discord.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isEmpty = (thing: any) =>
@@ -77,7 +83,7 @@ export const loadNames = () => {
 /**
  * Extracts guild members from the /start command options. 
  */
-export const getPlayersFromStartCommand = (interaction: CommandInteraction) => {
+export const getPlayersFromStartCommand = (interaction: ChatInputCommandInteraction) => {
     const players = [];
     const getPlayer = (player: string) => interaction.options.getMentionable(player);
     players.push(interaction.options.getMentionable("player1"));
@@ -96,6 +102,29 @@ export const getPlayersFromStartCommand = (interaction: CommandInteraction) => {
     return players as GuildMember[];
 };
 
+/**
+ * Takes a map of PermissionBitFields keyed to a string identifier, such
+ * as a user ID, and creates a readable message to send as a reply.
+ * 
+ * Example:
+ * Cowberry5 is missing permissions: SendMessages
+ */
+export const sendMissingPermissionsMessage = async (
+    interaction: ChatInputCommandInteraction,
+    errors: Record<string, PermissionsBitField>
+) => {
+    const permissionsMessage = Object.keys(errors)
+        .reduce((acc, username) => acc +=
+            `**${username}** is missing permissions: **${errors[username].toArray()}**\n`,
+        "");
+    const embed = new EmbedBuilder()
+        .setDescription(`It looks like you have some permissions issues.\n\n${permissionsMessage}`);
+    await interaction.reply({
+        embeds: [embed],
+        ephemeral: true
+    });
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const shuffleArray = (array: any[]) => array
     .map(value => ({ value, sort: Math.random() }))
@@ -104,7 +133,7 @@ export const shuffleArray = (array: any[]) => array
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const sendTypingAndWait = async (channel: TextBasedChannel , ms: number) => {
+export const sendTypingAndWait = async (channel: TextBasedChannel, ms: number) => {
     await channel.sendTyping();
     await delay(ms);
 };
