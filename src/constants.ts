@@ -1,13 +1,3 @@
-export enum CommandType {
-    NewQuest,
-    Questing,
-    Combat,
-    Stealth,
-    Social,
-    Merchant,
-    Lookout
-}
-
 export const ACTIVITY = {
     ENCOUNTER: "encounter",
     ATTACK: "attack"

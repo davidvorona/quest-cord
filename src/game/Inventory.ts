@@ -64,8 +64,7 @@ export default class Inventory {
      * [
      *  {
      *      value: "sword",
-     *      label: "Sword (1)",
-     *     
+     *      label: "Sword (1)"
      *  },
      *  {
      *      value: "potion",

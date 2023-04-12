@@ -23,7 +23,11 @@ module.exports = {
         ],
         "max-len": ["error", { "code": 100 }],
         "no-trailing-spaces": ["error", {}],
-        "space-before-function-paren": ["error", "never"],
+        "space-before-function-paren": ["error", {
+            "anonymous": "always",
+            "named": "never",
+            "asyncArrow": "always"
+        }],
         "space-in-parens": ["error", "never"],
         "eol-last": ["error", "always"]
     }

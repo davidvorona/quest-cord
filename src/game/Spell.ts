@@ -2,7 +2,7 @@ import { BaseSpell, Effects } from "../types";
 
 class Spell {
     id: string;
-    
+
     name: string;
 
     damage?: number;

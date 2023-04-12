@@ -27,7 +27,7 @@ class World {
     /**
      * The fault axis determines the direction that mountain ranges form. Faults on the
      * y-axis would generate north-south mountain ranges, whereas fault on the x-axis
-     * would generate east-west mountain ranges. 
+     * would generate east-west mountain ranges.
      */
     readonly faultAxis: number;
 
