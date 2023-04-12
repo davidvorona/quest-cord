@@ -106,21 +106,21 @@ class Narrator {
     async explainEncounter(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
             await this.ponderAndDescribe("On your turn, you can act with the **/action** command. "
-                + "You can also use items with **/use**.");
+                + "You can also use items with **/action use**.");
         } else if (encounter instanceof StealthEncounter) {
             await this.ponderAndDescribe("Choose between a stealthy approach with the **/sneak** "
-                + "command, or surprise your enemies with **/surprise**!");
+                + "command, or surprise your enemies with **/action surprise**!");
         } else if (encounter instanceof SocialEncounter) {
-            await this.ponderAndDescribe("Talk to the figure with the **/talk** command.");
+            await this.ponderAndDescribe("Talk to the figure with the **/action talk** command.");
         } else if (encounter instanceof MerchantEncounter) {
-            await this.ponderAndDescribe("Trade with the merchant using the **/buy** or "
-                + "**/sell** commands!");
+            await this.ponderAndDescribe("Trade with the merchant using the **/action buy** or "
+                + "**/action sell** commands!");
         } else if (encounter instanceof LookoutEncounter) {
             await this.ponderAndDescribe("Take advantage of the view, and uncover more of the map "
-                + "with the **/lookout** command!");
+                + "with the **/action lookout** command!");
         } else if (encounter instanceof RestEncounter) {
-            await this.ponderAndDescribe("The days is yours! Rest, relax, and **/travel** when you "
-                + "are ready to move on.");
+            await this.ponderAndDescribe("The days is yours! Rest, relax, and **/travel** "
+                + "when you are ready to move on.");
         } else {
             await this.ponderAndDescribe("You can travel with the **/travel** command.");
         }
