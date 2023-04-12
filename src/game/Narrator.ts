@@ -19,6 +19,7 @@ import SocialEncounter from "./SocialEncounter";
 import MerchantEncounter from "./MerchantEncounter";
 import LookoutEncounter from "./LookoutEncounter";
 import RestEncounter from "./RestEncounter";
+import Spell from "./Spell";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -97,8 +98,8 @@ class Narrator {
         await this.ponderAndDescribe(`You deal ${damage} damage.`);
     }
 
-    async describeCastSpell(attacker: Creature, spell: string) {
-        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell} at `
+    async describeCastSpell(attacker: Creature, spell: Spell) {
+        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at `
             + "the enemy and deals 0 damage.");
     }
 

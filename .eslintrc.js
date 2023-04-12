@@ -21,6 +21,10 @@ module.exports = {
         "@typescript-eslint/indent": [
             "error", 4, { "MemberExpression": 1, "SwitchCase": 0 }
         ],
-        "max-len": ["error", { "code": 100 }]
+        "max-len": ["error", { "code": 100 }],
+        "no-trailing-spaces": ["error", {}],
+        "space-before-function-paren": ["error", "never"],
+        "space-in-parens": ["error", "never"],
+        "eol-last": ["error", "always"]
     }
 };

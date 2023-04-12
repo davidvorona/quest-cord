@@ -1,13 +1,8 @@
-import path from "path";
 import { Client, Guild, IntentsBitField, Events } from "discord.js";
 import QuestLord from "./game/QuestLord";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
-import { parseJson, readFile } from "./util";
-import { AuthJson } from "./types";
 import setGuildCommands from "./commands";
-
-const authPath = path.join(__dirname, "../config/auth.json");
-const { TOKEN } = parseJson(readFile(authPath)) as AuthJson;
+import config from "./config";
 
 const questLord = new QuestLord(compendium);
 
@@ -40,4 +35,4 @@ client.on(Events.GuildCreate, async (guild: Guild) => {
 client.on(Events.InteractionCreate, (interaction) =>
     questLord.handleInteraction(interaction));
 
-client.login(TOKEN);
+client.login(config.authToken);

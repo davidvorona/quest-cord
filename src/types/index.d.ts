@@ -6,8 +6,9 @@ export interface AuthJson {
 /* Structure of JSON file with bot config */
 export interface ConfigJson {
     CLIENT_ID: string;
-    GUILD_ID: string;
-    DATA_DIR: string;
+    GUILD_ID?: string;
+    DATA_DIR?: string;
+    FORCE_ENCOUNTER_TYPE?: string;
 }
 
 export interface BiomeData {

@@ -149,10 +149,12 @@ export default class QuestLord {
             if (interaction instanceof ChatInputCommandInteraction) {
                 console.error(`Failed to process '/${interaction.commandName}' command `
                     + `due to: ${err}`);
-                await interaction.reply({
-                    content: "Failed to handle command, please try again later.",
-                    ephemeral: true
-                });
+                if (!interaction.replied) {
+                    await interaction.reply({
+                        content: "Failed to handle command, please try again later.",
+                        ephemeral: true
+                    });
+                }
             } else {
                 console.error(`Failed to handle interaction due to: ${err}`);
             }
@@ -169,8 +171,12 @@ export default class QuestLord {
             }
 
             // Selecting a spell to cast
-            if (interaction.customId === "spell") {
+            if (interaction.customId === "spell:cast") {
                 await this.handleCastSpell(interaction);
+            }
+
+            if (interaction.customId === "spell:target") {
+                await this.handleSpellTarget(interaction);
             }
 
             // Choosing an item to use
@@ -240,7 +246,7 @@ export default class QuestLord {
             await sendMissingPermissionsMessage(interaction, errors);
             return;
         }
-        
+
         // Create and register world for guild
         const world = new World(guildId);
         this.worlds[guildId] = world;
@@ -283,23 +289,26 @@ export default class QuestLord {
                 content: "Destiny has not claimed you yet, your time will come...",
                 ephemeral: true
             });
+            return;
         // Ensure user has not already created a character
-        } else if (quest.isCharacterCreated(userId)) {
+        }
+        if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
                 ephemeral: true
             });
-        } else {
-            const optionClass = interaction.options.getString("class", true);
-            const character = this.creatureFactory.createClassCharacter(optionClass);
-            const pc = quest.createPlayerCharacter(userId, character);
-            // The name of the base character is the class name, the character name
-            // is attached to the PlayerCharacter object
-            await narrator.ponderAndReply(interaction, {
-                content: `Character *${pc.getName()}*, level ${pc.lvl} ${optionClass}, created...`,
-                ephemeral: true
-            });
+            return;
         }
+
+        const optionClass = interaction.options.getString("class", true);
+        const character = this.creatureFactory.createClassCharacter(optionClass);
+        const pc = quest.createPlayerCharacter(userId, character);
+        // The name of the base character is the class name, the character name
+        // is attached to the PlayerCharacter object
+        await narrator.ponderAndReply(interaction, {
+            content: `Character *${pc.getName()}*, level ${pc.lvl} ${optionClass}, created...`,
+            ephemeral: true
+        });
 
         // If adding this character completes the party, then start the quest with an encounter
         if (quest.areAllCharactersCreated()) {
@@ -322,7 +331,7 @@ export default class QuestLord {
         const narrator = quest.getNarrator();
         // Travel can only happen between encounters, or if the encounter is a RestEncounter
         if (quest.isInEncounter() && !(quest.encounter instanceof RestEncounter)) {
-            await interaction.reply({ 
+            await interaction.reply({
                 content: "You cannot travel during an encounter.",
                 ephemeral: true
             });
@@ -465,7 +474,7 @@ export default class QuestLord {
         if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
             throw new Error("There is no active merchant encounter, aborting");
         }
-    
+
         const embed = new EmbedBuilder()
             .setColor(0x0099FF)
             .setDescription("What do you want to buy?");
@@ -512,7 +521,7 @@ export default class QuestLord {
         if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
             throw new Error("There is no active merchant encounter, aborting");
         }
-    
+
         const embed = new EmbedBuilder()
             .setColor(0x0099FF)
             .setDescription("What do you want to sell?");
@@ -608,7 +617,7 @@ export default class QuestLord {
         const map = world.stringify(quest.getPartyCoordinates());
         console.info(map);
     }
-    
+
     /* GAME METHODS */
 
     private async failQuest(guildId: string): Promise<void> {
@@ -658,14 +667,14 @@ export default class QuestLord {
 
     private async handleTurn(guildId: string) {
         const quest = this.quests[guildId];
-        
+
         if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
             throw new Error("There is no active turn-based encounter, aborting");
         }
 
         const narrator = quest.getNarrator();
         const encounter = quest.encounter;
-        const currentTurn = encounter.getCurrentTurn();            
+        const currentTurn = encounter.getCurrentTurn();
         await narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
         // If its a monster's turn, invoke its handler
         if (currentTurn instanceof Monster) {
@@ -675,7 +684,7 @@ export default class QuestLord {
 
     private async handleNextTurn(guildId: string) {
         const quest = this.quests[guildId];
-        
+
         if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
             throw new Error("There is no active turn-based encounter, aborting");
         }
@@ -763,7 +772,7 @@ export default class QuestLord {
     private async promptUse(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         const quest = this.quests[guildId];
-        
+
         const encounter = quest.encounter;
         if (encounter && encounter instanceof TurnBasedEncounter) {
             await this.validatePlayerTurn(interaction);
@@ -825,7 +834,7 @@ export default class QuestLord {
             }
         } else {
             await useItem();
-        }   
+        }
     }
 
     private async promptAttack(interaction: CommandInteraction): Promise<void> {
@@ -901,23 +910,32 @@ export default class QuestLord {
 
         const embed = new EmbedBuilder()
             .setColor(0x0099FF)
-            .setDescription("Who do you want to attack?");
-        const options = quest.encounter.getMonsterNames().map((n: string, idx) => ({
-            label: n,
-            value: idx.toString()
+            .setDescription("What spell do you want to cast?");
+        const pc = quest.getPlayerByUserId(interaction.user.id);
+        if (!pc) {
+            throw new Error("You do not have a character, aborting");
+        }
+        const options = pc.character.getSpells().map(s => ({
+            label: s.name,
+            value: s.id
         }));
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("targets")
-                    .setPlaceholder("Nothing selected")
-                    .addOptions(options)
-            );
-        await interaction.reply({
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
-        });
+        if (options.length) {
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                .addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId("spell:cast")
+                        .setPlaceholder("Nothing selected")
+                        .addOptions(options)
+                );
+            await interaction.reply({
+                ephemeral: true,
+                embeds: [embed],
+                components: [row]
+            });
+        } else {
+            throw new Error("You have no spells to cast!");
+        }
+
     }
 
     private async handleCastSpell(interaction: SelectMenuInteraction): Promise<void> {
@@ -930,16 +948,68 @@ export default class QuestLord {
             throw new Error("There is no active combat encounter, aborting");
         }
 
-        const narrator = quest.getNarrator();
+        const spellId = interaction.values[0];
 
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const spell = interaction.values[0];
+        const pc = quest.getPlayerByUserId(interaction.user.id);
+        if (!pc) {
+            throw new Error("You do not have a character, aborting");
+        }
+        const spell = pc.getCharacter().getSpell(spellId);
+        if (!spell) {
+            throw new Error("You do not have this spell, aborting");
+        }
+        pc.holdSpell(spellId);
+
+        const narrator = quest.getNarrator();
+        const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setDescription(`You choose to cast **${spell.name}**. Who do you want to target?`);
+        const options = quest.encounter.getMonsterNames().map((n: string, idx) => ({
+            label: n,
+            value: idx.toString()
+        }));
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId("spell:target")
+                    .setPlaceholder("Nothing selected")
+                    .addOptions(options)
+            );
         await narrator.ponderAndUpdate(interaction, {
-            content: "You prepare to cast the spell...",
-            components: [],
-            embeds: []
+            components: [row],
+            embeds: [embed]
         });
-        await narrator.describeCastSpell(pc.getCharacter(), spell);
+    }
+
+    private async handleSpellTarget(interaction: SelectMenuInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        const quest = this.quests[guildId];
+
+        await this.validatePlayerTurn(interaction);
+
+        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
+            throw new Error("There is no active combat encounter, aborting");
+        }
+
+        const pc = quest.getPlayerByUserId(interaction.user.id);
+        if (!pc) {
+            throw new Error("You do not have a character, aborting");
+        }
+
+        const heldSpell = pc.getHeldSpell();
+        if (!heldSpell) {
+            throw new Error("You are not holding this spell");
+        }
+
+        const narrator = quest.getNarrator();
+        narrator.ponderAndUpdate(interaction, {
+            content: "You prepare to cast the spell...",
+            embeds: [],
+            components: []
+        });
+        await narrator.describeCastSpell(pc.getCharacter(), heldSpell);
+
+        pc.releaseSpell();
 
         await this.handleNextTurn(guildId);
     }

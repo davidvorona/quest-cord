@@ -1,16 +1,12 @@
-import path from "path";
 import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
-import { ConfigJson, AuthJson, CharacterClass } from "./types";
-import { parseJson, readFile } from "./util";
+import { CharacterClass } from "./types";
 import { DIRECTION, FORMATTED_DIRECTION } from "./constants";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
+import config from "./config";
 
-const authPath = path.join(__dirname, "../config/auth.json");
-const { TOKEN } = parseJson(readFile(authPath)) as AuthJson;
-const configPath = path.join(__dirname, "../config/config.json");
-const { CLIENT_ID } = parseJson(readFile(configPath)) as ConfigJson;
+const { clientId, authToken } = config;
 
-const rest = new REST({ version: "10" }).setToken(TOKEN);
+const rest = new REST({ version: "10" }).setToken(authToken);
 
 interface CommandBuilderArgs {
     type: number;
@@ -198,7 +194,7 @@ export default async function setGuildCommands(guildId: string, args?: CommandBu
     try {
         console.log(`Refreshing application (/) commands for guild ${guildId}`);
         await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, guildId),
+            Routes.applicationGuildCommands(clientId, guildId),
             { body: commands }
         );
     } catch (error) {

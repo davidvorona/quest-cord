@@ -3,6 +3,7 @@ import Character from "./Character";
 
 const { firstNames, lastNames } = loadNames();
 
+
 export default class PlayerCharacter {
     readonly character: Character;
 
@@ -11,6 +12,8 @@ export default class PlayerCharacter {
     readonly firstName: string;
 
     readonly lastName: string;
+
+    heldSpell?: string;
 
     lvl: number;
 
@@ -34,5 +37,19 @@ export default class PlayerCharacter {
 
     getCharacter() {
         return this.character;
+    }
+
+    holdSpell(spellId: string) {
+        this.heldSpell = spellId;
+    }
+
+    releaseSpell() {
+        this.heldSpell = undefined;
+    }
+
+    getHeldSpell() {
+        if (this.heldSpell) {
+            return this.character.getSpell(this.heldSpell);
+        }
     }
 }

@@ -63,6 +63,14 @@ export default class Creature {
         return this.equipment.weapon;
     }
 
+    getSpell(spellId: string) {
+        return this.spells.find(s => s.id === spellId);
+    }
+
+    getSpells() {
+        return this.spells;
+    }
+
     applyEffects(effects: Effects) {
         if (effects.hp) {
             this.setHp(this.hp + effects.hp);

@@ -8,6 +8,7 @@ import LookoutEncounter from "../game/LookoutEncounter";
 import RestEncounter from "../game/RestEncounter";
 import CreatureFactory from "./CreatureFactory";
 import { randInList } from "../util";
+import config from "../config";
 
 const EncounterType = {
     Combat: "Combat",      // Typical combat encounter
@@ -26,7 +27,7 @@ class EncounterBuilder {
     }
 
     build(biome: string, characters: Character[]) {
-        const encounterType = randInList(Object.keys(EncounterType));
+        const encounterType = config.forceEncounterType || randInList(Object.keys(EncounterType));
         switch (encounterType) {
         case (EncounterType.Combat): {
             const monsters = this.creatureFactory
