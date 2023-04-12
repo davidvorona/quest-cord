@@ -14,5 +14,7 @@ export default class MerchantEncounter extends Encounter {
         );
     }
 
+    getMerchant = () => this.merchant;
+
     getMerchantName = () => this.merchant.getName();
 }

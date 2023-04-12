@@ -18,6 +18,7 @@ import StealthEncounter from "./StealthEncounter";
 import SocialEncounter from "./SocialEncounter";
 import MerchantEncounter from "./MerchantEncounter";
 import LookoutEncounter from "./LookoutEncounter";
+import RestEncounter from "./RestEncounter";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -116,6 +117,9 @@ class Narrator {
         } else if (encounter instanceof LookoutEncounter) {
             await this.ponderAndDescribe("Take advantage of the view, and uncover more of the map "
                 + "with the **/lookout** command!");
+        } else if (encounter instanceof RestEncounter) {
+            await this.ponderAndDescribe("The days is yours! Rest, relax, and **/travel** when you "
+                + "are ready to move on.");
         } else {
             await this.ponderAndDescribe("You can travel with the **/travel** command.");
         }
@@ -148,6 +152,9 @@ class Narrator {
         } else if (encounter instanceof LookoutEncounter) {
             await this.ponderAndDescribe("You find yourself at a vantage point, giving you "
                 + "a great view of land around you.");
+        } else if (encounter instanceof RestEncounter) {
+            await this.ponderAndDescribe("You find yourself in a place of peace, sheltered from "
+                + "bad weather and hidden from roaming monsters. A place to rest.");
         } else {
             await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
         }

@@ -5,6 +5,7 @@ import StealthEncounter from "../game/StealthEncounter";
 import SocialEncounter from "../game/SocialEncounter";
 import MerchantEncounter from "../game/MerchantEncounter";
 import LookoutEncounter from "../game/LookoutEncounter";
+import RestEncounter from "../game/RestEncounter";
 import CreatureFactory from "./CreatureFactory";
 import { randInList } from "../util";
 
@@ -14,7 +15,7 @@ const EncounterType = {
     Social: "Social",      // WIP: An encounter that involves a social interaction
     Merchant: "Merchant",  // WIP: An encounter with a traveling merchant with goods for sale
     Lookout: "Lookout",    // WIP: Get to a vantage point for greater map visibility
-    Nothing: "Nothing"     // WIP: A day where nothing happens, characters can rest and get buff
+    Rest: "Rest"            // WIP: A day where nothing happens, characters can rest and get buff
 } as const;
 
 class EncounterBuilder {
@@ -48,8 +49,8 @@ class EncounterBuilder {
         case (EncounterType.Lookout): {
             return new LookoutEncounter(characters);
         }
-        case (EncounterType.Nothing): {
-            return new Encounter(characters);
+        case (EncounterType.Rest): {
+            return new RestEncounter(characters);
         }
         default:
             return new Encounter(characters);
