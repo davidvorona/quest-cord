@@ -25,32 +25,32 @@ class EncounterBuilder {
     }
 
     build(biome: string, characters: Character[]) {
-        const encounterType = EncounterType.Combat; // randInList(Object.keys(EncounterType));
+        const encounterType = randInList(Object.keys(EncounterType));
         switch (encounterType) {
         case (EncounterType.Combat): {
             const monsters = this.creatureFactory
                 .createRandomBiomeTypeMonsterList(characters.length, biome);
             return new CombatEncounter(characters, monsters);
         }
-        // case (EncounterType.Stealth): {
-        //     const monsters = this.creatureFactory
-        //         .createRandomBiomeTypeMonsterList(characters.length, biome);
-        //     return new StealthEncounter(characters, monsters);
-        // }
-        // case (EncounterType.Social): {
-        //     const npcs = this.creatureFactory.createRandomNpcList(1);
-        //     return new SocialEncounter(characters, npcs);
-        // }
-        // case (EncounterType.Merchant): {
-        //     const merchant = this.creatureFactory.createRandomMerchant();
-        //     return new MerchantEncounter(characters, merchant);
-        // }
-        // case (EncounterType.Lookout): {
-        //     return new LookoutEncounter(characters);
-        // }
-        // case (EncounterType.Nothing): {
-        //     return new Encounter(characters);
-        // }
+        case (EncounterType.Stealth): {
+            const monsters = this.creatureFactory
+                .createRandomBiomeTypeMonsterList(characters.length, biome);
+            return new StealthEncounter(characters, monsters);
+        }
+        case (EncounterType.Social): {
+            const npcs = this.creatureFactory.createRandomNpcList(1);
+            return new SocialEncounter(characters, npcs);
+        }
+        case (EncounterType.Merchant): {
+            const merchant = this.creatureFactory.createRandomMerchant();
+            return new MerchantEncounter(characters, merchant);
+        }
+        case (EncounterType.Lookout): {
+            return new LookoutEncounter(characters);
+        }
+        case (EncounterType.Nothing): {
+            return new Encounter(characters);
+        }
         default:
             return new Encounter(characters);
         }
