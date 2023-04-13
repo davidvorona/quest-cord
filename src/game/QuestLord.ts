@@ -20,19 +20,12 @@ import {
     CommandInteraction,
     SelectMenuInteraction
 } from "../types";
-import { getPlayersFromStartCommand, isEmpty, rand, sendMissingPermissionsMessage } from "../util";
-import Monster from "./Monster";
+import { getPlayersFromStartCommand, isEmpty, sendMissingPermissionsMessage } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
 import World from "./World";
-import TurnBasedEncounter from "./TurnBasedEncounter";
 import Narrator from "./Narrator";
-import CombatEncounter from "./CombatEncounter";
 import SpellFactory from "../services/SpellFactory";
-import StealthEncounter from "./StealthEncounter";
-import SocialEncounter from "./SocialEncounter";
-import MerchantEncounter from "./MerchantEncounter";
-import LookoutEncounter from "./LookoutEncounter";
 import RestEncounter from "./RestEncounter";
 
 export default class QuestLord {
@@ -140,17 +133,13 @@ export default class QuestLord {
                 this.logMapDisplay(interaction);
             }
         } catch (err) {
-            if (interaction instanceof ChatInputCommandInteraction) {
-                console.error(`Failed to process '/${interaction.commandName}' command `
-                    + `due to: ${err}`);
-                if (!interaction.replied) {
-                    await interaction.reply({
-                        content: "Failed to handle command, please try again later.",
-                        ephemeral: true
-                    });
-                }
-            } else {
-                console.error(`Failed to handle interaction due to: ${err}`);
+            console.error(`Failed to process '/${interaction.commandName}' command `
+                + `due to: ${err}`);
+            if (!interaction.replied) {
+                await interaction.reply({
+                    content: "Failed to handle command, please try again later.",
+                    ephemeral: true
+                });
             }
         }
     }
@@ -188,7 +177,11 @@ export default class QuestLord {
                 await this.handleSell(interaction);
             }
         } catch (err) {
-            console.error(`Failed to handle interaction due to: ${err}`);
+            console.error(`Failed to process selection for '${interaction.customId}' `
+                + `due to: ${err}`);
+            await interaction.update({
+                content: "Failed to handle selection, please try again.",
+            });
         }
     }
 
@@ -312,7 +305,9 @@ export default class QuestLord {
             const partyBiome = world.getBiome(quest.getPartyCoordinates());
             await narrator.describeSurroundings(partyBiome);
 
-            await this.startEncounter(guildId);
+            const encounter = this.encounterBuilder
+                .build(partyBiome, quest.getCharacters(), narrator);
+            await quest.startEncounter(encounter);
         }
     }
 
@@ -353,18 +348,20 @@ export default class QuestLord {
             await narrator.describeTravel(biome, newBiome);
 
             // Now that the party has reached a new location, start the next encounter
-            await this.startEncounter(guildId);
+            const encounter = this.encounterBuilder
+                .build(newBiome, quest.getCharacters(), narrator);
+            await quest.startEncounter(encounter);
         }
     }
 
     // Actions are all things that can be done during encounters, or that have special
     // rules during encounters
     private async handleAction(interaction: CommandInteraction): Promise<void> {
+        const subcommand = interaction.options.getSubcommand();
         try {
             const guildId = interaction.guildId;
             this.assertQuestStarted(guildId);
 
-            const subcommand = interaction.options.getSubcommand();
             if (subcommand === "attack") {
                 await this.promptAttack(interaction);
             }
@@ -394,11 +391,13 @@ export default class QuestLord {
             }
         } catch (e) {
             const err = e instanceof Error ? e.message : "Unable to complete action, try again.";
-            await interaction.reply({
-                content: err,
-                ephemeral: true
-            });
-            return;
+            console.error(`Failed to handle action '${subcommand}' due to: ${err}`);
+            if (!interaction.replied) {
+                await interaction.reply({
+                    content: err,
+                    ephemeral: true
+                });
+            }
         }
     }
 
@@ -407,15 +406,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
-            throw new Error("There is no active stealth encounter, aborting");
-        }
+        await quest.handleEncounterCommand(interaction);
 
-        const narrator = quest.getNarrator();
-        await narrator.ponderAndReply(interaction, "You sneak past the enemies.");
-        const encounter = quest.encounter;
-        if (encounter.isOver()) {
-            quest.endEncounter();
+        if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
         }
     }
@@ -425,16 +418,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
-            throw new Error("There is no active stealth encounter, aborting");
-        }
+        await quest.handleEncounterCommand(interaction);
 
-        const narrator = quest.getNarrator();
-        await narrator.ponderAndReply(interaction, "You're about to mount a surprise attack "
-            + "when you reconsider, and decide to sneak past instead.");
-        const encounter = quest.encounter;
-        if (encounter.isOver()) {
-            quest.endEncounter();
+        if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
         }
     }
@@ -444,18 +430,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof SocialEncounter)) {
-            throw new Error("There is no active social encounter, aborting");
-        }
+        await quest.handleEncounterCommand(interaction);
 
-        const narrator = quest.getNarrator();
-        const encounter = quest.encounter;
-        const npcName = encounter.getNpcNames()[0];
-        await narrator.ponderAndReply(interaction, "You walk up to the figure, and "
-            + `strike up a conversation. Their name is ${npcName}. After some pleasant `
-            + "talk, you bid farewell and continue on your way.");
-        if (encounter.isOver()) {
-            quest.endEncounter();
+        if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
         }
     }
@@ -486,10 +463,6 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         await quest.handleEncounterCommand(interaction);
-
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
     }
 
     private async handleSell(interaction: SelectMenuInteraction): Promise<void> {
@@ -497,16 +470,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
-            throw new Error("There is no active merchant encounter, aborting");
-        }
+        await quest.handleEncounterMenuSelect(interaction);
 
-        const narrator = quest.getNarrator();
-        const encounter = quest.encounter;
-        await narrator.ponderAndUpdate(interaction, "You offer to sell the merchant some of your "
-            + "loot. Unfortunately, he's out of gold!");
-        if (encounter.isOver()) {
-            quest.endEncounter();
+        if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
         }
     }
@@ -516,16 +482,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof LookoutEncounter)) {
-            throw new Error("There is no active lookout encounter, aborting");
-        }
+        await quest.handleEncounterCommand(interaction);
 
-        const narrator = quest.getNarrator();
-        const encounter = quest.encounter;
-        await narrator.ponderAndReply(interaction, "You take in the view, expanding your "
-            + "map in all directions.");
-        if (encounter.isOver()) {
-            quest.endEncounter();
+        if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
         }
     }
@@ -558,15 +517,23 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         console.log("Printing character status for guild", guildId);
+        await interaction.reply({
+            content: "Printed status to the console.",
+            ephemeral: true
+        });
     }
 
-    private logMapDisplay(interaction: CommandInteraction) {
+    private async logMapDisplay(interaction: CommandInteraction) {
         const guildId = interaction.guildId;
         const world = this.worlds[guildId];
         const quest = this.quests[guildId];
 
         const map = world.stringify(quest.getPartyCoordinates());
         console.info(map);
+        await interaction.reply({
+            content: "Printed map to the console.",
+            ephemeral: true
+        });
     }
 
     /* GAME METHODS */
@@ -578,28 +545,6 @@ export default class QuestLord {
             "*Your party was slaughtered, and so ends this thread of destiny...*"
         );
         delete this.quests[guildId];
-    }
-
-    private async startEncounter(guildId: string) {
-        this.assertQuestStarted(guildId);
-
-        const quest = this.quests[guildId];
-        const world = this.worlds[guildId];
-
-        // Build an encounter and start it for the quest
-        const biome = world.getBiome(quest.getPartyCoordinates());
-        const encounter = this.encounterBuilder.build(biome, quest.getCharacters());
-        quest.startEncounter(encounter);
-
-        // Narrate the encounter
-        const narrator = quest.getNarrator();
-        await narrator.describeEncounter(encounter);
-        await narrator.explainEncounter(encounter);
-
-        // If it's a turn-based encounter, then prompt for or handle the first turn
-        if (encounter instanceof TurnBasedEncounter) {
-            await this.handleTurn(guildId);
-        }
     }
 
     private async promptTravel(guildId: string) {
@@ -616,265 +561,41 @@ export default class QuestLord {
             + "choose a direction.");
     }
 
-    private async handleTurn(guildId: string) {
-        const quest = this.quests[guildId];
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
-            throw new Error("There is no active turn-based encounter, aborting");
-        }
-
-        const narrator = quest.getNarrator();
-        const encounter = quest.encounter;
-        const currentTurn = encounter.getCurrentTurn();
-        await narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
-        // If its a monster's turn, invoke its handler
-        if (currentTurn instanceof Monster) {
-            await this.handleMonsterTurn(guildId);
-        }
-    }
-
-    private async handleNextTurn(guildId: string) {
-        const quest = this.quests[guildId];
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
-            throw new Error("There is no active turn-based encounter, aborting");
-        }
-
-        const narrator = quest.getNarrator();
-        const encounter = quest.encounter;
-        if (encounter.isOver()) {
-            const isSuccess = encounter.isSuccess();
-            await narrator.describeEncounterOver(encounter);
-            quest.endEncounter();
-            if (isSuccess) {
-                await this.promptTravel(guildId);
-            } else {
-                await this.failQuest(guildId);
-            }
+    private async handleEncounterResults(guildId: string, results?: boolean) {
+        // If results are undefined, it means encounter did not end
+        if (results === undefined) {
             return;
         }
-
-        encounter.nextTurn();
-
-        await this.handleTurn(guildId);
-    }
-
-    private async handleMonsterTurn(guildId: string) {
-        const quest = this.quests[guildId];
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof TurnBasedEncounter)) {
-            throw new Error("There is no active turn-based encounter, aborting");
-        }
-
-        const encounter = quest.encounter;
-        const narrator = quest.getNarrator();
-
-        if (encounter instanceof CombatEncounter) {
-            const currentTurn = encounter.getCurrentTurn();
-            if (currentTurn instanceof Monster) {
-                const chars = encounter.getCharacters();
-                const target = chars[rand(chars.length)];
-                const damage = encounter.calculateDamage(currentTurn);
-                target.setHp(target.hp - damage);
-                await narrator.ponderAndDescribe(`${currentTurn.getName()} deals ${damage} damage `
-                    + `to ${target.getName()}.`);
-
-                await this.handleNextTurn(guildId);
-            }
-        }
-    }
-
-    private async validatePlayerTurn(interaction: CommandInteraction | SelectMenuInteraction) {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
-
-        const quest = this.quests[guildId];
-
-        const userId = interaction.user.id;
-        if (!quest.isUserInParty(userId)) {
-            await interaction.reply({
-                content: "You are not on this quest. Destiny will call on you soon enough...",
-                ephemeral: true
-            });
-            return;
-        }
-        if (
-            !quest.isInEncounter()
-            || !(quest.encounter instanceof TurnBasedEncounter)
-        ) {
-            await interaction.reply({
-                content: "You are not currently in a turn-based encounter.",
-                ephemeral: true
-            });
-            return;
-        }
-
-        const encounter = quest.encounter;
-        const currentTurn = encounter.getCurrentTurn();
-        const myPlayerCharacter = quest.getPlayerByUserId(interaction.user.id);
-        if (currentTurn !== myPlayerCharacter?.getCharacter()) {
-            await interaction.reply({
-                content: "It's not your turn!",
-                ephemeral: true
-            });
+        // results === true is success, continue quest
+        if (results) {
+            await this.promptTravel(guildId);
+        // results === false is failure, and quest ends
+        } else {
+            await this.failQuest(guildId);
         }
     }
 
     private async promptUse(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
-        const quest = this.quests[guildId];
-
-        const encounter = quest.encounter;
-        if (encounter && encounter instanceof TurnBasedEncounter) {
-            await this.validatePlayerTurn(interaction);
-        }
-
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("Which item are you using?");
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const options = pc.getCharacter().getInventory().getInteractionOptions();
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("item:use")
-                    .setPlaceholder("Nothing selected")
-                    .addOptions(options)
-            );
-        await interaction.reply({
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
-        });
-    }
-
-    private async handleUse(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        async function useItem() {
-            try {
-                const item = interaction.values[0];
-                pc.getCharacter().useItem(item);
-                const narrator = quest.getNarrator();
-                await narrator.ponderAndUpdate(interaction, {
-                    content: `You use the ${item}.`,
-                    components: [],
-                    embeds: []
-                });
-            } catch (err) {
-                await interaction.reply({
-                    content: "You do not have this item!",
-                    ephemeral: true
-                });
-            }
-        }
-
-        const encounter = quest.getEncounter();
-        if (encounter && encounter instanceof TurnBasedEncounter) {
-            if (encounter.getCurrentTurn() === pc.getCharacter()) {
-                await useItem();
-                await this.handleNextTurn(guildId);
-            } else {
-                await interaction.reply({
-                    content: "You can only use an item on your turn.",
-                    ephemeral: true
-                });
-            }
+        // For using items, we only really validate it during an encounter
+        if (quest.isInEncounter()) {
+            await quest.handleEncounterCommand(interaction);
+        // Otherwise, let them use items to their heart's content
         } else {
-            await useItem();
-        }
-    }
-
-    private async promptAttack(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        const quest = this.quests[guildId];
-
-        await this.validatePlayerTurn(interaction);
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
-            throw new Error("There is no active combat encounter, aborting");
-        }
-
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("Who do you want to attack?");
-        const options = quest.encounter.getMonsterNames().map((n: string, idx) => ({
-            label: n,
-            value: idx.toString()
-        }));
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("target")
-                    .setPlaceholder("Nothing selected")
-                    .addOptions(options)
-            );
-        await interaction.reply({
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
-        });
-    }
-
-    private async handleAttack(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        const quest = this.quests[guildId];
-
-        await this.validatePlayerTurn(interaction);
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
-            throw new Error("There is no active combat encounter, aborting");
-        }
-
-        const encounter = quest.encounter;
-        const targetIdx = Number(interaction.values[0]);
-
-        const target = encounter.getMonsterByIndex(targetIdx);
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-
-        const narrator = quest.getNarrator();
-        await narrator.ponderAndUpdate(interaction, {
-            content: "You prepare to attack the creature...",
-            components: [],
-            embeds: []
-        });
-        const damage = encounter.calculateDamage(pc.getCharacter());
-        target.setHp(target.hp - damage);
-
-        await narrator.describeAttack(pc.getCharacter(), target, damage);
-
-        await this.handleNextTurn(guildId);
-    }
-
-    private async promptCastSpell(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        const quest = this.quests[guildId];
-
-        await this.validatePlayerTurn(interaction);
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
-            throw new Error("There is no active combat encounter, aborting");
-        }
-
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("What spell do you want to cast?");
-        const pc = quest.getPlayerByUserId(interaction.user.id);
-        if (!pc) {
-            throw new Error("You do not have a character, aborting");
-        }
-        const options = pc.character.getSpells().map(s => ({
-            label: s.name,
-            value: s.id
-        }));
-        if (options.length) {
+            // TODO: This code is a copy of what is in the base Encounter 'commands' list,
+            // we should avoid repeating it here.
+            const embed = new EmbedBuilder()
+                .setColor(0x0099FF)
+                .setDescription("Which item are you using?");
+            const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+            const options = pc.getCharacter().getInventory().getInteractionOptions();
             const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                 .addComponents(
                     new StringSelectMenuBuilder()
-                        .setCustomId("spell:cast")
+                        .setCustomId("item:use")
                         .setPlaceholder("Nothing selected")
                         .addOptions(options)
                 );
@@ -883,85 +604,84 @@ export default class QuestLord {
                 embeds: [embed],
                 components: [row]
             });
-        } else {
-            throw new Error("You have no spells to cast!");
         }
+    }
 
+    private async handleUse(interaction: SelectMenuInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        if (quest.isInEncounter()) {
+            const results = await quest.handleEncounterMenuSelect(interaction);
+            await this.handleEncounterResults(guildId, results);
+        } else {
+            // TODO: This code is a copy of what is in the base Encounter 'menus' list,
+            // we should avoid repeating it here.
+            const item = interaction.values[0];
+            const pc = quest.getPlayerByUserId(interaction.user.id);
+            if (!pc) {
+                throw new Error("Player character does not exist!");
+            }
+            try {
+                pc.getCharacter().useItem(item);
+            } catch (err) {
+                await interaction.reply({
+                    content: "You do not have this item!",
+                    ephemeral: true
+                });
+                return;
+            }
+            const narrator = quest.getNarrator();
+            await narrator.ponderAndUpdate(interaction, {
+                content: `You use the ${item}.`,
+                components: [],
+                embeds: []
+            });
+        }
+    }
+
+    private async promptAttack(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        await quest.handleEncounterCommand(interaction);
+    }
+
+    private async handleAttack(interaction: SelectMenuInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        const results = await quest.handleEncounterMenuSelect(interaction);
+
+        await this.handleEncounterResults(guildId, results);
+    }
+
+    private async promptCastSpell(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        await quest.handleEncounterCommand(interaction);
     }
 
     private async handleCastSpell(interaction: SelectMenuInteraction): Promise<void> {
         const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
         const quest = this.quests[guildId];
-
-        await this.validatePlayerTurn(interaction);
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
-            throw new Error("There is no active combat encounter, aborting");
-        }
-
-        const spellId = interaction.values[0];
-
-        const pc = quest.getPlayerByUserId(interaction.user.id);
-        if (!pc) {
-            throw new Error("You do not have a character, aborting");
-        }
-        const spell = pc.getCharacter().getSpell(spellId);
-        if (!spell) {
-            throw new Error("You do not have this spell, aborting");
-        }
-        pc.holdSpell(spellId);
-
-        const narrator = quest.getNarrator();
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription(`You choose to cast **${spell.name}**. Who do you want to target?`);
-        const options = quest.encounter.getMonsterNames().map((n: string, idx) => ({
-            label: n,
-            value: idx.toString()
-        }));
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("spell:target")
-                    .setPlaceholder("Nothing selected")
-                    .addOptions(options)
-            );
-        await narrator.ponderAndUpdate(interaction, {
-            components: [row],
-            embeds: [embed]
-        });
+        await quest.handleEncounterMenuSelect(interaction);
     }
 
     private async handleSpellTarget(interaction: SelectMenuInteraction): Promise<void> {
         const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
         const quest = this.quests[guildId];
+        const results = await quest.handleEncounterMenuSelect(interaction);
 
-        await this.validatePlayerTurn(interaction);
-
-        if (!quest.isInEncounter() || !(quest.encounter instanceof CombatEncounter)) {
-            throw new Error("There is no active combat encounter, aborting");
-        }
-
-        const pc = quest.getPlayerByUserId(interaction.user.id);
-        if (!pc) {
-            throw new Error("You do not have a character, aborting");
-        }
-
-        const heldSpell = pc.getHeldSpell();
-        if (!heldSpell) {
-            throw new Error("You are not holding this spell");
-        }
-
-        const narrator = quest.getNarrator();
-        narrator.ponderAndUpdate(interaction, {
-            content: "You prepare to cast the spell...",
-            embeds: [],
-            components: []
-        });
-        await narrator.describeCastSpell(pc.getCharacter(), heldSpell);
-
-        pc.releaseSpell();
-
-        await this.handleNextTurn(guildId);
+        await this.handleEncounterResults(guildId, results);
     }
 }

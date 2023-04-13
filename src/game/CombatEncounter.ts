@@ -1,15 +1,175 @@
 import TurnBasedEncounter from "./TurnBasedEncounter";
 import Character from "./Character";
 import Monster from "./Monster";
-import { shuffleArray } from "../util";
+import { rand, shuffleArray } from "../util";
 import Creature from "./Creature";
+import Narrator from "./Narrator";
+import { CommandInteraction, SelectMenuInteraction } from "../types";
+import {
+    ActionRowBuilder,
+    EmbedBuilder,
+    StringSelectMenuBuilder
+} from "discord.js";
 
 export default class CombatEncounter extends TurnBasedEncounter {
     monsters: Monster[] = [];
 
-    constructor(characters: Character[], monsters: Monster[]) {
-        super(characters);
+    /**
+     * The heldSpell property is the ID of the spell selected in the
+     * 'spell:cast' command, temporarily cached until the user chooses
+     * a target. There can only ever be one, since a single user can
+     * only hold one spell, and combat encounters are turn-based.
+     */
+    heldSpell?: string;
+
+    static commands = [
+        ...TurnBasedEncounter.commands,
+        {
+            name: "attack",
+            description: "Strike at an enemy!"
+        },
+        {
+            name: "cast",
+            description: "Cast a spell"
+        }
+    ];
+
+    commands = {
+        ...super.commands,
+        attack: {
+            execute: async (interaction: CommandInteraction) => {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription("Who do you want to attack?");
+                const options = this.getMonsterNames().map((n: string, idx) => ({
+                    label: n,
+                    value: idx.toString()
+                }));
+                const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId("target")
+                            .setPlaceholder("Nothing selected")
+                            .addOptions(options)
+                    );
+                await interaction.reply({
+                    ephemeral: true,
+                    embeds: [embed],
+                    components: [row]
+                });
+            }
+        },
+        cast: {
+            execute: async (interaction: CommandInteraction, character: Character) => {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription("What spell do you want to cast?");
+                const options = character.getSpells().map(s => ({
+                    label: s.name,
+                    value: s.id
+                }));
+                if (options.length) {
+                    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                        .addComponents(
+                            new StringSelectMenuBuilder()
+                                .setCustomId("spell:cast")
+                                .setPlaceholder("Nothing selected")
+                                .addOptions(options)
+                        );
+                    await interaction.reply({
+                        ephemeral: true,
+                        embeds: [embed],
+                        components: [row]
+                    });
+                } else {
+                    throw new Error("You do not have any spells!");
+                }
+            }
+        }
+    };
+
+    menus = [
+        ...super.menus,
+        {
+            customId: "target",
+            consumesTurn: true,
+            execute: async (interaction: SelectMenuInteraction, character: Character) => {
+                const targetIdx = Number(interaction.values[0]);
+
+                const target = this.getMonsterByIndex(targetIdx);
+
+                await interaction.update({
+                    content: "You prepare to attack the creature...",
+                    components: [],
+                    embeds: []
+                });
+
+                const damage = this.calculateDamage(character);
+                target.setHp(target.hp - damage);
+
+                await this.narrator.describeAttack(character, target, damage);
+            }
+        },
+        {
+            customId: "spell:target",
+            execute: async (interaction: SelectMenuInteraction, character: Character) => {
+                const spellId = interaction.values[0];
+                const spell = character.getSpell(spellId);
+                if (!spell) {
+                    throw new Error("You do not have this spell, aborting");
+                }
+                this.holdSpell(spellId);
+
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription(`You choose to cast **${spell.name}**. `
+                        + "Who do you want to target?");
+                const options = this.getMonsterNames().map((n: string, idx) => ({
+                    label: n,
+                    value: idx.toString()
+                }));
+                const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId("spell:target")
+                            .setPlaceholder("Nothing selected")
+                            .addOptions(options)
+                    );
+                await this.narrator.ponderAndUpdate(interaction, {
+                    components: [row],
+                    embeds: [embed]
+                });
+            }
+        },
+        {
+            customId: "spell:cast",
+            consumesTurn: true,
+            execute: async (interaction: SelectMenuInteraction, character: Character) => {
+                if (!this.heldSpell) {
+                    throw new Error("You are not holding any spell!");
+                }
+
+                await this.narrator.ponderAndUpdate(interaction, {
+                    content: "You prepare to cast the spell...",
+                    embeds: [],
+                    components: []
+                });
+
+                const heldSpell = character.getSpell(this.heldSpell);
+                if (!heldSpell) {
+                    throw new Error("You are not holding this spell...");
+                }
+
+                // TODO: Actually apply the spell to the game LOL
+                await this.narrator.describeCastSpell(character, heldSpell);
+            }
+        }
+    ];
+
+    constructor(characters: Character[], narrator: Narrator, monsters: Monster[]) {
+        super(characters, narrator);
         this.monsters = monsters;
+        this.narrator = narrator;
         this.turnOrder = shuffleArray([...characters, ...monsters]);
         console.info(
             "Combat encounter started...",
@@ -30,6 +190,43 @@ export default class CombatEncounter extends TurnBasedEncounter {
     isOver = () => !this.getTotalCharacterHp() || !this.getTotalMonsterHp();
 
     isSuccess = () => !this.getTotalMonsterHp();
+
+    private holdSpell(spellId: string) {
+        this.heldSpell = spellId;
+    }
+
+    /**
+     * @override
+     */
+    async handleNextTurn() {
+        await super.handleNextTurn();
+        this.heldSpell = undefined;
+    }
+
+    /**
+     * @override
+     */
+    async handleTurn() {
+        const currentTurn = this.getCurrentTurn();
+        await this.narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
+        // If its a monster's turn, invoke its handler
+        if (currentTurn instanceof Monster) {
+            await this.handleMonsterTurn();
+        }
+    }
+
+    private async handleMonsterTurn() {
+        const currentTurn = this.getCurrentTurn();
+        if (currentTurn instanceof Monster) {
+            const chars = this.getCharacters();
+            const target = chars[rand(chars.length)];
+            const damage = this.calculateDamage(currentTurn);
+            target.setHp(target.hp - damage);
+            await this.narrator.ponderAndDescribe(`${currentTurn.getName()} deals ${damage} damage `
+                + `to ${target.getName()}.`);
+            await this.handleNextTurn();
+        }
+    }
 
     calculateDamage(attacker: Creature): number {
         const baseDamage = attacker.damage;

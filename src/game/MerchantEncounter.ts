@@ -7,17 +7,31 @@ import {
     EmbedBuilder,
     StringSelectMenuBuilder
 } from "discord.js";
+import Narrator from "./Narrator";
 
 export default class MerchantEncounter extends Encounter {
     merchant: NonPlayerCharacter;
 
-    commands = [
+    static commands = [
+        ...Encounter.commands,
         {
             name: "buy",
-            description: "Buy items from a merchant",
+            description: "Buy items from a merchant"
+        },
+        {
+            name: "sell",
+            description: "Sell items to a merchant"
+        }
+    ];
+
+    commands = {
+        ...super.commands,
+        buy: {
             execute: async (interaction: CommandInteraction) => {
-                const merchant = this.getMerchant();
-                const options = merchant.getCharacter().getInventory().getInteractionOptions();
+                const options = this.getMerchant()
+                    .getCharacter()
+                    .getInventory()
+                    .getInteractionOptions();
                 const embed = new EmbedBuilder()
                     .setColor(0x0099FF)
                     .setDescription("What do you want to buy?");
@@ -35,9 +49,7 @@ export default class MerchantEncounter extends Encounter {
                 });
             }
         },
-        {
-            name: "sell",
-            description: "Sell items to a merchant",
+        sell: {
             execute: async (interaction: CommandInteraction, character: Character) => {
                 const options = character.getInventory().getInteractionOptions();
                 const embed = new EmbedBuilder()
@@ -57,11 +69,11 @@ export default class MerchantEncounter extends Encounter {
                 });
             }
         }
-    ];
+    };
 
     menus = [
         {
-            name: "item:buy",
+            customId: "item:buy",
             execute: async (interaction: SelectMenuInteraction) => {
                 await interaction.update({
                     content: "You offer to pay gold for the merchant's goods. "
@@ -70,7 +82,7 @@ export default class MerchantEncounter extends Encounter {
             }
         },
         {
-            name: "item:sell",
+            customId: "item:sell",
             execute: async (interaction: SelectMenuInteraction) => {
                 await interaction.update({
                     content: "You offer to sell the merchant some of your "
@@ -80,8 +92,8 @@ export default class MerchantEncounter extends Encounter {
         }
     ];
 
-    constructor(characters: Character[], merchant: NonPlayerCharacter) {
-        super(characters);
+    constructor(characters: Character[], narrator: Narrator, merchant: NonPlayerCharacter) {
+        super(characters, narrator);
         this.merchant = merchant;
         console.info(
             "Merchant encounter started...",

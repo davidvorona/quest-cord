@@ -1,4 +1,5 @@
 import Character from "../game/Character";
+import Narrator from "../game/Narrator";
 import Encounter from "../game/Encounter";
 import CombatEncounter from "../game/CombatEncounter";
 import StealthEncounter from "../game/StealthEncounter";
@@ -26,35 +27,35 @@ class EncounterBuilder {
         this.creatureFactory = creatureFactory;
     }
 
-    build(biome: string, characters: Character[]) {
+    build(biome: string, characters: Character[], narrator: Narrator) {
         const encounterType = config.forceEncounterType || randInList(Object.keys(EncounterType));
         switch (encounterType) {
         case (EncounterType.Combat): {
             const monsters = this.creatureFactory
                 .createRandomBiomeTypeMonsterList(characters.length, biome);
-            return new CombatEncounter(characters, monsters);
+            return new CombatEncounter(characters, narrator, monsters);
         }
         case (EncounterType.Stealth): {
             const monsters = this.creatureFactory
                 .createRandomBiomeTypeMonsterList(characters.length, biome);
-            return new StealthEncounter(characters, monsters);
+            return new StealthEncounter(characters, narrator, monsters);
         }
         case (EncounterType.Social): {
             const npcs = this.creatureFactory.createRandomNpcList(1);
-            return new SocialEncounter(characters, npcs);
+            return new SocialEncounter(characters, narrator, npcs);
         }
         case (EncounterType.Merchant): {
             const merchant = this.creatureFactory.createRandomMerchant();
-            return new MerchantEncounter(characters, merchant);
+            return new MerchantEncounter(characters, narrator, merchant);
         }
         case (EncounterType.Lookout): {
-            return new LookoutEncounter(characters);
+            return new LookoutEncounter(characters, narrator);
         }
         case (EncounterType.Rest): {
-            return new RestEncounter(characters);
+            return new RestEncounter(characters, narrator);
         }
         default:
-            return new Encounter(characters);
+            return new Encounter(characters, narrator);
         }
     }
 }
