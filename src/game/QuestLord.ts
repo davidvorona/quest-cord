@@ -1,12 +1,10 @@
 import {
     Interaction,
-    TextBasedChannel,
     ActionRowBuilder,
     StringSelectMenuBuilder,
     ChatInputCommandInteraction,
     StringSelectMenuInteraction,
     PermissionFlagsBits,
-    Guild,
     TextChannel,
     EmbedBuilder,
     GuildMember,
@@ -16,7 +14,12 @@ import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
 import EncounterBuilder from "../services/EncounterBuilder";
 import CreatureFactory from "../services/CreatureFactory";
-import { Direction } from "../types";
+import {
+    Direction,
+    QuestLordInteraction,
+    CommandInteraction,
+    SelectMenuInteraction
+} from "../types";
 import { getPlayersFromStartCommand, isEmpty, rand, sendMissingPermissionsMessage } from "../util";
 import Monster from "./Monster";
 import PlayerCharacter from "./PlayerCharacter";
@@ -31,15 +34,6 @@ import SocialEncounter from "./SocialEncounter";
 import MerchantEncounter from "./MerchantEncounter";
 import LookoutEncounter from "./LookoutEncounter";
 import RestEncounter from "./RestEncounter";
-
-type QuestLordInteraction<T extends Interaction> = T & {
-    guildId: string;
-    guild: Guild;
-    channel: TextBasedChannel;
-};
-
-type CommandInteraction = QuestLordInteraction<ChatInputCommandInteraction>;
-type SelectMenuInteraction = QuestLordInteraction<StringSelectMenuInteraction>;
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -471,27 +465,7 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
-            throw new Error("There is no active merchant encounter, aborting");
-        }
-
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("What do you want to buy?");
-        const merchant = quest.encounter.getMerchant();
-        const options = merchant.getCharacter().getInventory().getInteractionOptions();
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("item:buy")
-                    .setPlaceholder("Nothing selected")
-                    .addOptions(options)
-            );
-        await interaction.reply({
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
-        });
+        await quest.handleEncounterCommand(interaction);
     }
 
     private async handleBuy(interaction: SelectMenuInteraction): Promise<void> {
@@ -499,16 +473,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
-            throw new Error("There is no active merchant encounter, aborting");
-        }
+        await quest.handleEncounterMenuSelect(interaction);
 
-        const narrator = quest.getNarrator();
-        const encounter = quest.encounter;
-        await narrator.ponderAndUpdate(interaction, "You offer to pay gold for the merchant's "
-            + "goods. Unfortunately, he's out of stock!");
-        if (encounter.isOver()) {
-            quest.endEncounter();
+        if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
         }
     }
@@ -518,27 +485,11 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        if (!quest.isInEncounter() || !(quest.encounter instanceof MerchantEncounter)) {
-            throw new Error("There is no active merchant encounter, aborting");
-        }
+        await quest.handleEncounterCommand(interaction);
 
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("What do you want to sell?");
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
-        const options = pc.getCharacter().getInventory().getInteractionOptions();
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("item:sell")
-                    .setPlaceholder("Nothing selected")
-                    .addOptions(options)
-            );
-        await interaction.reply({
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
-        });
+        if (!quest.isInEncounter()) {
+            await this.promptTravel(guildId);
+        }
     }
 
     private async handleSell(interaction: SelectMenuInteraction): Promise<void> {

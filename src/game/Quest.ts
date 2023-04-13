@@ -3,6 +3,7 @@ import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./Encounter";
 import Character from "./Character";
 import Narrator from "./Narrator";
+import { CommandInteraction, SelectMenuInteraction } from "../types";
 
 export default class Quest {
     readonly id: string;
@@ -94,5 +95,35 @@ export default class Quest {
 
     isInEncounter(): this is { encounter: Encounter } {
         return this.encounter !== undefined;
+    }
+
+    async handleEncounterCommand(interaction: CommandInteraction) {
+        if (!this.isInEncounter()) {
+            throw new Error("There is no active encounter, aborting");
+        }
+        const playerCharacter = this.getPlayerByUserId(interaction.user.id);
+        if (!playerCharacter) {
+            throw new Error("Player character does not exist, aborting");
+        }
+        await this.encounter.handleCommand(interaction, playerCharacter.getCharacter());
+
+        if (this.encounter.isOver()) {
+            this.endEncounter();
+        }
+    }
+
+    async handleEncounterMenuSelect(interaction: SelectMenuInteraction) {
+        if (!this.isInEncounter()) {
+            throw new Error("There is no active encounter, aborting");
+        }
+        const playerCharacter = this.getPlayerByUserId(interaction.user.id);
+        if (!playerCharacter) {
+            throw new Error("Player character does not exist, aborting");
+        }
+        await this.encounter.handleMenuSelect(interaction, playerCharacter.getCharacter());
+
+        if (this.encounter.isOver()) {
+            this.endEncounter();
+        }
     }
 }

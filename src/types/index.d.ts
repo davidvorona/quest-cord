@@ -1,3 +1,11 @@
+import {
+    ChatInputCommandInteraction,
+    Guild,
+    Interaction,
+    StringSelectMenuInteraction,
+    TextBasedChannel
+} from "discord.js";
+
 /* Structure of JSON file with bot token */
 export interface AuthJson {
     TOKEN: string;
@@ -96,3 +104,12 @@ export interface CharacterClass extends BaseCreature {
 }
 
 export type Direction = "north" | "south" | "east" | "west";
+
+export type QuestLordInteraction<T extends Interaction> = T & {
+    guildId: string;
+    guild: Guild;
+    channel: TextBasedChannel;
+};
+
+export type CommandInteraction = QuestLordInteraction<ChatInputCommandInteraction>;
+export type SelectMenuInteraction = QuestLordInteraction<StringSelectMenuInteraction>;
