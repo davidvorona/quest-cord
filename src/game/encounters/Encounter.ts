@@ -68,7 +68,7 @@ export default class Encounter {
         const commandName = commandNameOverride || interaction.options.getSubcommand();
         const command = this.getCommand(commandName);
         if (!command) {
-            throw new Error(`Invalid command: ${commandName}`);
+            throw new Error(`Invalid command for ${this.constructor.name}: ${commandName}`);
         }
         await command.execute(interaction, character);
     }
@@ -76,7 +76,7 @@ export default class Encounter {
     async handleMenuSelect(interaction: SelectMenuInteraction, character: Character) {
         const menu = this.getMenu(interaction.customId);
         if (!menu) {
-            throw new Error(`Invalid menu: ${interaction.customId}`);
+            throw new Error(`Invalid menu for ${this.constructor.name}: ${interaction.customId}`);
         }
         await menu.execute(interaction, character);
     }
