@@ -1,14 +1,15 @@
 import Encounter from "./Encounter";
 import Creature from "./Creature";
 import Character from "./Character";
+import Narrator from "./Narrator";
 
 export default class TurnBasedEncounter extends Encounter {
     turnIdx = 0;
 
     turnOrder: Creature[] = [];
 
-    constructor(characters: Character[]) {
-        super(characters, true);
+    constructor(characters: Character[], narrator: Narrator) {
+        super(characters, narrator, true);
     }
 
     getCurrentTurn = () => this.turnOrder[this.turnIdx];
@@ -22,4 +23,13 @@ export default class TurnBasedEncounter extends Encounter {
     };
 
     getTurnOrderNames = () => this.turnOrder.map(c => c.getName());
+
+    async handleTurn() {
+        throw new Error("Abstract method be implemented by subclass!");
+    }
+
+    async handleNextTurn() {
+        this.nextTurn();
+        await this.handleTurn();
+    }
 }

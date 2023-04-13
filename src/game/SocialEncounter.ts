@@ -1,12 +1,34 @@
+import { CommandInteraction } from "../types";
 import Character from "./Character";
 import Encounter from "./Encounter";
+import Narrator from "./Narrator";
 import NonPlayerCharacter from "./NonPlayerCharacter";
 
 export default class SocialEncounter extends Encounter {
     npcs: NonPlayerCharacter[] = [];
 
-    constructor(characters: Character[], npcs: NonPlayerCharacter[]) {
-        super(characters);
+    static commands = [
+        ...Encounter.commands,
+        {
+            name: "talk",
+            description: "Beg, bully, or bandy your way forward"
+        }
+    ];
+
+    commands = {
+        ...super.commands,
+        talk: {
+            execute: async (interaction: CommandInteraction) => {
+                const npcName = this.getNpcNames()[0];
+                await this.narrator.ponderAndReply(interaction, "You walk up to the figure, and "
+                    + `strike up a conversation. Their name is ${npcName}. After some pleasant `
+                    + "talk, you bid farewell and continue on your way.");
+            }
+        }
+    };
+
+    constructor(characters: Character[], narrator: Narrator, npcs: NonPlayerCharacter[]) {
+        super(characters, narrator);
         this.npcs = npcs;
         console.info(
             "Social encounter started...",

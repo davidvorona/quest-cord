@@ -4,6 +4,7 @@ import Encounter from "./Encounter";
 import Character from "./Character";
 import Narrator from "./Narrator";
 import { CommandInteraction, SelectMenuInteraction } from "../types";
+import TurnBasedEncounter from "./TurnBasedEncounter";
 
 export default class Quest {
     readonly id: string;
@@ -75,55 +76,118 @@ export default class Quest {
         return this.coordinates;
     }
 
-    assertEncounterStarted() {
-        if (isEmpty(this.encounter)) {
-            throw new Error("Encounter is not started, aborting");
-        }
-    }
-
-    startEncounter(encounter: Encounter) {
-        this.encounter = encounter;
-    }
-
     getEncounter() {
         return this.encounter;
-    }
-
-    endEncounter() {
-        this.encounter = undefined;
     }
 
     isInEncounter(): this is { encounter: Encounter } {
         return this.encounter !== undefined;
     }
 
+    assertEncounterStarted() {
+        if (!this.isInEncounter()) {
+            throw new Error("Encounter is not started, aborting");
+        }
+    }
+
+    assertAndGetEncounter() {
+        if (!this.isInEncounter()) {
+            throw new Error("Encounter is not started, aborting");
+        }
+        return this.encounter;
+    }
+
+    async startEncounter(encounter: Encounter) {
+        this.encounter = encounter;
+
+        // Narrate the encounter
+        await this.narrator.describeEncounter(encounter);
+        await this.narrator.explainEncounter(encounter);
+
+        // If it's a turn-based encounter, then prompt for or handle the first turn
+        if (encounter instanceof TurnBasedEncounter) {
+            await encounter.handleTurn();
+        }
+    }
+
+    async endEncounter() {
+        const encounter = this.assertAndGetEncounter();
+        await this.narrator.describeEncounterOver(encounter);
+
+        const results = encounter.isSuccess();
+        this.encounter = undefined;
+        return results;
+    }
+
+    private validatePlayerTurn(userId: string) {
+        if (!this.isUserInParty(userId)) {
+            throw new Error("You are not on this quest. Destiny will call on you soon enough...");
+        }
+        if (
+            !this.isInEncounter()
+            || !(this.encounter instanceof TurnBasedEncounter)
+        ) {
+            throw new Error("You are not currently in a turn-based encounter.");
+        }
+
+        const currentTurn = this.encounter.getCurrentTurn();
+        const myPlayerCharacter = this.getPlayerByUserId(userId);
+        if (currentTurn !== myPlayerCharacter?.getCharacter()) {
+            throw new Error("It's not your turn!");
+        }
+    }
+
     async handleEncounterCommand(interaction: CommandInteraction) {
         if (!this.isInEncounter()) {
-            throw new Error("There is no active encounter, aborting");
+            throw new Error("There is no active encounter!");
         }
-        const playerCharacter = this.getPlayerByUserId(interaction.user.id);
+        const userId = interaction.user.id;
+        const playerCharacter = this.getPlayerByUserId(userId);
         if (!playerCharacter) {
-            throw new Error("Player character does not exist, aborting");
+            throw new Error("Player character does not exist!");
         }
+        const command = this.encounter.getCommand(interaction.commandName);
+        const consumesTurn = command && command.consumesTurn;
+        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+            this.validatePlayerTurn(userId);
+        }
+
         await this.encounter.handleCommand(interaction, playerCharacter.getCharacter());
 
         if (this.encounter.isOver()) {
-            this.endEncounter();
+            const results = await this.endEncounter();
+            return results;
+        }
+
+        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+            await this.encounter.handleNextTurn();
         }
     }
 
     async handleEncounterMenuSelect(interaction: SelectMenuInteraction) {
         if (!this.isInEncounter()) {
-            throw new Error("There is no active encounter, aborting");
+            throw new Error("There is no active encounter!");
         }
-        const playerCharacter = this.getPlayerByUserId(interaction.user.id);
+        const userId = interaction.user.id;
+        const playerCharacter = this.getPlayerByUserId(userId);
         if (!playerCharacter) {
-            throw new Error("Player character does not exist, aborting");
+            throw new Error("Player character does not exist!");
         }
+        const selection = this.encounter.getMenu(interaction.customId);
+        const consumesTurn = selection && selection.consumesTurn;
+        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+            this.validatePlayerTurn(userId);
+        }
+
         await this.encounter.handleMenuSelect(interaction, playerCharacter.getCharacter());
 
         if (this.encounter.isOver()) {
-            this.endEncounter();
+            const results = await this.endEncounter();
+            return results;
+        }
+
+        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+            await this.encounter.handleNextTurn();
         }
     }
 }
