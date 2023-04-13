@@ -1,4 +1,4 @@
-import { BaseSpell, Effects } from "../types";
+import { BaseSpell, Effects } from "../../types";
 
 class Spell {
     id: string;

@@ -1,8 +1,8 @@
-import { BaseCreature, Effects } from "../types";
-import { createRandomId } from "../util";
-import Item from "./Item";
-import Weapon from "./Weapon";
-import Spell from "./Spell";
+import { BaseCreature, Effects } from "../../types";
+import { createRandomId } from "../../util";
+import Item from "../things/Item";
+import Weapon from "../things/Weapon";
+import Spell from "../things/Spell";
 
 export interface Equipment {
     weapon?: Weapon;

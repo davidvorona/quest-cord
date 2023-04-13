@@ -1,5 +1,5 @@
 import { rand, loadNames } from "../util";
-import Character from "./Character";
+import Character from "./creatures/Character";
 
 const { firstNames, lastNames } = loadNames();
 

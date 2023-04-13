@@ -1,9 +1,9 @@
 import { COMPENDIUM_SECTION, ITEM_TYPE } from "../constants";
-import Item from "../game/Item";
-import Consumable from "../game/Consumable";
+import Item from "../game/things/Item";
+import Consumable from "../game/things/Consumable";
 import { BaseItem, BaseConsumable, BaseWeapon } from "../types";
 import CompendiumReader from "./CompendiumReader";
-import Weapon from "../game/Weapon";
+import Weapon from "../game/things/Weapon";
 import { randKey } from "../util";
 
 class ItemFactory {

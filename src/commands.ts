@@ -2,6 +2,7 @@ import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.
 import { CharacterClass } from "./types";
 import { DIRECTION, FORMATTED_DIRECTION } from "./constants";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
+import Encounters from "./game/encounters";
 import config from "./config";
 
 const { clientId, authToken } = config;
@@ -35,16 +36,29 @@ class CommandBuilder {
         return { name, value };
     }
 
+    private buildActionSubcommands(builder: SlashCommandBuilder) {
+        const commands: { name: string; description: string; }[] = [];
+        Encounters.forEach((Encounter) => {
+            Encounter.commands.forEach((command) => {
+                const exists = commands.find(c => c.name === command.name);
+                if (exists) {
+                    console.warn("Duplicate command:", command.name);
+                    return;
+                }
+                commands.push(command);
+            });
+        });
+        commands.forEach((command) => {
+            builder.addSubcommand((subcommand) => {
+                return subcommand
+                    .setName(command.name)
+                    .setDescription(command.description);
+            });
+        });
+        return builder;
+    }
+
     build() {
-        const classChoices = Object.values(compendium.data.classes).map(
-            (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
-        );
-        const directionChoices = [
-            { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
-            { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
-            { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
-            { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
-        ];
         return [
             // /ping
             new SlashCommandBuilder()
@@ -97,7 +111,9 @@ class CommandBuilder {
                         .setName("class")
                         .setDescription("Pick a character class")
                         .setRequired(true)
-                        .addChoices(...classChoices);
+                        .addChoices(...Object.values(compendium.data.classes).map(
+                            (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
+                        ));
                 }),
             // /inventory
             new SlashCommandBuilder()
@@ -120,65 +136,23 @@ class CommandBuilder {
                         .setName("direction")
                         .setDescription("Pick the compass direction")
                         .setRequired(true)
-                        .addChoices(...directionChoices);
+                        .addChoices(
+                            { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
+                            { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
+                            { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
+                            { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
+                        );
                 }),
-            // /action
+            // /use - Use an item, behavior depends on encounter state
             new SlashCommandBuilder()
-                .setName("action")
-                .setDescription("What do you want to do?")
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("use")
-                        .setDescription("Use an item in your inventory");
-                })
-                // /action attack
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("attack")
-                        .setDescription("Strike at an enemy!");
-                })
-                // /action cast
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("cast")
-                        .setDescription("Cast a spell");
-                })
-                // /action sneak
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("sneak")
-                        .setDescription("Try to sneak past the enemies");
-                })
-                // /action surprise
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("surprise")
-                        .setDescription("Surprise the enemies and attack!");
-                })
-                // /action talk
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("talk")
-                        .setDescription("Beg, bully, or bandy your way forward");
-                })
-                // /action buy
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("buy")
-                        .setDescription("Buy items from the merchant's stock");
-                })
-                // /action sell
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("sell")
-                        .setDescription("Sell items to the merchant");
-                })
-                // /action lookout
-                .addSubcommand((subcommand) => {
-                    return subcommand
-                        .setName("lookout")
-                        .setDescription("Take in your surroundings from a vantage point");
-                })
+                .setName("use")
+                .setDescription("Use an item from your inventory"),
+            // /action - Used for encounter-specific subcommands
+            this.buildActionSubcommands(
+                new SlashCommandBuilder()
+                    .setName("action")
+                    .setDescription("What do you want to do?")
+            ),
         ];
     }
 }

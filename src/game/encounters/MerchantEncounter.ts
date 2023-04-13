@@ -1,19 +1,18 @@
-import Character from "./Character";
+import Character from "../creatures/Character";
 import Encounter from "./Encounter";
-import NonPlayerCharacter from "./NonPlayerCharacter";
-import { CommandInteraction, SelectMenuInteraction } from "../types";
+import NonPlayerCharacter from "../NonPlayerCharacter";
+import { CommandInteraction, SelectMenuInteraction } from "../../types";
 import {
     ActionRowBuilder,
     EmbedBuilder,
     StringSelectMenuBuilder
 } from "discord.js";
-import Narrator from "./Narrator";
+import Narrator from "../Narrator";
 
 export default class MerchantEncounter extends Encounter {
     merchant: NonPlayerCharacter;
 
     static commands = [
-        ...Encounter.commands,
         {
             name: "buy",
             description: "Buy items from a merchant"
@@ -25,7 +24,6 @@ export default class MerchantEncounter extends Encounter {
     ];
 
     commands = {
-        ...super.commands,
         buy: {
             execute: async (interaction: CommandInteraction) => {
                 const options = this.getMerchant()

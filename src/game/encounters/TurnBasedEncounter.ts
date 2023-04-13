@@ -1,7 +1,7 @@
 import Encounter from "./Encounter";
-import Creature from "./Creature";
-import Character from "./Character";
-import Narrator from "./Narrator";
+import Creature from "../creatures/Creature";
+import Character from "../creatures/Character";
+import Narrator from "../Narrator";
 
 export default class TurnBasedEncounter extends Encounter {
     turnIdx = 0;

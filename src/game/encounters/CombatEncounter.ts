@@ -1,10 +1,10 @@
 import TurnBasedEncounter from "./TurnBasedEncounter";
-import Character from "./Character";
-import Monster from "./Monster";
-import { rand, shuffleArray } from "../util";
-import Creature from "./Creature";
-import Narrator from "./Narrator";
-import { CommandInteraction, SelectMenuInteraction } from "../types";
+import Character from "../creatures/Character";
+import Monster from "../creatures/Monster";
+import { rand, shuffleArray } from "../../util";
+import Creature from "../creatures/Creature";
+import Narrator from "../Narrator";
+import { CommandInteraction, SelectMenuInteraction } from "../../types";
 import {
     ActionRowBuilder,
     EmbedBuilder,
@@ -23,7 +23,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
     heldSpell?: string;
 
     static commands = [
-        ...TurnBasedEncounter.commands,
         {
             name: "attack",
             description: "Strike at an enemy!"
@@ -35,7 +34,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
     ];
 
     commands = {
-        ...super.commands,
         attack: {
             execute: async (interaction: CommandInteraction) => {
                 const embed = new EmbedBuilder()
@@ -85,11 +83,30 @@ export default class CombatEncounter extends TurnBasedEncounter {
                     throw new Error("You do not have any spells!");
                 }
             }
+        },
+        use: {
+            execute: async (interaction: CommandInteraction, character: Character) => {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription("Which item are you using?");
+                const options = character.getInventory().getInteractionOptions();
+                const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId("item:use")
+                            .setPlaceholder("Nothing selected")
+                            .addOptions(options)
+                    );
+                await interaction.reply({
+                    ephemeral: true,
+                    embeds: [embed],
+                    components: [row]
+                });
+            }
         }
     };
 
     menus = [
-        ...super.menus,
         {
             customId: "target",
             consumesTurn: true,
@@ -162,6 +179,29 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
                 // TODO: Actually apply the spell to the game LOL
                 await this.narrator.describeCastSpell(character, heldSpell);
+
+                this.releaseSpell();
+            }
+        },
+        {
+            customId: "item:use",
+            consumesTurn: true,
+            execute: async (interaction: SelectMenuInteraction, character: Character) => {
+                const item = interaction.values[0];
+                try {
+                    character.useItem(item);
+                } catch (err) {
+                    await interaction.reply({
+                        content: "You do not have this item!",
+                        ephemeral: true
+                    });
+                    return;
+                }
+                await this.narrator.ponderAndUpdate(interaction, {
+                    content: `You use the ${item}.`,
+                    components: [],
+                    embeds: []
+                });
             }
         }
     ];
@@ -195,12 +235,16 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.heldSpell = spellId;
     }
 
+    private releaseSpell() {
+        this.heldSpell = undefined;
+    }
+
     /**
      * @override
      */
     async handleNextTurn() {
         await super.handleNextTurn();
-        this.heldSpell = undefined;
+        this.releaseSpell();
     }
 
     /**

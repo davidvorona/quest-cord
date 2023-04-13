@@ -1,4 +1,4 @@
-import { BaseConsumable, Effects } from "../types";
+import { BaseConsumable, Effects } from "../../types";
 import Item from "./Item";
 
 export default class Consumable extends Item {

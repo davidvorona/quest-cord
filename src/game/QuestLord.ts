@@ -21,12 +21,11 @@ import {
     SelectMenuInteraction
 } from "../types";
 import { getPlayersFromStartCommand, isEmpty, sendMissingPermissionsMessage } from "../util";
-import PlayerCharacter from "./PlayerCharacter";
 import Quest from "./Quest";
 import World from "./World";
 import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
-import RestEncounter from "./RestEncounter";
+import RestEncounter from "./encounters/RestEncounter";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -113,6 +112,11 @@ export default class QuestLord {
                 await this.handleTravel(interaction);
             }
 
+            // User character uses an item
+            if (interaction.commandName === "use") {
+                await this.promptUse(interaction);
+            }
+
             // User acts during an encounter
             if (interaction.commandName === "action") {
                 await this.handleAction(interaction);
@@ -134,7 +138,7 @@ export default class QuestLord {
             }
         } catch (err) {
             console.error(`Failed to process '/${interaction.commandName}' command `
-                + `due to: ${err}`);
+                + "due to:", err);
             if (!interaction.replied) {
                 await interaction.reply({
                     content: "Failed to handle command, please try again later.",
@@ -158,6 +162,7 @@ export default class QuestLord {
                 await this.handleCastSpell(interaction);
             }
 
+            // Choosing a target for a held spell
             if (interaction.customId === "spell:target") {
                 await this.handleSpellTarget(interaction);
             }
@@ -178,10 +183,55 @@ export default class QuestLord {
             }
         } catch (err) {
             console.error(`Failed to process selection for '${interaction.customId}' `
-                + `due to: ${err}`);
+                + "due to:", err);
             await interaction.update({
                 content: "Failed to handle selection, please try again.",
             });
+        }
+    }
+
+    // Actions are all things that can be done during encounters, or that have special
+    // rules during encounters
+    private async handleAction(interaction: CommandInteraction): Promise<void> {
+        const subcommand = interaction.options.getSubcommand();
+        try {
+            const guildId = interaction.guildId;
+            this.assertQuestStarted(guildId);
+
+            if (subcommand === "attack") {
+                await this.promptAttack(interaction);
+            }
+            if (subcommand === "cast") {
+                await this.promptCastSpell(interaction);
+            }
+            if (subcommand === "sneak") {
+                await this.handleSneak(interaction);
+            }
+            if (subcommand === "surprise") {
+                await this.handleSurprise(interaction);
+            }
+            if (subcommand === "talk") {
+                await this.handleTalk(interaction);
+            }
+            if (subcommand === "buy") {
+                await this.promptBuy(interaction);
+            }
+            if (subcommand === "sell") {
+                await this.promptSell(interaction);
+            }
+            if (subcommand === "lookout") {
+                await this.handleLookout(interaction);
+            }
+        } catch (e) {
+            const errMessage = e instanceof Error
+                ? e.message : "Unable to complete action, try again.";
+            console.error(`Failed to handle action '${subcommand}' due to:`, e);
+            if (!interaction.replied) {
+                await interaction.reply({
+                    content: errMessage,
+                    ephemeral: true
+                });
+            }
         }
     }
 
@@ -316,6 +366,12 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
+        // TODO: Probably need a better way to handle difference between a quest
+        // being created and a quest being started.
+        if (!quest.areAllCharactersCreated()) {
+            throw new Error("The questing party hasn't formed yet!");
+        }
+
         const world = this.worlds[guildId];
         const narrator = quest.getNarrator();
         // Travel can only happen between encounters, or if the encounter is a RestEncounter
@@ -351,53 +407,6 @@ export default class QuestLord {
             const encounter = this.encounterBuilder
                 .build(newBiome, quest.getCharacters(), narrator);
             await quest.startEncounter(encounter);
-        }
-    }
-
-    // Actions are all things that can be done during encounters, or that have special
-    // rules during encounters
-    private async handleAction(interaction: CommandInteraction): Promise<void> {
-        const subcommand = interaction.options.getSubcommand();
-        try {
-            const guildId = interaction.guildId;
-            this.assertQuestStarted(guildId);
-
-            if (subcommand === "attack") {
-                await this.promptAttack(interaction);
-            }
-            if (subcommand === "cast") {
-                await this.promptCastSpell(interaction);
-            }
-            if (subcommand === "use") {
-                await this.promptUse(interaction);
-            }
-            if (subcommand === "sneak") {
-                await this.handleSneak(interaction);
-            }
-            if (subcommand === "surprise") {
-                await this.handleSurprise(interaction);
-            }
-            if (subcommand === "talk") {
-                await this.handleTalk(interaction);
-            }
-            if (subcommand === "buy") {
-                await this.promptBuy(interaction);
-            }
-            if (subcommand === "sell") {
-                await this.promptSell(interaction);
-            }
-            if (subcommand === "lookout") {
-                await this.handleLookout(interaction);
-            }
-        } catch (e) {
-            const err = e instanceof Error ? e.message : "Unable to complete action, try again.";
-            console.error(`Failed to handle action '${subcommand}' due to: ${err}`);
-            if (!interaction.replied) {
-                await interaction.reply({
-                    content: err,
-                    ephemeral: true
-                });
-            }
         }
     }
 
@@ -494,8 +503,7 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-
-        const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
         const quantities = pc.getCharacter().getInventory().getQuantities();
         const inventoryEmbed = quantities.length
             ? quantities.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** `
@@ -582,7 +590,9 @@ export default class QuestLord {
         const quest = this.quests[guildId];
         // For using items, we only really validate it during an encounter
         if (quest.isInEncounter()) {
-            await quest.handleEncounterCommand(interaction);
+            // Override the command name here since typical encounter commands are
+            // subcommands of /action
+            await quest.handleEncounterCommand(interaction, interaction.commandName);
         // Otherwise, let them use items to their heart's content
         } else {
             // TODO: This code is a copy of what is in the base Encounter 'commands' list,
@@ -590,7 +600,7 @@ export default class QuestLord {
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
                 .setDescription("Which item are you using?");
-            const pc = quest.getPlayerByUserId(interaction.user.id) as PlayerCharacter;
+            const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
             const options = pc.getCharacter().getInventory().getInteractionOptions();
             const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                 .addComponents(
@@ -616,13 +626,10 @@ export default class QuestLord {
             const results = await quest.handleEncounterMenuSelect(interaction);
             await this.handleEncounterResults(guildId, results);
         } else {
-            // TODO: This code is a copy of what is in the base Encounter 'menus' list,
+            // TODO: This code is a copy of what is in the base CombatEncounter 'menus' list,
             // we should avoid repeating it here.
             const item = interaction.values[0];
-            const pc = quest.getPlayerByUserId(interaction.user.id);
-            if (!pc) {
-                throw new Error("Player character does not exist!");
-            }
+            const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
             try {
                 pc.getCharacter().useItem(item);
             } catch (err) {
