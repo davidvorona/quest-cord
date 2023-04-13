@@ -1,8 +1,8 @@
-import { BaseNonPlayerCharacter, CharacterClass } from "../types";
+import { BaseNonPlayerCharacter, CharacterClass } from "../../types";
 import Creature, { Equipment } from "./Creature";
-import Consumable from "./Consumable";
-import Item from "./Item";
-import Spell from "./Spell";
+import Consumable from "../things/Consumable";
+import Item from "../things/Item";
+import Spell from "../things/Spell";
 import Inventory from "./Inventory";
 
 export default class Character extends Creature {

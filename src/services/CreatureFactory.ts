@@ -1,8 +1,8 @@
 import { COMPENDIUM_SECTION } from "../constants";
-import { Equipment } from "../game/Creature";
-import Character from "../game/Character";
+import { Equipment } from "../game/creatures/Creature";
+import Character from "../game/creatures/Character";
 import NonPlayerCharacter from "../game/NonPlayerCharacter";
-import Monster from "../game/Monster";
+import Monster from "../game/creatures/Monster";
 import {
     CharacterClass,
     BaseMonster,
@@ -12,8 +12,8 @@ import {
 import { randKey } from "../util";
 import CompendiumReader from "./CompendiumReader";
 import ItemFactory from "./ItemFactory";
-import Weapon from "../game/Weapon";
-import Item from "../game/Item";
+import Weapon from "../game/things/Weapon";
+import Item from "../game/things/Item";
 import SpellFactory from "./SpellFactory";
 
 interface CharacterClassData {

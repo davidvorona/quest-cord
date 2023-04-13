@@ -1,14 +1,13 @@
-import { CommandInteraction } from "../types";
-import Character from "./Character";
+import { CommandInteraction } from "../../types";
+import Character from "../creatures/Character";
 import Encounter from "./Encounter";
-import Monster from "./Monster";
-import Narrator from "./Narrator";
+import Monster from "../creatures/Monster";
+import Narrator from "../Narrator";
 
 export default class StealthEncounter extends Encounter {
     monsters: Monster[] = [];
 
     static commands = [
-        ...Encounter.commands,
         {
             name: "sneak",
             description: "Try to sneak past the enemies"
@@ -20,7 +19,6 @@ export default class StealthEncounter extends Encounter {
     ];
 
     commands = {
-        ...super.commands,
         sneak: {
             execute: async (interaction: CommandInteraction) => {
                 await this.narrator.ponderAndReply(interaction, "You sneak past the enemies.");

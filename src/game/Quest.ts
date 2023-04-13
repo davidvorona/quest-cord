@@ -1,10 +1,10 @@
 import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
-import Encounter from "./Encounter";
-import Character from "./Character";
+import Encounter from "./encounters/Encounter";
+import Character from "./creatures/Character";
 import Narrator from "./Narrator";
 import { CommandInteraction, SelectMenuInteraction } from "../types";
-import TurnBasedEncounter from "./TurnBasedEncounter";
+import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 
 export default class Quest {
     readonly id: string;
@@ -34,7 +34,7 @@ export default class Quest {
         this.pcs[userId] = null;
     }
 
-    getPlayerByUserId(userId: string) {
+    private getPlayerByUserId(userId: string) {
         return this.pcs[userId];
     }
 
@@ -52,8 +52,24 @@ export default class Quest {
         return playerCharacter;
     }
 
+    doesCharacterExist(pc: PlayerCharacter | null): pc is PlayerCharacter {
+        return (pc as PlayerCharacter) !== null;
+    }
+
+    assertAndGetPlayerCharacter(userId: string) {
+        const playerCharacter = this.getPlayerByUserId(userId);
+        if (!this.doesCharacterExist(playerCharacter)) {
+            throw new Error("Player character does not exist!");
+        }
+        return playerCharacter;
+    }
+
     isCharacterCreated(userId: string) {
         return !isEmpty(this.pcs[userId]);
+    }
+
+    isCharacterInParty(pc: PlayerCharacter) {
+        return this.pcs[pc.userId];
     }
 
     areAllCharactersCreated() {
@@ -131,28 +147,30 @@ export default class Quest {
         }
 
         const currentTurn = this.encounter.getCurrentTurn();
-        const myPlayerCharacter = this.getPlayerByUserId(userId);
-        if (currentTurn !== myPlayerCharacter?.getCharacter()) {
+        const myPlayerCharacter = this.assertAndGetPlayerCharacter(userId);
+        if (currentTurn !== myPlayerCharacter.getCharacter()) {
             throw new Error("It's not your turn!");
         }
     }
 
-    async handleEncounterCommand(interaction: CommandInteraction) {
+    async handleEncounterCommand(interaction: CommandInteraction, commandNameOverride?: string) {
         if (!this.isInEncounter()) {
             throw new Error("There is no active encounter!");
         }
         const userId = interaction.user.id;
-        const playerCharacter = this.getPlayerByUserId(userId);
-        if (!playerCharacter) {
-            throw new Error("Player character does not exist!");
-        }
-        const command = this.encounter.getCommand(interaction.commandName);
+        const playerCharacter = this.assertAndGetPlayerCharacter(userId);
+        const commandName = commandNameOverride || interaction.options.getSubcommand();
+        const command = this.encounter.getCommand(commandName);
         const consumesTurn = command && command.consumesTurn;
         if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
             this.validatePlayerTurn(userId);
         }
 
-        await this.encounter.handleCommand(interaction, playerCharacter.getCharacter());
+        await this.encounter.handleCommand(
+            interaction,
+            playerCharacter.getCharacter(),
+            commandNameOverride
+        );
 
         if (this.encounter.isOver()) {
             const results = await this.endEncounter();
@@ -169,10 +187,7 @@ export default class Quest {
             throw new Error("There is no active encounter!");
         }
         const userId = interaction.user.id;
-        const playerCharacter = this.getPlayerByUserId(userId);
-        if (!playerCharacter) {
-            throw new Error("Player character does not exist!");
-        }
+        const playerCharacter = this.assertAndGetPlayerCharacter(userId);
         const selection = this.encounter.getMenu(interaction.customId);
         const consumesTurn = selection && selection.consumesTurn;
         if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {

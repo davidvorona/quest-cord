@@ -1,14 +1,13 @@
-import { CommandInteraction } from "../types";
-import Character from "./Character";
+import { CommandInteraction } from "../../types";
+import Character from "../creatures/Character";
 import Encounter from "./Encounter";
-import Narrator from "./Narrator";
-import NonPlayerCharacter from "./NonPlayerCharacter";
+import Narrator from "../Narrator";
+import NonPlayerCharacter from "../NonPlayerCharacter";
 
 export default class SocialEncounter extends Encounter {
     npcs: NonPlayerCharacter[] = [];
 
     static commands = [
-        ...Encounter.commands,
         {
             name: "talk",
             description: "Beg, bully, or bandy your way forward"
@@ -16,7 +15,6 @@ export default class SocialEncounter extends Encounter {
     ];
 
     commands = {
-        ...super.commands,
         talk: {
             execute: async (interaction: CommandInteraction) => {
                 const npcName = this.getNpcNames()[0];

@@ -1,7 +1,7 @@
-import { BaseMonster } from "../types";
+import { BaseMonster } from "../../types";
 import Creature, { Equipment } from "./Creature";
-import Item from "./Item";
-import Spell from "./Spell";
+import Item from "../things/Item";
+import Spell from "../things/Spell";
 
 export default class Monster extends Creature {
     readonly lvl: number;

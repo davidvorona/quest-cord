@@ -1,4 +1,4 @@
-import { BaseWeapon } from "../types";
+import { BaseWeapon } from "../../types";
 import Item from "./Item";
 
 class Weapon extends Item {

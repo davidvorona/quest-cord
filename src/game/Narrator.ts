@@ -7,19 +7,19 @@ import {
     StringSelectMenuInteraction,
     InteractionUpdateOptions
 } from "discord.js";
-import Encounter from "./Encounter";
+import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
 import { ACTIVITY } from "../constants";
-import CombatEncounter from "./CombatEncounter";
+import CombatEncounter from "./encounters/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
-import Creature from "./Creature";
-import Character from "./Character";
-import StealthEncounter from "./StealthEncounter";
-import SocialEncounter from "./SocialEncounter";
-import MerchantEncounter from "./MerchantEncounter";
-import LookoutEncounter from "./LookoutEncounter";
-import RestEncounter from "./RestEncounter";
-import Spell from "./Spell";
+import Creature from "./creatures/Creature";
+import Character from "./creatures/Character";
+import StealthEncounter from "./encounters/StealthEncounter";
+import SocialEncounter from "./encounters/SocialEncounter";
+import MerchantEncounter from "./encounters/MerchantEncounter";
+import LookoutEncounter from "./encounters/LookoutEncounter";
+import RestEncounter from "./encounters/RestEncounter";
+import Spell from "./things/Spell";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages

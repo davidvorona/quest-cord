@@ -1,4 +1,4 @@
-import Item from "./Item";
+import Item from "../things/Item";
 
 export default class Inventory {
     items: Item[];

@@ -1,5 +1,5 @@
 import { COMPENDIUM_SECTION } from "../constants";
-import Spell from "../game/Spell";
+import Spell from "../game/things/Spell";
 import { BaseSpell } from "../types";
 import CompendiumReader from "./CompendiumReader";
 
