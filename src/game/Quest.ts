@@ -38,6 +38,10 @@ export default class Quest {
         return this.pcs[userId];
     }
 
+    getPartyUserIds() {
+        return Object.keys(this.pcs);
+    }
+
     isUserInParty(userId: string) {
         return Object.prototype.hasOwnProperty.call(this.pcs, userId);
     }
