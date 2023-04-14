@@ -128,7 +128,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             }
         },
         {
-            customId: "spell:target",
+            customId: "spell:cast",
             execute: async (interaction: SelectMenuInteraction, character: Character) => {
                 const spellId = interaction.values[0];
                 const spell = character.getSpell(spellId);
@@ -159,7 +159,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             }
         },
         {
-            customId: "spell:cast",
+            customId: "spell:target",
             consumesTurn: true,
             execute: async (interaction: SelectMenuInteraction, character: Character) => {
                 if (!this.heldSpell) {

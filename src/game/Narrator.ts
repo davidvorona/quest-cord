@@ -105,11 +105,12 @@ class Narrator {
 
     async explainEncounter(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
-            await this.ponderAndDescribe("On your turn, you can act with the **/action** command. "
-                + "You can also use items with **/action use**.");
+            await this.ponderAndDescribe("On your turn, you can attack with the "
+                + "**/action attack** command, or cast a spell with **/action cast**. "
+                + "You can also use items with **/use**.");
         } else if (encounter instanceof StealthEncounter) {
-            await this.ponderAndDescribe("Choose between a stealthy approach with the **/sneak** "
-                + "command, or surprise your enemies with **/action surprise**!");
+            await this.ponderAndDescribe("Choose between a stealthy approach with the "
+                + "**/action sneak** command, or surprise your enemies with **/action surprise**!");
         } else if (encounter instanceof SocialEncounter) {
             await this.ponderAndDescribe("Talk to the figure with the **/action talk** command.");
         } else if (encounter instanceof MerchantEncounter) {

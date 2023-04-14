@@ -1,8 +1,8 @@
 import Character from "../creatures/Character";
-import Encounter from "./Encounter";
+import FreeEncounter from "./FreeEncounter";
 import Narrator from "../Narrator";
 
-export default class RestEncounter extends Encounter {
+export default class RestEncounter extends FreeEncounter {
     constructor(characters: Character[], narrator: Narrator) {
         super(characters, narrator);
         console.info(

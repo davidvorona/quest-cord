@@ -25,7 +25,7 @@ import Quest from "./Quest";
 import World from "./World";
 import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
-import RestEncounter from "./encounters/RestEncounter";
+import FreeEncounter from "./encounters/FreeEncounter";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -375,7 +375,7 @@ export default class QuestLord {
         const world = this.worlds[guildId];
         const narrator = quest.getNarrator();
         // Travel can only happen between encounters, or if the encounter is a RestEncounter
-        if (quest.isInEncounter() && !(quest.encounter instanceof RestEncounter)) {
+        if (quest.isInEncounter() && !(quest.encounter instanceof FreeEncounter)) {
             await interaction.reply({
                 content: "You cannot travel during an encounter.",
                 ephemeral: true
@@ -394,6 +394,11 @@ export default class QuestLord {
             } catch (err) {
                 await interaction.reply(`You cannot travel further ${direction}.`);
                 return;
+            }
+
+            // If traveling from a free encounter, end that encounter
+            if (quest.encounter instanceof FreeEncounter) {
+                await quest.endEncounter();
             }
 
             // Set the new coordinates, and continue

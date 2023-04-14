@@ -1,5 +1,5 @@
 import Character from "../creatures/Character";
-import Encounter from "./Encounter";
+import FreeEncounter from "./FreeEncounter";
 import NonPlayerCharacter from "../NonPlayerCharacter";
 import { CommandInteraction, SelectMenuInteraction } from "../../types";
 import {
@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 import Narrator from "../Narrator";
 
-export default class MerchantEncounter extends Encounter {
+export default class MerchantEncounter extends FreeEncounter {
     merchant: NonPlayerCharacter;
 
     static commands = [
