@@ -13,6 +13,7 @@ import {
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
 import EncounterBuilder from "../services/EncounterBuilder";
+import PollBooth, { PollType } from "../services/PollBooth";
 import CreatureFactory from "../services/CreatureFactory";
 import {
     Direction,
@@ -32,6 +33,8 @@ export default class QuestLord {
 
     quests: Record<string, Quest> = {};
 
+    polls: Record<string, PollBooth> = {};
+
     creatureFactory: CreatureFactory;
 
     itemFactory: ItemFactory;
@@ -47,6 +50,8 @@ export default class QuestLord {
         this.creatureFactory = new CreatureFactory(compendium, this.itemFactory, this.spellFactory);
         this.encounterBuilder = new EncounterBuilder(this.creatureFactory);
     }
+
+    /* VALIDATION */
 
     private assertWorldGenerated(guildId: string) {
         if (isEmpty(this.worlds[guildId])) {
@@ -72,13 +77,58 @@ export default class QuestLord {
         }
     }
 
+    private assertPollBoothCreated(guildId: string) {
+        if (isEmpty(this.polls[guildId])) {
+            throw new Error("Pool booth not created, aborting");
+        }
+    }
+
     private static isValidInteraction<T extends Interaction>(
         interaction: T
     ): interaction is QuestLordInteraction<T> {
         return interaction.inGuild() && interaction.channel instanceof TextChannel;
     }
 
-    /* SLASH COMMAND HANDLING */
+    private static validateStartCommandOptions(
+        interaction: CommandInteraction,
+        players: GuildMember[]
+    ) {
+        const { channels, members } = interaction.guild;
+
+        const optionChannel = interaction.options.getChannel("channel");
+        const channel = optionChannel
+            ? channels.cache.find(c => c.id === optionChannel.id)
+            : interaction.channel;
+        if (!channel || !(channel instanceof TextChannel)) {
+            throw new Error("This is not a valid questing channel!");
+        }
+        const botMember = members.me;
+        if (!botMember) {
+            throw new Error("The bot does not exist in this guild!");
+        }
+        const questMembers = players.concat(botMember);
+        const invalidPermissions: Record<string, PermissionsBitField> = {};
+        questMembers.forEach((member) => {
+            const permissions = member.permissionsIn(channel);
+            const missingPermissions = [];
+            if (!permissions.has(PermissionFlagsBits.ViewChannel)) {
+                missingPermissions.push(PermissionFlagsBits.ViewChannel);
+            }
+            if (!permissions.has(PermissionFlagsBits.SendMessages)) {
+                missingPermissions.push(PermissionFlagsBits.SendMessages);
+            }
+            if (missingPermissions.length) {
+                invalidPermissions[member.user.username] =
+                    new PermissionsBitField(missingPermissions);
+            }
+        });
+        return {
+            errors: invalidPermissions,
+            isValid: isEmpty(invalidPermissions)
+        };
+    }
+
+    /* INTERACTIONS */
 
     async handleInteraction(interaction: Interaction) {
         if (interaction.isChatInputCommand()) {
@@ -235,42 +285,6 @@ export default class QuestLord {
         }
     }
 
-    private static validateStartCommandOptions(
-        interaction: CommandInteraction,
-        players: GuildMember[]
-    ) {
-        const { channels, members } = interaction.guild;
-        const optionChannel = interaction.options.getChannel("channel", true);
-        const channel = channels.cache.find(c => c.id === optionChannel.id);
-        if (!channel || !(channel instanceof TextChannel)) {
-            throw new Error("This is not a valid questing channel!");
-        }
-        const botMember = members.me;
-        if (!botMember) {
-            throw new Error("The bot does not exist in this guild!");
-        }
-        const questMembers = players.concat(botMember);
-        const invalidPermissions: Record<string, PermissionsBitField> = {};
-        questMembers.forEach((member) => {
-            const permissions = member.permissionsIn(channel);
-            const missingPermissions = [];
-            if (!permissions.has(PermissionFlagsBits.ViewChannel)) {
-                missingPermissions.push(PermissionFlagsBits.ViewChannel);
-            }
-            if (!permissions.has(PermissionFlagsBits.SendMessages)) {
-                missingPermissions.push(PermissionFlagsBits.SendMessages);
-            }
-            if (missingPermissions.length) {
-                invalidPermissions[member.user.username] =
-                    new PermissionsBitField(missingPermissions);
-            }
-        });
-        return {
-            errors: invalidPermissions,
-            isValid: isEmpty(invalidPermissions)
-        };
-    }
-
     private async startQuest(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertWorldNotGenerated(guildId);
@@ -302,6 +316,9 @@ export default class QuestLord {
 
         // Register new quest
         this.quests[guildId] = quest;
+
+        // Create guild poll booth
+        this.polls[guildId] = new PollBooth(narrator, quest.getPartySize());
 
         // Defer reply in case guild commands take a while
         await interaction.deferReply({ ephemeral: true });
@@ -365,6 +382,23 @@ export default class QuestLord {
         }
     }
 
+    private validateTravelDirection(guildId: string, direction: Direction) {
+        const world = this.worlds[guildId];
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        const coordinates = quest.getPartyCoordinates();
+
+        try {
+            // Apply the cardinal direction to the party's coordinates, this method
+            // throws an error if the delta would move the party off the world
+            const [x, y] = world.applyDirectionToCoordinates(direction, coordinates);
+            return [x, y];
+        } catch (err) {
+            throw new Error(`You cannot travel further ${direction}.`);
+        }
+    }
+
     private async handleTravel(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
@@ -386,36 +420,40 @@ export default class QuestLord {
             });
         } else {
             const direction = interaction.options.getString("direction", true) as Direction;
-            const coordinates = quest.getPartyCoordinates();
-            // Store current biome string in a variable for use
-            const biome = world.getBiome(coordinates);
+            this.validateTravelDirection(guildId, direction);
 
-            let x, y;
-            try {
-                // Apply the cardinal direction to the party's coordinates, this method throws an
-                // error if the delta would move the party off the world
-                [x, y] = world.applyDirectionToCoordinates(direction, coordinates);
-            } catch (err) {
-                await interaction.reply(`You cannot travel further ${direction}.`);
-                return;
-            }
+            this.assertPollBoothCreated(guildId);
+            const pollBooth = this.polls[guildId];
 
-            // If traveling from a free encounter, end that encounter
-            if (quest.encounter instanceof FreeEncounter) {
-                await quest.endEncounter();
-            }
+            pollBooth.castVote(PollType.Travel, direction, async (vote: Direction) => {
+                const coordinates = quest.getPartyCoordinates();
+                // Store current biome string in a variable for use
+                const biome = world.getBiome(coordinates);
 
-            // Set the new coordinates, and continue
-            quest.setPartyCoordinates([x, y]);
+                const [x, y] = this.validateTravelDirection(guildId, vote);
 
-            const newBiome = world.getBiome([x, y]);
-            await narrator.ponderAndReply(interaction, `You choose to travel ${direction}.`);
-            await narrator.describeTravel(biome, newBiome);
+                // If traveling from a free encounter, end that encounter
+                if (quest.encounter instanceof FreeEncounter) {
+                    await quest.endEncounter();
+                }
 
-            // Now that the party has reached a new location, start the next encounter
-            const encounter = this.encounterBuilder
-                .build(newBiome, quest.getCharacters(), narrator);
-            await quest.startEncounter(encounter);
+                // Set the new coordinates, and continue
+                quest.setPartyCoordinates([x, y]);
+
+                const newBiome = world.getBiome([x, y]);
+                await narrator.ponderAndDescribe(`The party chooses to travel ${vote}.`);
+                await narrator.describeTravel(biome, newBiome);
+
+                // Now that the party has reached a new location, start the next encounter
+                const encounter = this.encounterBuilder
+                    .build(newBiome, quest.getCharacters(), narrator);
+                await quest.startEncounter(encounter);
+            });
+
+            await interaction.reply({
+                content: `Vote cast for '${direction}'!`,
+                ephemeral: true
+            });
         }
     }
 
@@ -504,93 +542,6 @@ export default class QuestLord {
 
         if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
-        }
-    }
-
-    private async printInventory(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
-
-        const quest = this.quests[guildId];
-        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
-        const quantities = pc.getCharacter().getInventory().getQuantities();
-        const inventoryEmbed = quantities.length
-            ? quantities.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** `
-                + `${curr.item.name}: ${curr.quantity}`, "")
-            : "Inventory is empty";
-
-        const embed = new EmbedBuilder()
-            .setColor("#0099ff")
-            .setTitle("Your inventory")
-            .setDescription(inventoryEmbed);
-        await interaction.reply({
-            embeds: [embed],
-            ephemeral: true
-        });
-    }
-
-    private async printStatus(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
-
-        console.log("Printing character status for guild", guildId);
-        await interaction.reply({
-            content: "Printed status to the console.",
-            ephemeral: true
-        });
-    }
-
-    private async logMapDisplay(interaction: CommandInteraction) {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
-
-        const world = this.worlds[guildId];
-        const quest = this.quests[guildId];
-
-        const map = world.stringify(quest.getPartyCoordinates());
-        console.info(map);
-        await interaction.reply({
-            content: "Printed map to the console.",
-            ephemeral: true
-        });
-    }
-
-    /* GAME METHODS */
-
-    private async failQuest(guildId: string): Promise<void> {
-        const quest = this.quests[guildId];
-        const narrator = quest.getNarrator();
-        await narrator.ponderAndDescribe(
-            "*Your party was slaughtered, and so ends this thread of destiny...*"
-        );
-        delete this.quests[guildId];
-    }
-
-    private async promptTravel(guildId: string) {
-        this.assertQuestStarted(guildId);
-
-        const world = this.worlds[guildId];
-        const quest = this.quests[guildId];
-
-        // Describe surroundings
-        const narrator = quest.getNarrator();
-        const partyBiome = world.getBiome(quest.getPartyCoordinates());
-        await narrator.describeSurroundings(partyBiome);
-        await narrator.ponderAndDescribe("Where would you like to go? Use **/travel** to "
-            + "choose a direction.");
-    }
-
-    private async handleEncounterResults(guildId: string, results?: boolean) {
-        // If results are undefined, it means encounter did not end
-        if (results === undefined) {
-            return;
-        }
-        // results === true is success, continue quest
-        if (results) {
-            await this.promptTravel(guildId);
-        // results === false is failure, and quest ends
-        } else {
-            await this.failQuest(guildId);
         }
     }
 
@@ -701,5 +652,92 @@ export default class QuestLord {
         const results = await quest.handleEncounterMenuSelect(interaction);
 
         await this.handleEncounterResults(guildId, results);
+    }
+
+    private async printInventory(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+        const quantities = pc.getCharacter().getInventory().getQuantities();
+        const inventoryEmbed = quantities.length
+            ? quantities.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** `
+                + `${curr.item.name}: ${curr.quantity}`, "")
+            : "Inventory is empty";
+
+        const embed = new EmbedBuilder()
+            .setColor("#0099ff")
+            .setTitle("Your inventory")
+            .setDescription(inventoryEmbed);
+        await interaction.reply({
+            embeds: [embed],
+            ephemeral: true
+        });
+    }
+
+    private async printStatus(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        console.log("Printing character status for guild", guildId);
+        await interaction.reply({
+            content: "Printed status to the console.",
+            ephemeral: true
+        });
+    }
+
+    private async logMapDisplay(interaction: CommandInteraction) {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const world = this.worlds[guildId];
+        const quest = this.quests[guildId];
+
+        const map = world.stringify(quest.getPartyCoordinates());
+        console.info(map);
+        await interaction.reply({
+            content: "Printed map to the console.",
+            ephemeral: true
+        });
+    }
+
+    /* OTHER METHODS */
+
+    private async failQuest(guildId: string): Promise<void> {
+        const quest = this.quests[guildId];
+        const narrator = quest.getNarrator();
+        await narrator.ponderAndDescribe(
+            "*Your party was slaughtered, and so ends this thread of destiny...*"
+        );
+        delete this.quests[guildId];
+    }
+
+    private async promptTravel(guildId: string) {
+        this.assertQuestStarted(guildId);
+
+        const world = this.worlds[guildId];
+        const quest = this.quests[guildId];
+
+        // Describe surroundings
+        const narrator = quest.getNarrator();
+        const partyBiome = world.getBiome(quest.getPartyCoordinates());
+        await narrator.describeSurroundings(partyBiome);
+        await narrator.ponderAndDescribe("Where would you like to go? Use **/travel** to "
+            + "choose a direction.");
+    }
+
+    private async handleEncounterResults(guildId: string, results?: boolean) {
+        // If results are undefined, it means encounter did not end
+        if (results === undefined) {
+            return;
+        }
+        // results === true is success, continue quest
+        if (results) {
+            await this.promptTravel(guildId);
+        // results === false is failure, and quest ends
+        } else {
+            await this.failQuest(guildId);
+        }
     }
 }
