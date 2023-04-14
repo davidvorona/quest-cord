@@ -134,7 +134,7 @@ export default class QuestLord {
 
             // User wants to look at the map
             if (interaction.commandName === "map") {
-                this.logMapDisplay(interaction);
+                await this.logMapDisplay(interaction);
             }
         } catch (err) {
             console.error(`Failed to process '/${interaction.commandName}' command `
@@ -289,7 +289,11 @@ export default class QuestLord {
         this.worlds[guildId] = world;
 
         // Create narrator for quest
-        const narrator = new Narrator(guildId, interaction.channel);
+        const questChannel = interaction.options.getChannel("channel") || interaction.channel;
+        if (!(questChannel instanceof TextChannel)) {
+            throw new Error(`Invalid channel '${questChannel.id}' of type '${questChannel.type}'`);
+        }
+        const narrator = new Narrator(guildId, questChannel);
 
         // Create quest for user(s)
         const quest = new Quest(guildId, narrator);
@@ -538,6 +542,8 @@ export default class QuestLord {
 
     private async logMapDisplay(interaction: CommandInteraction) {
         const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
         const world = this.worlds[guildId];
         const quest = this.quests[guildId];
 
@@ -600,7 +606,7 @@ export default class QuestLord {
             await quest.handleEncounterCommand(interaction, interaction.commandName);
         // Otherwise, let them use items to their heart's content
         } else {
-            // TODO: This code is a copy of what is in the base Encounter 'commands' list,
+            // TODO: This code is a copy of what is in the base CombatEncounter 'commands' list,
             // we should avoid repeating it here.
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)

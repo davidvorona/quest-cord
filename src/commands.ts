@@ -69,17 +69,16 @@ class CommandBuilder {
             new SlashCommandBuilder()
                 .setName("start")
                 .setDescription("Start a quest for a party")
-                .addChannelOption((option) => {
-                    return option
-                        .setName("channel")
-                        .setDescription("Pick a channel for this quest")
-                        .setRequired(true);
-                })
                 .addMentionableOption((option) => {
                     return option
                         .setName("player1")
                         .setDescription("Player 1")
                         .setRequired(true);
+                })
+                .addChannelOption((option) => {
+                    return option
+                        .setName("channel")
+                        .setDescription("Pick a channel for this quest");
                 })
                 .addMentionableOption((option) => {
                     return option

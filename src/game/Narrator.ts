@@ -1,11 +1,11 @@
 import {
-    TextBasedChannel,
     BaseMessageOptions,
     ChatInputCommandInteraction,
     InteractionReplyOptions,
     EmbedBuilder,
     StringSelectMenuInteraction,
-    InteractionUpdateOptions
+    InteractionUpdateOptions,
+    TextChannel
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
@@ -32,9 +32,9 @@ class Narrator {
 
     guildId: string;
 
-    channel: TextBasedChannel;
+    channel: TextChannel;
 
-    constructor(guildId: string, channel: TextBasedChannel) {
+    constructor(guildId: string, channel: TextChannel) {
         this.guildId = guildId;
         this.channel = channel;
     }
