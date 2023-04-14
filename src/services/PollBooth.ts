@@ -54,7 +54,13 @@ export default class PollBooth {
     async castVote(type: PollType, vote: string, resultCallback: ResultCallback) {
         this.createPollIfNotExists(type, resultCallback);
         const poll = this.assertAndGetPoll(type);
+        // Cast the vote
+        poll.castVote(vote);
         console.info(`Vote cast for '${vote}'`);
-        await poll.castVote(vote);
+        // Get and handle the result if it exists
+        const result = poll.findResult();
+        if (result) {
+            await poll.handleResult(result);
+        }
     }
 }

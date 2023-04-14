@@ -451,7 +451,7 @@ export default class QuestLord {
             });
 
             await interaction.reply({
-                content: `Vote cast for '${direction}'!`,
+                content: `Vote cast for **${direction}**!`,
                 ephemeral: true
             });
         }

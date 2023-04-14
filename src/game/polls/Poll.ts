@@ -60,24 +60,30 @@ export default class Poll {
         return result;
     }
 
-    updateResultCallback(resultCallback: ResultCallback) {
-        this.resultCallback = resultCallback;
-    }
-
-    async castVote(value: string) {
-        this.votes.push(value);
-        const result = this.findMajorityVote();
+    /**
+     * Tries to determine a valid result from the votes so far. First
+     * it checks for a majority vote and returns that as the result if
+     * it exists. If no majority vote is found, it checks if all votes
+     * have been cast. If they have, then the result is either the highest
+     * vote or - if a winner has still not been decided - randomly chosen
+     * between the highest.
+     */
+    findResult() {
+        let result = this.findMajorityVote();
         if (result) {
             console.info("Result found (majority):", result);
-            await this.execute(result);
         } else if (this.votes.length >= this.votesNeeded) {
-            const highestVote = this.findHighestVote();
-            console.info("Result found (highest):", highestVote);
-            await this.execute(highestVote);
+            result = this.findHighestVote();
+            console.info("Result found (highest):", result);
         }
+        return result;
     }
 
-    async execute(result: string) {
+    castVote(value: string) {
+        this.votes.push(value);
+    }
+
+    async handleResult(result: string) {
         if (this.resultCallback) {
             await this.resultCallback(result);
         }
