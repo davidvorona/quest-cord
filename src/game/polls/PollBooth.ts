@@ -1,6 +1,6 @@
-import Narrator from "../game/Narrator";
-import Poll from "../game/polls/Poll";
-import TravelPoll from "../game/polls/TravelPoll";
+import Narrator from "../Narrator";
+import Poll from "./Poll";
+import TravelPoll from "./TravelPoll";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ResultCallback = (voteResult: any) => Promise<void>;
@@ -15,11 +15,11 @@ export default class PollBooth {
 
     narrator: Narrator;
 
-    votesNeeded: number;
+    voters: string[];
 
-    constructor(narrator: Narrator, votesNeeded: number) {
+    constructor(narrator: Narrator, voters: string[]) {
         this.narrator = narrator;
-        this.votesNeeded = votesNeeded;
+        this.voters = voters;
     }
 
     doesPollTypeExist = (type: PollType) => type in this.polls;
@@ -43,7 +43,7 @@ export default class PollBooth {
         // If poll type does not exist, create a new one
         switch (type) {
         case PollType.Travel:
-            this.polls[type] = new TravelPoll(this.votesNeeded, resultCallback);
+            this.polls[type] = new TravelPoll(this.voters, resultCallback);
             break;
         default:
             throw new Error(`Invalid poll type: ${type}`);
@@ -51,16 +51,21 @@ export default class PollBooth {
         console.info(`${type} poll created`);
     }
 
-    async castVote(type: PollType, vote: string, resultCallback: ResultCallback) {
+    async castVote(voterId: string, type: PollType, vote: string, resultCallback: ResultCallback) {
         this.createPollIfNotExists(type, resultCallback);
         const poll = this.assertAndGetPoll(type);
         // Cast the vote
-        poll.castVote(vote);
-        console.info(`Vote cast for '${vote}'`);
+        poll.castVote(voterId, vote);
+        console.info(`User '${voterId}' casts vote for '${vote}'`);
         // Get and handle the result if it exists
         const result = poll.findResult();
         if (result) {
             await poll.handleResult(result);
+            this.closePoll(type);
         }
+    }
+
+    private closePoll(type: PollType) {
+        delete this.polls[type];
     }
 }

@@ -7,21 +7,24 @@ export default class Poll {
      * out. Note: avoid replies to interactions, as they will not
      * work as intended.
      */
-    resultCallback?: ResultCallback;
+    resultCallback: ResultCallback;
 
-    votes: string[] = [];
+    votes: Record<string, string> = {};
 
-    votesNeeded: number;
+    voters: string[];
 
-    constructor(votesNeeded: number, resultCallback: ResultCallback) {
-        this.votesNeeded = votesNeeded;
+    constructor(voters: string[], resultCallback: ResultCallback) {
+        this.voters = voters;
         this.resultCallback = resultCallback;
     }
 
-    private countVotes() {
+    private countVotes = () => Object.keys(this.votes).length;
+
+    private findVoteCounts() {
         const counts: Record<string, number> = {};
-        for (let i = 0; i < this.votes.length; i++) {
-            const vote = this.votes[i];
+        const votes = Object.values(this.votes);
+        for (let i = 0; i < this.countVotes(); i++) {
+            const vote = votes[i];
             if (!counts[vote]) {
                 counts[vote] = 0;
             }
@@ -31,9 +34,9 @@ export default class Poll {
     }
 
     private findHighestVote() {
-        const counts = this.countVotes();
+        const counts = this.findVoteCounts();
         // Default to first vote
-        let highestVote = this.votes[0];
+        let highestVote = Object.values(this.votes)[0];
         Object.keys(counts).forEach((vote) => {
             if (counts[vote] > counts[highestVote]) {
                 highestVote = vote;
@@ -43,11 +46,12 @@ export default class Poll {
     }
 
     private findMajorityVote() {
-        const majorityCount = Math.floor(this.votesNeeded / 2) + 1;
+        const majorityCount = Math.floor(this.voters.length / 2) + 1;
         const counts: Record<string, number> = {};
+        const votes = Object.values(this.votes);
         let result;
-        for (let i = 0; i < this.votes.length; i++) {
-            const vote = this.votes[i];
+        for (let i = 0; i < this.countVotes(); i++) {
+            const vote = votes[i];
             if (!counts[vote]) {
                 counts[vote] = 0;
             }
@@ -72,26 +76,18 @@ export default class Poll {
         let result = this.findMajorityVote();
         if (result) {
             console.info("Result found (majority):", result);
-        } else if (this.votes.length >= this.votesNeeded) {
+        } else if (this.countVotes() >= this.voters.length) {
             result = this.findHighestVote();
             console.info("Result found (highest):", result);
         }
         return result;
     }
 
-    castVote(value: string) {
-        this.votes.push(value);
+    castVote(voterId: string, value: string) {
+        this.votes[voterId] = value;
     }
 
     async handleResult(result: string) {
-        if (this.resultCallback) {
-            await this.resultCallback(result);
-        }
-        this.closePoll();
-    }
-
-    closePoll() {
-        this.resultCallback = undefined;
-        this.votes = [];
+        await this.resultCallback(result);
     }
 }

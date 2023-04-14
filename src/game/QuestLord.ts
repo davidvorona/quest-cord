@@ -13,7 +13,7 @@ import {
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
 import EncounterBuilder from "../services/EncounterBuilder";
-import PollBooth, { PollType } from "../services/PollBooth";
+import PollBooth, { PollType } from "./polls/PollBooth";
 import CreatureFactory from "../services/CreatureFactory";
 import {
     Direction,
@@ -318,7 +318,7 @@ export default class QuestLord {
         this.quests[guildId] = quest;
 
         // Create guild poll booth
-        this.polls[guildId] = new PollBooth(narrator, quest.getPartySize());
+        this.polls[guildId] = new PollBooth(narrator, quest.getPartyUserIds());
 
         // Defer reply in case guild commands take a while
         await interaction.deferReply({ ephemeral: true });
@@ -425,7 +425,8 @@ export default class QuestLord {
             this.assertPollBoothCreated(guildId);
             const pollBooth = this.polls[guildId];
 
-            pollBooth.castVote(PollType.Travel, direction, async (vote: Direction) => {
+            const voterId = interaction.user.id;
+            pollBooth.castVote(voterId, PollType.Travel, direction, async (vote: Direction) => {
                 const coordinates = quest.getPartyCoordinates();
                 // Store current biome string in a variable for use
                 const biome = world.getBiome(coordinates);
