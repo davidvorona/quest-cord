@@ -2,6 +2,8 @@
 type ResultCallback = (voteResult: any) => Promise<void>;
 
 export default class Poll {
+    resultCallbackLocked = false;
+
     /**
      * Callback function that is invoked once the poll results are
      * out. Note: avoid replies to interactions, as they will not
@@ -87,7 +89,29 @@ export default class Poll {
         this.votes[voterId] = value;
     }
 
+    private lockResult() {
+        this.resultCallbackLocked = true;
+    }
+
+    private unlockResult() {
+        this.resultCallbackLocked = false;
+    }
+
+    /**
+     * Invokes the result callback. To prevent the callback from being invoked
+     * multiple times due to a race condition, a lock is placed on the callback
+     * until it resolves and the poll is deleted, or until it throws an error.
+     */
     async handleResult(result: string) {
-        await this.resultCallback(result);
+        if (this.resultCallbackLocked) {
+            throw new Error("Poll result callback is locked, aborting");
+        }
+        this.lockResult();
+        try {
+            await this.resultCallback(result);
+        } catch (err) {
+            this.unlockResult();
+            throw err;
+        }
     }
 }
