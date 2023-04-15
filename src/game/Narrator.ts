@@ -126,7 +126,8 @@ class Narrator {
             await this.ponderAndDescribe("Choose between a stealthy approach with the "
                 + "**/action sneak** command, or surprise your enemies with **/action surprise**!");
         } else if (encounter instanceof SocialEncounter) {
-            await this.ponderAndDescribe("Talk to the figure with the **/action talk** command.");
+            await this.ponderAndDescribe("Talk to the figure with the **/action talk** command, "
+                + "or ignore them with **/action ignore**.");
         } else if (encounter instanceof MerchantEncounter) {
             await this.ponderAndDescribe("Trade with the merchant using the **/action buy** or "
                 + "**/action sell** commands!");
