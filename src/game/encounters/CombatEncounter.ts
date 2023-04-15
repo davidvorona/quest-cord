@@ -50,7 +50,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                             .setPlaceholder("Nothing selected")
                             .addOptions(options)
                     );
-                await interaction.reply({
+                await this.narrator.reply(interaction, {
                     ephemeral: true,
                     embeds: [embed],
                     components: [row]
@@ -74,7 +74,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                                 .setPlaceholder("Nothing selected")
                                 .addOptions(options)
                         );
-                    await interaction.reply({
+                    await this.narrator.reply(interaction, {
                         ephemeral: true,
                         embeds: [embed],
                         components: [row]
@@ -97,7 +97,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                             .setPlaceholder("Nothing selected")
                             .addOptions(options)
                     );
-                await interaction.reply({
+                await this.narrator.reply(interaction, {
                     ephemeral: true,
                     embeds: [embed],
                     components: [row]
@@ -115,7 +115,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
                 const target = this.getMonsterByIndex(targetIdx);
 
-                await interaction.update({
+                await this.narrator.update(interaction, {
                     content: "You prepare to attack the creature...",
                     components: [],
                     embeds: []
@@ -191,7 +191,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 try {
                     character.useItem(item);
                 } catch (err) {
-                    await interaction.reply({
+                    await this.narrator.reply(interaction, {
                         content: "You do not have this item!",
                         ephemeral: true
                     });

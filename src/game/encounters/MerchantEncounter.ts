@@ -40,7 +40,7 @@ export default class MerchantEncounter extends FreeEncounter {
                             .setPlaceholder("Nothing selected")
                             .addOptions(options)
                     );
-                await interaction.reply({
+                await this.narrator.reply(interaction, {
                     ephemeral: true,
                     embeds: [embed],
                     components: [row]
@@ -60,7 +60,7 @@ export default class MerchantEncounter extends FreeEncounter {
                             .setPlaceholder("Nothing selected")
                             .addOptions(options)
                     );
-                await interaction.reply({
+                await this.narrator.reply(interaction, {
                     ephemeral: true,
                     embeds: [embed],
                     components: [row]
@@ -73,7 +73,7 @@ export default class MerchantEncounter extends FreeEncounter {
         {
             customId: "item:buy",
             execute: async (interaction: SelectMenuInteraction) => {
-                await interaction.update({
+                await this.narrator.update(interaction, {
                     content: "You offer to pay gold for the merchant's goods. "
                         + "Unfortunately, he's out of stock!"
                 });
@@ -82,7 +82,7 @@ export default class MerchantEncounter extends FreeEncounter {
         {
             customId: "item:sell",
             execute: async (interaction: SelectMenuInteraction) => {
-                await interaction.update({
+                await this.narrator.update(interaction, {
                     content: "You offer to sell the merchant some of your "
                         + "loot. Unfortunately, he's out of gold!"
                 });

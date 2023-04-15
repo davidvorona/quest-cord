@@ -44,8 +44,15 @@ class Narrator {
         await this.channel.send(payload);
     }
 
+    async reply(
+        interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
+        payload: string | InteractionReplyOptions
+    ) {
+        await interaction.reply(payload);
+    }
+
     async ponderAndReply(
-        interaction: ChatInputCommandInteraction,
+        interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
         payload: string | InteractionReplyOptions
     ) {
         const ephemeral = typeof payload !== "string" ? payload.ephemeral : false;
@@ -56,11 +63,18 @@ class Narrator {
         await interaction.editReply(payload);
     }
 
+    async update(
+        interaction: StringSelectMenuInteraction,
+        payload: string| InteractionUpdateOptions
+    ) {
+        await interaction.update(payload);
+    }
+
     async ponderAndUpdate(
         interaction: StringSelectMenuInteraction,
         payload: string | InteractionUpdateOptions
     ) {
-        if (interaction.deferred) {
+        if (!interaction.deferred) {
             await interaction.deferUpdate();
         }
         await delay(rand(Narrator.TIME_TO_PONDER));

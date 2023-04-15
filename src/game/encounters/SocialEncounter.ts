@@ -1,4 +1,3 @@
-import { CommandInteraction } from "../../types";
 import Character from "../creatures/Character";
 import Encounter from "./Encounter";
 import Narrator from "../Narrator";
@@ -11,16 +10,26 @@ export default class SocialEncounter extends Encounter {
         {
             name: "talk",
             description: "Beg, bully, or bandy your way forward"
+        },
+        {
+            name: "ignore",
+            description: "Keep to yourself and ignore the friendly figure"
         }
     ];
 
     commands = {
         talk: {
-            execute: async (interaction: CommandInteraction) => {
+            execute: async () => {
                 const npcName = this.getNpcNames()[0];
-                await this.narrator.ponderAndReply(interaction, "You walk up to the figure, and "
+                await this.narrator.ponderAndDescribe("You walk up to the figure, and "
                     + `strike up a conversation. Their name is ${npcName}. After some pleasant `
                     + "talk, you bid farewell and continue on your way.");
+            }
+        },
+        ignore: {
+            execute: async () => {
+                await this.narrator.ponderAndDescribe("You keep your head down and "
+                    + "continue past the figure without saying a word.");
             }
         }
     };

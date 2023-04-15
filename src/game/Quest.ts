@@ -1,10 +1,11 @@
 import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
-import Encounter from "./encounters/Encounter";
+import Encounter, { EncounterCommand } from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
 import { CommandInteraction, SelectMenuInteraction } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
+import PollBooth from "./polls/PollBooth";
 
 export default class Quest {
     readonly id: string;
@@ -13,25 +14,35 @@ export default class Quest {
 
     readonly narrator: Narrator;
 
+    readonly pollBooth: PollBooth;
+
     pcs: Record<string, PlayerCharacter | null> = {};
 
     coordinates: [number, number] = [0, 0];
 
     encounter?: Encounter;
 
-    constructor(guildId: string, narrator: Narrator) {
+    constructor(guildId: string, userIds: string[], narrator: Narrator) {
         console.info("Accepting new quest...");
         this.id = createRandomId();
         this.guildId = guildId;
+        this.pcs = this.initPlayers(userIds);
         this.narrator = narrator;
+        this.pollBooth = new PollBooth(narrator, userIds);
+    }
+
+    initPlayers(userIds: string[]) {
+        const players: Record<string, null> = {};
+        userIds.forEach(id => (players[id] = null));
+        return players;
     }
 
     getNarrator() {
         return this.narrator;
     }
 
-    addPlayer(userId: string) {
-        this.pcs[userId] = null;
+    getPollBooth() {
+        return this.pollBooth;
     }
 
     private getPlayerByUserId(userId: string) {
@@ -58,6 +69,13 @@ export default class Quest {
 
     doesCharacterExist(pc: PlayerCharacter | null): pc is PlayerCharacter {
         return (pc as PlayerCharacter) !== null;
+    }
+
+    assertPlayerCharacterExists(userId: string) {
+        const playerCharacter = this.getPlayerByUserId(userId);
+        if (!this.doesCharacterExist(playerCharacter)) {
+            throw new Error("Player character does not exist!");
+        }
     }
 
     assertAndGetPlayerCharacter(userId: string) {
@@ -157,23 +175,33 @@ export default class Quest {
         }
     }
 
-    async handleEncounterCommand(interaction: CommandInteraction, commandNameOverride?: string) {
+    validateEncounterCommand(interaction: CommandInteraction, commandNameOverride?: string) {
         if (!this.isInEncounter()) {
             throw new Error("There is no active encounter!");
         }
-        const userId = interaction.user.id;
-        const playerCharacter = this.assertAndGetPlayerCharacter(userId);
+        // Assert interaction user has a valid player character
+        this.assertPlayerCharacterExists(interaction.user.id);
+        // Validate the command itself
         const commandName = commandNameOverride || interaction.options.getSubcommand();
-        const command = this.encounter.getCommand(commandName);
+        const command = this.encounter.assertAndGetCommand(commandName);
+        // If turn-based, validate the player's turn
         const consumesTurn = command && command.consumesTurn;
         if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
-            this.validatePlayerTurn(userId);
+            this.validatePlayerTurn(interaction.user.id);
         }
+        return command;
+    }
+
+    async handleEncounterCommand(interaction: CommandInteraction, command: EncounterCommand) {
+        if (!this.isInEncounter()) {
+            throw new Error("There is no active encounter!");
+        }
+        const playerCharacter = this.assertAndGetPlayerCharacter(interaction.user.id);
 
         await this.encounter.handleCommand(
             interaction,
-            playerCharacter.getCharacter(),
-            commandNameOverride
+            command,
+            playerCharacter.getCharacter()
         );
 
         if (this.encounter.isOver()) {
@@ -181,7 +209,7 @@ export default class Quest {
             return results;
         }
 
-        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+        if (this.encounter instanceof TurnBasedEncounter && command.consumesTurn) {
             await this.encounter.handleNextTurn();
         }
     }

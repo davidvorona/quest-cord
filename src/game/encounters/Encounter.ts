@@ -7,15 +7,17 @@ interface StaticCommand {
     description: string;
 }
 
-interface EncounterCommand {
+export interface EncounterCommand {
     execute: (interaction: CommandInteraction, character: Character) => Promise<void>;
     consumesTurn?: boolean;
+    democratic?: boolean;
 }
 
-interface EncounterSelection {
+export interface EncounterSelection {
     customId: string;
     execute: (interaction: SelectMenuInteraction, character: Character) => Promise<void>;
     consumesTurn?: boolean;
+    democratic?: boolean;
 }
 
 export default class Encounter {
@@ -58,18 +60,21 @@ export default class Encounter {
 
     getCommand = (commandName: string) => this.commands[commandName];
 
-    getMenu = (customId: string) => this.menus.find(s => s.customId === customId);
-
-    async handleCommand(
-        interaction: CommandInteraction,
-        character: Character,
-        commandNameOverride?: string
-    ) {
-        const commandName = commandNameOverride || interaction.options.getSubcommand();
+    assertAndGetCommand(commandName: string) {
         const command = this.getCommand(commandName);
         if (!command) {
             throw new Error(`Invalid command for ${this.constructor.name}: ${commandName}`);
         }
+        return command;
+    }
+
+    getMenu = (customId: string) => this.menus.find(s => s.customId === customId);
+
+    async handleCommand(
+        interaction: CommandInteraction,
+        command: EncounterCommand,
+        character: Character,
+    ) {
         await command.execute(interaction, character);
     }
 

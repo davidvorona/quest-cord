@@ -1,12 +1,15 @@
 import Narrator from "../Narrator";
 import Poll from "./Poll";
+import StealthPoll from "./StealthPoll";
 import TravelPoll from "./TravelPoll";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ResultCallback = (voteResult: any) => Promise<void>;
 
 export enum PollType {
-    Travel = "Travel"
+    Travel = "Travel",
+    Stealth = "Stealth",
+    Social = "Social"
 }
 
 // RuneScape
@@ -44,6 +47,12 @@ export default class PollBooth {
         switch (type) {
         case PollType.Travel:
             this.polls[type] = new TravelPoll(this.voters, resultCallback);
+            break;
+        case PollType.Stealth:
+            this.polls[type] = new StealthPoll(this.voters, resultCallback);
+            break;
+        case PollType.Social:
+            this.polls[type] = new StealthPoll(this.voters, resultCallback);
             break;
         default:
             throw new Error(`Invalid poll type: ${type}`);

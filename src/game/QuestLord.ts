@@ -13,7 +13,7 @@ import {
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
 import EncounterBuilder from "../services/EncounterBuilder";
-import PollBooth, { PollType } from "./polls/PollBooth";
+import { PollType } from "./polls/PollBooth";
 import CreatureFactory from "../services/CreatureFactory";
 import {
     Direction,
@@ -32,8 +32,6 @@ export default class QuestLord {
     worlds: Record<string, World> = {};
 
     quests: Record<string, Quest> = {};
-
-    polls: Record<string, PollBooth> = {};
 
     creatureFactory: CreatureFactory;
 
@@ -74,12 +72,6 @@ export default class QuestLord {
     private assertQuestNotStarted(guildId: string) {
         if (!isEmpty(this.quests[guildId])) {
             throw new Error("Quest already started, aborting");
-        }
-    }
-
-    private assertPollBoothCreated(guildId: string) {
-        if (isEmpty(this.polls[guildId])) {
-            throw new Error("Pool booth not created, aborting");
         }
     }
 
@@ -263,6 +255,9 @@ export default class QuestLord {
             if (subcommand === "talk") {
                 await this.handleTalk(interaction);
             }
+            if (subcommand === "ignore") {
+                await this.handleIgnore(interaction);
+            }
             if (subcommand === "buy") {
                 await this.promptBuy(interaction);
             }
@@ -310,15 +305,12 @@ export default class QuestLord {
         const narrator = new Narrator(guildId, questChannel);
 
         // Create quest for user(s)
-        const quest = new Quest(guildId, narrator);
-        players.forEach(p => quest.addPlayer(p.id));
+        const userIds = players.map(p => p.id);
+        const quest = new Quest(guildId, userIds, narrator);
         quest.setPartyCoordinates(world.getRandomCoordinates());
 
         // Register new quest
         this.quests[guildId] = quest;
-
-        // Create guild poll booth
-        this.polls[guildId] = new PollBooth(narrator, quest.getPartyUserIds());
 
         // Defer reply in case guild commands take a while
         await interaction.deferReply({ ephemeral: true });
@@ -422,39 +414,44 @@ export default class QuestLord {
             const direction = interaction.options.getString("direction", true) as Direction;
             this.validateTravelDirection(guildId, direction);
 
-            this.assertPollBoothCreated(guildId);
-            const pollBooth = this.polls[guildId];
+            const pollBooth = quest.getPollBooth();
 
-            const voterId = interaction.user.id;
-            pollBooth.castVote(voterId, PollType.Travel, direction, async (vote: Direction) => {
-                const coordinates = quest.getPartyCoordinates();
-                // Store current biome string in a variable for use
-                const biome = world.getBiome(coordinates);
-
-                const [x, y] = this.validateTravelDirection(guildId, vote);
-
-                // If traveling from a free encounter, end that encounter
-                if (quest.encounter instanceof FreeEncounter) {
-                    await quest.endEncounter();
-                }
-
-                // Set the new coordinates, and continue
-                quest.setPartyCoordinates([x, y]);
-
-                const newBiome = world.getBiome([x, y]);
-                await narrator.ponderAndDescribe(`The party chooses to travel ${vote}.`);
-                await narrator.describeTravel(biome, newBiome);
-
-                // Now that the party has reached a new location, start the next encounter
-                const encounter = this.encounterBuilder
-                    .build(newBiome, quest.getCharacters(), narrator);
-                await quest.startEncounter(encounter);
-            });
-
+            // We can reply here, since we don't reply in the result callback
             await interaction.reply({
-                content: `Vote cast for **${direction}**!`,
+                content: `You voted to travel '${direction}'!`,
                 ephemeral: true
             });
+
+            const voterId = interaction.user.id;
+            await pollBooth.castVote(
+                voterId,
+                PollType.Travel,
+                direction,
+                async (vote: Direction) => {
+                    const coordinates = quest.getPartyCoordinates();
+                    // Store current biome string in a variable for use
+                    const biome = world.getBiome(coordinates);
+
+                    const [x, y] = this.validateTravelDirection(guildId, vote);
+
+                    // If traveling from a free encounter, end that encounter
+                    if (quest.encounter instanceof FreeEncounter) {
+                        await quest.endEncounter();
+                    }
+
+                    // Set the new coordinates, and continue
+                    quest.setPartyCoordinates([x, y]);
+
+                    const newBiome = world.getBiome([x, y]);
+                    await narrator.ponderAndDescribe(`The party chooses to travel ${vote}.`);
+                    await narrator.describeTravel(biome, newBiome);
+
+                    // Now that the party has reached a new location, start the next encounter
+                    const encounter = this.encounterBuilder
+                        .build(newBiome, quest.getCharacters(), narrator);
+                    await quest.startEncounter(encounter);
+                }
+            );
         }
     }
 
@@ -463,11 +460,29 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        quest.validateEncounterCommand(interaction);
 
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        const pollBooth = quest.getPollBooth();
+        const stealthAction = interaction.options.getSubcommand();
+
+        // We can reply here, since we don't reply in the result callback
+        await interaction.reply({
+            content: `You voted to '${stealthAction}'!`,
+            ephemeral: true
+        });
+
+        await pollBooth.castVote(
+            interaction.user.id,
+            PollType.Stealth,
+            stealthAction,
+            async (vote: string) => {
+                const command = quest.validateEncounterCommand(interaction, vote);
+                await quest.handleEncounterCommand(interaction, command);
+                if (!quest.isInEncounter()) {
+                    await this.promptTravel(guildId);
+                }
+            }
+        );
     }
 
     private async handleSurprise(interaction: CommandInteraction): Promise<void> {
@@ -475,11 +490,29 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        quest.validateEncounterCommand(interaction);
 
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        const pollBooth = quest.getPollBooth();
+        const stealthAction = interaction.options.getSubcommand();
+
+        // We can reply here, since we don't reply in the result callback
+        await interaction.reply({
+            content: `You voted to '${stealthAction}'!`,
+            ephemeral: true
+        });
+
+        await pollBooth.castVote(
+            interaction.user.id,
+            PollType.Stealth,
+            stealthAction,
+            async (vote: string) => {
+                const command = quest.validateEncounterCommand(interaction, vote);
+                await quest.handleEncounterCommand(interaction, command);
+                if (!quest.isInEncounter()) {
+                    await this.promptTravel(guildId);
+                }
+            }
+        );
     }
 
     private async handleTalk(interaction: CommandInteraction): Promise<void> {
@@ -487,11 +520,59 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        quest.validateEncounterCommand(interaction);
 
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        const pollBooth = quest.getPollBooth();
+        const socialAction = interaction.options.getSubcommand();
+
+        // We can reply here, since we don't reply in the result callback
+        await interaction.reply({
+            content: `You voted to '${socialAction}'!`,
+            ephemeral: true
+        });
+
+        await pollBooth.castVote(
+            interaction.user.id,
+            PollType.Social,
+            socialAction,
+            async (vote: string) => {
+                const command = quest.validateEncounterCommand(interaction, vote);
+                await quest.handleEncounterCommand(interaction, command);
+                if (!quest.isInEncounter()) {
+                    await this.promptTravel(guildId);
+                }
+            }
+        );
+    }
+
+    private async handleIgnore(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        quest.validateEncounterCommand(interaction);
+
+        const pollBooth = quest.getPollBooth();
+        const socialAction = interaction.options.getSubcommand();
+
+        // We can reply here, since we don't reply in the result callback
+        await interaction.reply({
+            content: `You voted to '${socialAction}'!`,
+            ephemeral: true
+        });
+
+        await pollBooth.castVote(
+            interaction.user.id,
+            PollType.Social,
+            socialAction,
+            async (vote: string) => {
+                const command = quest.validateEncounterCommand(interaction, vote);
+                await quest.handleEncounterCommand(interaction, command);
+                if (!quest.isInEncounter()) {
+                    await this.promptTravel(guildId);
+                }
+            }
+        );
     }
 
     private async promptBuy(interaction: CommandInteraction): Promise<void> {
@@ -499,7 +580,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        const command = quest.validateEncounterCommand(interaction);
+        await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleBuy(interaction: SelectMenuInteraction): Promise<void> {
@@ -519,7 +601,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        const command = quest.validateEncounterCommand(interaction);
+        await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleSell(interaction: SelectMenuInteraction): Promise<void> {
@@ -534,12 +617,16 @@ export default class QuestLord {
         }
     }
 
+    // TODO: This would be an example of a command anyone can do that doesn't require
+    // a poll to be executed. We need a way to lock this command until it resolves so
+    // submissions by multiple users don't cause a race condition.
     private async handleLookout(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        const command = quest.validateEncounterCommand(interaction);
+        await quest.handleEncounterCommand(interaction, command);
 
         if (!quest.isInEncounter()) {
             await this.promptTravel(guildId);
@@ -555,7 +642,8 @@ export default class QuestLord {
         if (quest.isInEncounter()) {
             // Override the command name here since typical encounter commands are
             // subcommands of /action
-            await quest.handleEncounterCommand(interaction, interaction.commandName);
+            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
+            await quest.handleEncounterCommand(interaction, command);
         // Otherwise, let them use items to their heart's content
         } else {
             // TODO: This code is a copy of what is in the base CombatEncounter 'commands' list,
@@ -616,7 +704,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        const command = quest.validateEncounterCommand(interaction);
+        await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleAttack(interaction: SelectMenuInteraction): Promise<void> {
@@ -634,7 +723,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterCommand(interaction);
+        const command = quest.validateEncounterCommand(interaction);
+        await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleCastSpell(interaction: SelectMenuInteraction): Promise<void> {

@@ -18,17 +18,11 @@ export const isEmpty = (thing: any) =>
 
 /**
  * Reads the file at the provided file path and returns stringified data.
- * 
- * @param {string} filePath relative path to the file
- * @returns {string} stringified data from file
  */
 export const readFile = (filePath: string): string => fs.readFileSync(filePath, "utf-8");
 
 /**
  * Parses the stringified data to a JSON object and logs any exceptions.
- * 
- * @param {string} dataJson 
- * @returns 
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const parseJson = (dataJson: string): any => {
@@ -43,9 +37,6 @@ export const parseJson = (dataJson: string): any => {
 /**
  * Finds a random number between 0 and the provided max, exclusive.
  * Example: rand(3) => 0 or 1 or 2
- * 
- * @param {number} max 
- * @returns 
  */
 export const rand = (max: number) => Math.floor(Math.random() * Math.floor(max));
 
@@ -81,7 +72,7 @@ export const loadNames = () => {
 };
 
 /**
- * Extracts guild members from the /start command options. 
+ * Extracts guild members from the /start command options.
  */
 export const getPlayersFromStartCommand = (interaction: ChatInputCommandInteraction) => {
     const players = [];
@@ -105,7 +96,6 @@ export const getPlayersFromStartCommand = (interaction: ChatInputCommandInteract
 /**
  * Takes a map of PermissionBitFields keyed to a string identifier, such
  * as a user ID, and creates a readable message to send as a reply.
- * 
  * Example:
  * Cowberry5 is missing permissions: SendMessages
  */
