@@ -7,6 +7,6 @@
         "weapon": "sword"
     },
     "spells": ["fire_bolt"],
-    "items": ["elixir", "potion"],
+    "items": ["elixir", "potion", "ear", "torch", "skull", "wand"],
     "lvlGains": []
 }

@@ -8,7 +8,8 @@ import {
     TextChannel,
     EmbedBuilder,
     GuildMember,
-    PermissionsBitField
+    PermissionsBitField,
+    AttachmentBuilder
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -26,6 +27,7 @@ import Quest from "./Quest";
 import World from "./World";
 import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
+import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
 
 export default class QuestLord {
@@ -166,12 +168,12 @@ export default class QuestLord {
 
             // User wants to look at their inventory
             if (interaction.commandName === "inventory") {
-                await this.printInventory(interaction);
+                await this.displayInventory(interaction);
             }
 
             // User wants to look at their character status
             if (interaction.commandName === "status") {
-                await this.printStatus(interaction);
+                await this.displayStatus(interaction);
             }
 
             // User wants to look at the map
@@ -745,36 +747,61 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, results);
     }
 
-    private async printInventory(interaction: CommandInteraction): Promise<void> {
+    private async displayInventory(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
-        const quantities = pc.getCharacter().getInventory().getQuantities();
-        const inventoryEmbed = quantities.length
-            ? quantities.reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** `
-                + `${curr.item.name}: ${curr.quantity}`, "")
+        const inventory = pc.getCharacter().getInventory();
+        const quantities = inventory.getQuantities();
+        const description = quantities.length
+            ? `${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}`
             : "Inventory is empty";
+        const fields = quantities.map((q) => ({
+            name: q.item.name,
+            value: q.quantity.toString(),
+            inline: true
+        }));
+        const thumbnail = new AttachmentBuilder("assets/inventory.png");
 
         const embed = new EmbedBuilder()
             .setColor("#0099ff")
             .setTitle("Your inventory")
-            .setDescription(inventoryEmbed);
+            .setAuthor({ name: description })
+            .setThumbnail("attachment://inventory.png")
+            .addFields(fields);
         await interaction.reply({
             embeds: [embed],
-            ephemeral: true
+            ephemeral: true,
+            files: [thumbnail]
         });
     }
 
-    private async printStatus(interaction: CommandInteraction): Promise<void> {
+    private async displayStatus(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
 
-        console.log("Printing character status for guild", guildId);
+        const quest = this.quests[guildId];
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+
+        const className = pc.getCharacter().baseId;
+        const thumbnail = new AttachmentBuilder(`assets/${className}.png`);
+        const embed = new EmbedBuilder()
+            .setColor("#0099ff")
+            .setTitle(pc.getName())
+            .setDescription(`Level ${pc.lvl} ${className}`)
+            .setThumbnail(`attachment://${className}.png`)
+            .addFields(
+                {
+                    name: "Hitpoints",
+                    value: `${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}`
+                }
+            );
         await interaction.reply({
-            content: "Printed status to the console.",
-            ephemeral: true
+            embeds: [embed],
+            ephemeral: true,
+            files: [thumbnail]
         });
     }
 
