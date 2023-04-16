@@ -753,8 +753,8 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
-        const inventory = pc.getCharacter().getInventory();
-        const quantities = inventory.getQuantities();
+
+        const quantities = pc.getCharacter().getInventory().getQuantities();
         const description = quantities.length
             ? `${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}`
             : "Inventory is empty";
@@ -764,7 +764,6 @@ export default class QuestLord {
             inline: true
         }));
         const thumbnail = new AttachmentBuilder("assets/inventory.png");
-
         const embed = new EmbedBuilder()
             .setColor("#0099ff")
             .setTitle("Your inventory")
