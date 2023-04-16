@@ -1,28 +1,21 @@
-import path from "path";
-import { REST } from "@discordjs/rest";
-import { Routes } from "discord-api-types/v9";
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { ConfigJson, AuthJson, AnyObject, CharacterClass } from "./types";
-import { parseJson, readFile } from "./util";
-import { COMMAND_TYPE, DIRECTION, FORMATTED_DIRECTION } from "./constants";
+import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { CharacterClass } from "./types";
+import { DIRECTION, FORMATTED_DIRECTION } from "./constants";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
+import Encounters from "./game/encounters";
+import config from "./config";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const defaultCommands = require("../config/commands");
-const authPath = path.join(__dirname, "../config/auth.json");
-const { TOKEN } = parseJson(readFile(authPath)) as AuthJson;
-const configPath = path.join(__dirname, "../config/config.json");
-const { CLIENT_ID } = parseJson(readFile(configPath)) as ConfigJson;
+const { clientId, authToken } = config;
 
-const rest = new REST({ version: "9" }).setToken(TOKEN);
+const rest = new REST({ version: "10" }).setToken(authToken);
 
 interface CommandBuilderArgs {
-    type: string;
+    type: number;
     targets?: string[];
 }
 
 class CommandBuilder {
-    type?: string;
+    type?: number;
 
     targets?: string[];
 
@@ -43,79 +36,122 @@ class CommandBuilder {
         return { name, value };
     }
 
-    build(): AnyObject[] {
-        const builtCommands = [];
-        switch (this.type) {
-        case COMMAND_TYPE.NEW_QUEST: {
-            const choices = Object.values(compendium.data.classes).map(
-                (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
-            );
-            builtCommands.push(new SlashCommandBuilder()
+    private buildActionSubcommands(builder: SlashCommandBuilder) {
+        const commands: { name: string; description: string; }[] = [];
+        Encounters.forEach((Encounter) => {
+            Encounter.commands.forEach((command) => {
+                const exists = commands.find(c => c.name === command.name);
+                if (exists) {
+                    console.warn("Duplicate command:", command.name);
+                    return;
+                }
+                commands.push(command);
+            });
+        });
+        commands.forEach((command) => {
+            builder.addSubcommand((subcommand) => {
+                return subcommand
+                    .setName(command.name)
+                    .setDescription(command.description);
+            });
+        });
+        return builder;
+    }
+
+    build() {
+        return [
+            // /ping
+            new SlashCommandBuilder()
+                .setName("ping")
+                .setDescription("Replies with pong!")
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            // /start
+            new SlashCommandBuilder()
+                .setName("start")
+                .setDescription("Start a quest for a party")
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player1")
+                        .setDescription("Player 1")
+                        .setRequired(true);
+                })
+                .addChannelOption((option) => {
+                    return option
+                        .setName("channel")
+                        .setDescription("Pick a channel for this quest");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player2")
+                        .setDescription("Player 2");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player3")
+                        .setDescription("Player 3");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player4")
+                        .setDescription("Player 4");
+                })
+                .addMentionableOption((option) => {
+                    return option
+                        .setName("player5")
+                        .setDescription("Player 5");
+                })
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            // /play
+            new SlashCommandBuilder()
                 .setName("play")
                 .setDescription("Create a character and embark on a quest")
                 .addStringOption((option) => {
                     return option
                         .setName("class")
                         .setDescription("Pick a character class")
-                        .addChoices(...choices);
-                })
-            );
-            break;
-        }
-        case COMMAND_TYPE.TRAVEL: {
-            const choices = [
-                { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
-                { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
-                { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
-                { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
-            ];
-            builtCommands.push(new SlashCommandBuilder()
+                        .setRequired(true)
+                        .addChoices(...Object.values(compendium.data.classes).map(
+                            (c: CharacterClass) => this.buildStringChoices(c.name, c.id)
+                        ));
+                }),
+            // /inventory
+            new SlashCommandBuilder()
+                .setName("inventory")
+                .setDescription("Show your current inventory"),
+            // /status
+            new SlashCommandBuilder()
+                .setName("status")
+                .setDescription("Show your character's current status"),
+            // /map
+            new SlashCommandBuilder()
+                .setName("map")
+                .setDescription("Display the map"),
+            // /travel
+            new SlashCommandBuilder()
                 .setName("travel")
                 .setDescription("What direction will you travel next?")
                 .addStringOption((option) => {
                     return option
                         .setName("direction")
                         .setDescription("Pick the compass direction")
-                        .addChoices(...choices);
-                })
-            );
-            break;
-        }
-        case COMMAND_TYPE.ENCOUNTER: {
-            const targets = this.targets as string[];
-            const choices = targets.map((t, idx) => {
-                const targetDescription = `${t} ${idx + 1}`;
-                return this.buildIntegerChoices(targetDescription, idx);
-            });
-            builtCommands.push(new SlashCommandBuilder()
-                .setName("attack")
-                .setDescription("Strike at an enemy!")
-                .addIntegerOption((option) => {
-                    return option
-                        .setName("target")
-                        .setDescription("Who do you want to attack?")
                         .setRequired(true)
-                        .addChoices(...choices);
-                })
-            );
-            builtCommands.push(new SlashCommandBuilder()
+                        .addChoices(
+                            { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
+                            { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
+                            { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
+                            { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
+                        );
+                }),
+            // /use - Use an item, behavior depends on encounter state
+            new SlashCommandBuilder()
                 .setName("use")
-                .setDescription("Use an item")
-                .addStringOption((option) => {
-                    return option
-                        .setName("item")
-                        .setDescription("Which item do you want to use?")
-                        .setRequired(true);
-                })
-            );
-            break;
-        }
-        default:
-            break;
-        }
-        return [
-            ...defaultCommands,
-            ...builtCommands
+                .setDescription("Use an item from your inventory"),
+            // /action - Used for encounter-specific subcommands
+            this.buildActionSubcommands(
+                new SlashCommandBuilder()
+                    .setName("action")
+                    .setDescription("What do you want to do?")
+            ),
         ];
     }
 }
@@ -131,7 +167,7 @@ export default async function setGuildCommands(guildId: string, args?: CommandBu
     try {
         console.log(`Refreshing application (/) commands for guild ${guildId}`);
         await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, guildId),
+            Routes.applicationGuildCommands(clientId, guildId),
             { body: commands }
         );
     } catch (error) {

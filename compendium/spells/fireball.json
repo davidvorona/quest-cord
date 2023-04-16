@@ -1,0 +1,8 @@
+{
+    "id": "fireball",
+    "name": "Fireball",
+    "damage": 6,
+    "effects": {
+        "status": "burning"
+    }
+}

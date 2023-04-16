@@ -1,9 +1,3 @@
-export const COMMAND_TYPE = {
-    NEW_QUEST: "new_quest",
-    ENCOUNTER: "encounter",
-    TRAVEL: "travel"
-} as const;
-
 export const ACTIVITY = {
     ENCOUNTER: "encounter",
     ATTACK: "attack"
@@ -12,11 +6,14 @@ export const ACTIVITY = {
 export const COMPENDIUM_SECTION = {
     MONSTERS: "monsters",
     CLASSES: "classes",
-    ITEMS: "items"
+    ITEMS: "items",
+    SPELLS: "spells",
+    NPCS: "npcs"
 } as const;
 
 export const ITEM_TYPE = {
-    CONSUMABLE: "consumable"
+    CONSUMABLE: "consumable",
+    WEAPON: "weapon"
 } as const;
 
 export const BIOME = {

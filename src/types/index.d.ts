@@ -1,3 +1,11 @@
+import {
+    ChatInputCommandInteraction,
+    Guild,
+    Interaction,
+    StringSelectMenuInteraction,
+    TextBasedChannel
+} from "discord.js";
+
 /* Structure of JSON file with bot token */
 export interface AuthJson {
     TOKEN: string;
@@ -6,8 +14,9 @@ export interface AuthJson {
 /* Structure of JSON file with bot config */
 export interface ConfigJson {
     CLIENT_ID: string;
-    GUILD_ID: string;
-    DATA_DIR: string;
+    GUILD_ID?: string;
+    DATA_DIR?: string;
+    FORCE_ENCOUNTER_TYPE?: string;
 }
 
 export interface BiomeData {
@@ -31,10 +40,23 @@ export interface BaseItem {
     type: string;
 }
 
+export interface BaseWeapon extends BaseItem {
+    damage: number;
+    properties?: string[];
+}
+
 export interface Effects {
     hp?: number;
     maxHp?: number;
     damage?: number;
+    status?: string;
+}
+
+export interface BaseSpell {
+    id: string;
+    name: string;
+    damage?: number;
+    effects?: Effects
 }
 
 export interface BaseConsumable extends BaseItem {
@@ -82,3 +104,12 @@ export interface CharacterClass extends BaseCreature {
 }
 
 export type Direction = "north" | "south" | "east" | "west";
+
+export type QuestLordInteraction<T extends Interaction> = T & {
+    guildId: string;
+    guild: Guild;
+    channel: TextBasedChannel;
+};
+
+export type CommandInteraction = QuestLordInteraction<ChatInputCommandInteraction>;
+export type SelectMenuInteraction = QuestLordInteraction<StringSelectMenuInteraction>;

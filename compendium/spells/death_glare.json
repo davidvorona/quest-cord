@@ -1,0 +1,8 @@
+{
+    "id": "death_glare",
+    "name": "Death Glare",
+    "damage": 10,
+    "effects": {
+        "status": "frightened"
+    }
+}

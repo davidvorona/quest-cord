@@ -1,7 +1,13 @@
 import * as fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { CommandInteraction, GuildMember, TextChannel } from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    GuildMember,
+    PermissionsBitField,
+    TextBasedChannel
+} from "discord.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isEmpty = (thing: any) =>
@@ -12,17 +18,11 @@ export const isEmpty = (thing: any) =>
 
 /**
  * Reads the file at the provided file path and returns stringified data.
- * 
- * @param {string} filePath relative path to the file
- * @returns {string} stringified data from file
  */
 export const readFile = (filePath: string): string => fs.readFileSync(filePath, "utf-8");
 
 /**
  * Parses the stringified data to a JSON object and logs any exceptions.
- * 
- * @param {string} dataJson 
- * @returns 
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const parseJson = (dataJson: string): any => {
@@ -37,11 +37,23 @@ export const parseJson = (dataJson: string): any => {
 /**
  * Finds a random number between 0 and the provided max, exclusive.
  * Example: rand(3) => 0 or 1 or 2
- * 
- * @param {number} max 
- * @returns 
  */
 export const rand = (max: number) => Math.floor(Math.random() * Math.floor(max));
+
+/**
+ * Returns a random element from the given list.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const randInList = (list: unknown[]) => {
+    return list[rand(list.length)];
+};
+
+/**
+ * Returns a random key in an object.
+ */
+export const randKey = (object: Record<string, unknown>) => {
+    return Object.keys(object)[rand(Object.keys(object).length)];
+};
 
 /**
  * Creates a random UUID using the crypto package.
@@ -60,9 +72,9 @@ export const loadNames = () => {
 };
 
 /**
- * Extracts guild members from the /start command options. 
+ * Extracts guild members from the /start command options.
  */
-export const getPlayersFromStartCommand = (interaction: CommandInteraction) => {
+export const getPlayersFromStartCommand = (interaction: ChatInputCommandInteraction) => {
     const players = [];
     const getPlayer = (player: string) => interaction.options.getMentionable(player);
     players.push(interaction.options.getMentionable("player1"));
@@ -81,6 +93,28 @@ export const getPlayersFromStartCommand = (interaction: CommandInteraction) => {
     return players as GuildMember[];
 };
 
+/**
+ * Takes a map of PermissionBitFields keyed to a string identifier, such
+ * as a user ID, and creates a readable message to send as a reply.
+ * Example:
+ * Cowberry5 is missing permissions: SendMessages
+ */
+export const sendMissingPermissionsMessage = async (
+    interaction: ChatInputCommandInteraction,
+    errors: Record<string, PermissionsBitField>
+) => {
+    const permissionsMessage = Object.keys(errors)
+        .reduce((acc, username) => acc +=
+            `**${username}** is missing permissions: **${errors[username].toArray()}**\n`,
+        "");
+    const embed = new EmbedBuilder()
+        .setDescription(`It looks like you have some permissions issues.\n\n${permissionsMessage}`);
+    await interaction.reply({
+        embeds: [embed],
+        ephemeral: true
+    });
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const shuffleArray = (array: any[]) => array
     .map(value => ({ value, sort: Math.random() }))
@@ -89,11 +123,11 @@ export const shuffleArray = (array: any[]) => array
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const sendTypingAndWait = async (channel: TextChannel, ms: number) => {
+export const sendTypingAndWait = async (channel: TextBasedChannel, ms: number) => {
     await channel.sendTyping();
     await delay(ms);
 };
 
-export const sendTypingAndWaitRandom = async (channel: TextChannel, ms: number) => {
+export const sendTypingAndWaitRandom = async (channel: TextBasedChannel, ms: number) => {
     await sendTypingAndWait(channel, rand(ms));
 };

@@ -1,8 +1,11 @@
-import { BaseCreature, Effects } from "../types";
-import Item from "./Item";
+import { BaseCreature, Effects } from "../../types";
+import { createRandomId } from "../../util";
+import Item from "../things/Item";
+import Weapon from "../things/Weapon";
+import Spell from "../things/Spell";
 
 export interface Equipment {
-    weapon?: Item;
+    weapon?: Weapon;
     offhand?: Item;
     helm?: Item;
     armor?: Item;
@@ -11,7 +14,9 @@ export interface Equipment {
 }
 
 export default class Creature {
-    id: string;
+    readonly baseId: string;
+
+    readonly id: string;
 
     name: string;
 
@@ -23,12 +28,16 @@ export default class Creature {
 
     equipment: Equipment;
 
-    constructor(data: BaseCreature, equipment: Equipment) {
-        this.id = data.id;
+    spells: Spell[];
+
+    constructor(data: BaseCreature, equipment: Equipment, spells: Spell[]) {
+        this.baseId = data.id;
+        this.id = createRandomId();
         this.name = data.name;
         this.hp = this.maxHp = data.hp;
         this.damage = data.damage;
         this.equipment = equipment;
+        this.spells = spells;
     }
 
     getName() {
@@ -50,12 +59,16 @@ export default class Creature {
         this.hp = newHp;
     }
 
-    getWeapon(): Item | undefined {
+    getWeapon() {
         return this.equipment.weapon;
     }
 
-    attackWeapon() {
-        const weapon = this.getWeapon();
+    getSpell(spellId: string) {
+        return this.spells.find(s => s.id === spellId);
+    }
+
+    getSpells() {
+        return this.spells;
     }
 
     applyEffects(effects: Effects) {

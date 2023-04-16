@@ -1,0 +1,8 @@
+{
+    "id": "cone_of_cold",
+    "name": "Cone of Cold",
+    "damage": 4,
+    "effects": {
+        "status": "freezing"
+    }
+}

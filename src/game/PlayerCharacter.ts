@@ -1,16 +1,19 @@
 import { rand, loadNames } from "../util";
-import Character from "./Character";
+import Character from "./creatures/Character";
 
 const { firstNames, lastNames } = loadNames();
 
+
 export default class PlayerCharacter {
-    character: Character;
+    readonly character: Character;
 
-    userId: string;
+    readonly userId: string;
 
-    firstName: string;
+    readonly firstName: string;
 
-    lastName: string;
+    readonly lastName: string;
+
+    heldSpell?: string;
 
     lvl: number;
 
@@ -20,6 +23,7 @@ export default class PlayerCharacter {
 
         this.firstName = firstNames[rand(firstNames.length)];
         this.lastName = lastNames[rand(lastNames.length)];
+        // Set the name of the base character to the PC name
         this.character.setName(this.getName());
 
         this.lvl = 1;
@@ -33,5 +37,19 @@ export default class PlayerCharacter {
 
     getCharacter() {
         return this.character;
+    }
+
+    holdSpell(spellId: string) {
+        this.heldSpell = spellId;
+    }
+
+    releaseSpell() {
+        this.heldSpell = undefined;
+    }
+
+    getHeldSpell() {
+        if (this.heldSpell) {
+            return this.character.getSpell(this.heldSpell);
+        }
     }
 }

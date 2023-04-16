@@ -18,19 +18,23 @@ function getRegionBiomes() {
  * should support multiple concurrent questing parties.
  */
 class World {
-    id: string;
+    readonly id: string;
+
+    readonly guildId: string;
 
     name: string;
-
-    guildId: string;
 
     /**
      * The fault axis determines the direction that mountain ranges form. Faults on the
      * y-axis would generate north-south mountain ranges, whereas fault on the x-axis
-     * would generate east-west mountain ranges. 
+     * would generate east-west mountain ranges.
      */
-    faultAxis: number;
+    readonly faultAxis: number;
 
+    /**
+     * When accessing the matrix, you must invert traditional (x, y) coordinates to (y, x)
+     * to find the corresponding cell in the two-dimensional array.
+     */
     matrix: Biome[][];
 
     constructor(guildId: string) {
@@ -47,19 +51,20 @@ class World {
     }
 
     private static isDepth(depth: number, x: number, y: number) {
-        return x === depth  || y === depth || x === WORLD_DIMENSION - 1 - depth || y === WORLD_DIMENSION - 1 - depth;
+        return x === depth  || y === depth || x === WORLD_DIMENSION - 1 - depth
+            || y === WORLD_DIMENSION - 1 - depth;
     }
 
-    private static isPerimeter(x: number, y: number) {
+    private static isMatrixPerimeter(x: number, y: number) {
         return World.isDepth(0, x, y);
     }
 
-    private static isSeedColumn(x: number) {
+    private static isMatrixSeedColumn(x: number) {
         return (x - 2) % REGION_DIMENSION === 0;
     }
 
-    private static isRegionSeed(x: number, y: number) {
-        return World.isSeedColumn(x) && (y - 2) % REGION_DIMENSION === 0;
+    private static isMatrixRegionSeed(x: number, y: number) {
+        return World.isMatrixSeedColumn(x) && (y - 2) % REGION_DIMENSION === 0;
     }
 
     /**
@@ -68,28 +73,36 @@ class World {
      */
     private simpleGenerate() {
         const matrix = Array(WORLD_DIMENSION).fill(0).map(() => Array(WORLD_DIMENSION).fill(0));
-        // We iterate through the world tiles by row, starting from the top and going left to right
+        // We iterate through the world tiles by row, starting from the top and going left to right.
         for (let y = 0; y < WORLD_DIMENSION; y++) {
             for (let x = 0; x < WORLD_DIMENSION; x++) {
                 // The perimeter is always an endless ocean
-                if (World.isPerimeter(x, y)) {
-                    matrix[x][y] = BIOME.OCEAN;
+                if (World.isMatrixPerimeter(x, y)) {
+                    matrix[y][x] = BIOME.OCEAN;
                 // One depth in from the ocean is a beach layer
                 } else if (World.isDepth(1, x, y)) {
-                    matrix[x][y] = BIOME.BEACH;
+                    matrix[y][x] = BIOME.BEACH;
                 // Random biome region generation relies on iteration order: if the coordinate is
-                // the upper-left tile of a region, then set it to a random biome. This is the "seed"
-                // of the region, and must be set first per region for generation to function.
-                } else if (World.isRegionSeed(x, y)) {
+                // the upper-left tile of a region, then set it to a random biome. This is the
+                // "seed" of the region, and must be set first per region for generation to
+                // function.
+                } else if (World.isMatrixRegionSeed(x, y)) {
                     const biomes = getRegionBiomes();
-                    matrix[x][y] = biomes[rand(biomes.length)];
-                // Because of the iteration order, biomes will generate outward from the "seed":
-                // If x is a seed coordinate but y is not, then get the biome from the tile above (y - 1).
-                } else if (World.isSeedColumn(x)) {
-                    matrix[x][y] = matrix[x][y - 1];
+                    matrix[y][x] = biomes[rand(biomes.length)];
+                /**
+                 * Because of the iteration order, biomes will generate outward from the "seed":
+                 * | 1 2 3 |
+                 * | 4 5 6 |
+                 * | 7 8 9 |
+                 * where '1' is the seed tile.
+                 */
+                // If x is a seed coordinate but y is not, then get the biome from the tile
+                // above (y - 1).
+                } else if (World.isMatrixSeedColumn(x)) {
+                    matrix[y][x] = matrix[y - 1][x];
                 // Otherwise, use the biome of the tile to the left (x - 1).
                 } else {
-                    matrix[x][y] = matrix[x - 1][y];
+                    matrix[y][x] = matrix[y][x - 1];
                 }
             }
         }
@@ -97,19 +110,20 @@ class World {
     }
 
     /**
-     * Returns random coordinates in the world as an [x, y] tuple.
+     * Returns random coordinates in the world as an [y, x] tuple.
      */
     getRandomCoordinates(): [number, number] {
         return [rand(WORLD_DIMENSION), rand(WORLD_DIMENSION)];
     }
 
-    getBiome(coordinates: [number, number]): Biome {
-        return this.matrix[coordinates[0]][coordinates[1]];
+    getBiome([x, y]: [number, number]): Biome {
+        return this.matrix[y][x];
     }
 
-    applyDirectionToCoordinates(direction: Direction, coordinates: [number, number]): [number, number] {
-        let x = coordinates[0];
-        let y = coordinates[1];
+    applyDirectionToCoordinates(
+        direction: Direction,
+        [x, y]: [number, number]
+    ): [number, number] {
         if (direction === DIRECTION.NORTH) {
             y -= 1;
         } else if (direction === DIRECTION.SOUTH) {
@@ -123,6 +137,26 @@ class World {
             throw new Error(`(${x},${y}) are invalid coordinates`);
         }
         return [x, y];
+    }
+
+    /**
+     * Takes an [x, y] tuple for adding the party to the map.
+     */
+    stringify([partyX, partyY]: [number, number] = [-1, -1]) {
+        let worldStr = "";
+        this.matrix.forEach((row, y) => {
+            row.forEach((biome, x) => {
+                if (x === partyX && y === partyY) {
+                    worldStr += "🧑";
+                } else {
+                    worldStr += biomesData[biome].emoji;
+                }
+            });
+            if (y !== this.matrix.length - 1) {
+                worldStr += "\n";
+            }
+        });
+        return worldStr;
     }
 
     /**
@@ -160,7 +194,9 @@ class World {
      * of regions.
      */
     private smartGenerate() {
-        const matrix = Array(WORLD_DIMENSION).fill("forest").map(() => Array(WORLD_DIMENSION).fill("forest"));
+        const matrix = Array(WORLD_DIMENSION)
+            .fill("forest")
+            .map(() => Array(WORLD_DIMENSION).fill("forest"));
         // 1. Generate the perimeter of the world: mostly oceans and some mountains
         for (let d = 0; d < WORLD_DIMENSION; d++) {
             // Generate tiles along the x-axis at y = 0
@@ -183,23 +219,6 @@ class World {
         // 5. Fill in remaining space with appropriate biomes
         // 6. Add lakes and other non-biome tiles to biomes
         return matrix;
-    }
-
-    stringify(partyCoordinates?: [number, number]) {
-        let worldStr = "";
-        this.matrix.forEach((row, y) => {
-            row.forEach((biome, x) => {
-                if (partyCoordinates && x === partyCoordinates[0] && y === partyCoordinates[1]) {
-                    worldStr += "🧑";
-                } else {
-                    worldStr += biomesData[biome as Biome].emoji;
-                }
-            });
-            if (y !== this.matrix.length - 1) {
-                worldStr += "\n";
-            }
-        });
-        return worldStr;
     }
 }
 

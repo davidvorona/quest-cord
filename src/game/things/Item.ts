@@ -1,4 +1,4 @@
-import { BaseItem } from "../types";
+import { BaseItem } from "../../types";
 
 export default class Item {
     id: string;
