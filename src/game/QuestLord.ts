@@ -484,10 +484,8 @@ export default class QuestLord {
             stealthAction,
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
-                await quest.handleEncounterCommand(interaction, command);
-                if (!quest.isInEncounter()) {
-                    await this.promptTravel(guildId);
-                }
+                const results = await quest.handleEncounterCommand(interaction, command);
+                await this.handleEncounterResults(guildId, results);
             }
         );
     }
@@ -514,10 +512,8 @@ export default class QuestLord {
             stealthAction,
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
-                await quest.handleEncounterCommand(interaction, command);
-                if (!quest.isInEncounter()) {
-                    await this.promptTravel(guildId);
-                }
+                const results = await quest.handleEncounterCommand(interaction, command);
+                await this.handleEncounterResults(guildId, results);
             }
         );
     }
@@ -544,10 +540,8 @@ export default class QuestLord {
             socialAction,
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
-                await quest.handleEncounterCommand(interaction, command);
-                if (!quest.isInEncounter()) {
-                    await this.promptTravel(guildId);
-                }
+                const results = await quest.handleEncounterCommand(interaction, command);
+                await this.handleEncounterResults(guildId, results);
             }
         );
     }
@@ -574,10 +568,8 @@ export default class QuestLord {
             socialAction,
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
-                await quest.handleEncounterCommand(interaction, command);
-                if (!quest.isInEncounter()) {
-                    await this.promptTravel(guildId);
-                }
+                const results = await quest.handleEncounterCommand(interaction, command);
+                await this.handleEncounterResults(guildId, results);
             }
         );
     }
@@ -596,11 +588,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterMenuSelect(interaction);
-
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        const results = await quest.handleEncounterMenuSelect(interaction);
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async promptSell(interaction: CommandInteraction): Promise<void> {
@@ -617,11 +606,8 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterMenuSelect(interaction);
-
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        const results = await quest.handleEncounterMenuSelect(interaction);
+        await this.handleEncounterResults(guildId, results);
     }
 
     // TODO: This would be an example of a command anyone can do that doesn't require

@@ -19,6 +19,7 @@ import SocialEncounter from "./encounters/SocialEncounter";
 import MerchantEncounter from "./encounters/MerchantEncounter";
 import LookoutEncounter from "./encounters/LookoutEncounter";
 import RestEncounter from "./encounters/RestEncounter";
+import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 
 /**
@@ -78,7 +79,7 @@ class Narrator {
             await interaction.deferUpdate();
         }
         await delay(rand(Narrator.TIME_TO_PONDER));
-        await interaction.update(payload);
+        await interaction.editReply(payload);
     }
 
     async describeNewParty(party: Character[]) {
@@ -139,6 +140,9 @@ class Narrator {
                 + "when you are ready to move on.");
         } else {
             await this.ponderAndDescribe("You can travel with the **/travel** command.");
+        }
+        if (encounter instanceof FreeEncounter) {
+            await this.ponderAndDescribe("Whenever you're ready, use **/travel** to move on.");
         }
     }
 

@@ -221,6 +221,10 @@ export default class Quest {
 
         if (this.encounter instanceof TurnBasedEncounter && command.consumesTurn) {
             await this.encounter.handleNextTurn();
+            if (this.encounter.isOver()) {
+                const results = this.encounter.getResults();
+                return results;
+            }
         }
     }
 
@@ -245,6 +249,10 @@ export default class Quest {
 
         if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
             await this.encounter.handleNextTurn();
+            if (this.encounter.isOver()) {
+                const results = this.encounter.getResults();
+                return results;
+            }
         }
     }
 }
