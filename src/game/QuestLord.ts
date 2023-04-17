@@ -355,7 +355,9 @@ export default class QuestLord {
 
         const optionClass = interaction.options.getString("class", true);
         const character = this.creatureFactory.createClassCharacter(optionClass);
-        const pc = quest.createPlayerCharacter(userId, character);
+        const { lvlGains } = this.creatureFactory.getCharacterClass(optionClass);
+        const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+
         // The name of the base character is the class name, the character name
         // is attached to the PlayerCharacter object
         await narrator.ponderAndReply(interaction, {

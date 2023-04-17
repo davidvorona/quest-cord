@@ -3,7 +3,7 @@ import PlayerCharacter from "./PlayerCharacter";
 import Encounter, { EncounterCommand } from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
-import { CommandInteraction, SelectMenuInteraction } from "../types";
+import { CommandInteraction, LevelGain, SelectMenuInteraction } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
 
@@ -73,8 +73,8 @@ export default class Quest {
         return pcs;
     }
 
-    createPlayerCharacter(userId: string, character: Character) {
-        const playerCharacter = new PlayerCharacter(userId, character);
+    createPlayerCharacter(userId: string, character: Character, lvlGains: LevelGain[]) {
+        const playerCharacter = new PlayerCharacter(userId, character, lvlGains);
         this.pcs[userId] = playerCharacter;
         return playerCharacter;
     }

@@ -1,6 +1,7 @@
 import { rand, loadNames } from "../util";
 import Character from "./creatures/Character";
 import { defaultXpService } from "../services/XpService";
+import { LevelGain } from "../types";
 
 const { firstNames, lastNames } = loadNames();
 
@@ -20,7 +21,9 @@ export default class PlayerCharacter {
 
     lvl: number;
 
-    constructor(userId: string, character: Character) {
+    lvlGains: LevelGain[];
+
+    constructor(userId: string, character: Character, lvlGains: LevelGain[]) {
         this.userId = userId;
         this.character = character;
 
@@ -31,6 +34,8 @@ export default class PlayerCharacter {
 
         this.xp = 0;
         this.lvl = 1;
+
+        this.lvlGains = lvlGains;
 
         console.info("Character", this.getName(),  "created");
     }
