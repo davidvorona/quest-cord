@@ -136,8 +136,8 @@ class Narrator {
             await this.ponderAndDescribe("Take advantage of the view, and uncover more of the map "
                 + "with the **/action lookout** command!");
         } else if (encounter instanceof RestEncounter) {
-            await this.ponderAndDescribe("The days is yours! Rest, relax, and **/travel** "
-                + "when you are ready to move on.");
+            await this.ponderAndDescribe("The days is yours! Rest, relax, and feel free to "
+                + "check your character status with **/status**.");
         } else {
             await this.ponderAndDescribe("You can travel with the **/travel** command.");
         }
