@@ -29,6 +29,7 @@ import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
 import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
+import { EncounterResults } from "./encounters/Encounter";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -354,7 +355,9 @@ export default class QuestLord {
 
         const optionClass = interaction.options.getString("class", true);
         const character = this.creatureFactory.createClassCharacter(optionClass);
-        const pc = quest.createPlayerCharacter(userId, character);
+        const { lvlGains } = this.creatureFactory.getCharacterClass(optionClass);
+        const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+
         // The name of the base character is the class name, the character name
         // is attached to the PlayerCharacter object
         await narrator.ponderAndReply(interaction, {
@@ -438,6 +441,8 @@ export default class QuestLord {
 
                     // If traveling from a free encounter, end that encounter
                     if (quest.encounter instanceof FreeEncounter) {
+                        // TODO: This means we can never get XP from a FreeEncounter, because
+                        // we never get its results before ending it. Probably need to fix that.
                         await quest.endEncounter();
                     }
 
@@ -844,15 +849,38 @@ export default class QuestLord {
             + "choose a direction.");
     }
 
-    private async handleEncounterResults(guildId: string, results?: boolean) {
+    private async awardExperience(guildId: string, xpReward: number) {
+        this.assertQuestStarted(guildId);
+        const quest = this.quests[guildId];
+
+        const narrator = quest.getNarrator();
+        await narrator.ponderAndDescribe(`The party is awarded ${xpReward} XP.`);
+
+        const party = quest.getPlayerCharacters();
+        for (const userId in party) {
+            const pc = party[userId];
+            const newLvl = pc.gainXp(xpReward);
+            if (newLvl) {
+                await narrator.ponderAndDescribe(`${pc.getName()} is now level ${newLvl}!`);
+            }
+        }
+    }
+
+    private async handleEncounterResults(guildId: string, results?: EncounterResults) {
         // If results are undefined, it means encounter did not end
         if (results === undefined) {
             return;
         }
-        // results === true is success, continue quest
-        if (results) {
+        // If there are results, encounter is over
+        this.assertQuestStarted(guildId);
+        const quest = this.quests[guildId];
+        await quest.endEncounter();
+        // If success, continue quest
+        if (results.success) {
+            // Award XP from encounter results to party
+            await this.awardExperience(guildId, results.xp);
             await this.promptTravel(guildId);
-        // results === false is failure, and quest ends
+        // If not success, quest ends
         } else {
             await this.failQuest(guildId);
         }

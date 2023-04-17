@@ -65,6 +65,14 @@ class CreatureFactory {
         return character;
     }
 
+    getCharacterClass(classId: string) {
+        const data = this.data.classes[classId];
+        if (!data) {
+            throw new Error(`Invalid class ID: ${classId}`);
+        }
+        return data;
+    }
+
     createClassCharacter(classId: string) {
         const data = this.data.classes[classId];
         if (!data) {

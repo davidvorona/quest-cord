@@ -3,7 +3,7 @@ import PlayerCharacter from "./PlayerCharacter";
 import Encounter, { EncounterCommand } from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
-import { CommandInteraction, SelectMenuInteraction } from "../types";
+import { CommandInteraction, LevelGain, SelectMenuInteraction } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
 
@@ -45,6 +45,10 @@ export default class Quest {
         return this.pollBooth;
     }
 
+    getParty() {
+        return this.pcs;
+    }
+
     private getPlayerByUserId(userId: string) {
         return this.pcs[userId];
     }
@@ -61,8 +65,16 @@ export default class Quest {
         return Object.keys(this.pcs).length;
     }
 
-    createPlayerCharacter(userId: string, character: Character) {
-        const playerCharacter = new PlayerCharacter(userId, character);
+    getPlayerCharacters() {
+        const pcs: PlayerCharacter[] = [];
+        Object.values(this.pcs).forEach((pc) => {
+            if (pc) pcs.push(pc);
+        });
+        return pcs;
+    }
+
+    createPlayerCharacter(userId: string, character: Character, lvlGains: LevelGain[]) {
+        const playerCharacter = new PlayerCharacter(userId, character, lvlGains);
         this.pcs[userId] = playerCharacter;
         return playerCharacter;
     }
@@ -152,9 +164,7 @@ export default class Quest {
         const encounter = this.assertAndGetEncounter();
         await this.narrator.describeEncounterOver(encounter);
 
-        const results = encounter.isSuccess();
         this.encounter = undefined;
-        return results;
     }
 
     private validatePlayerTurn(userId: string) {
@@ -205,7 +215,7 @@ export default class Quest {
         );
 
         if (this.encounter.isOver()) {
-            const results = await this.endEncounter();
+            const results = this.encounter.getResults();
             return results;
         }
 
@@ -229,7 +239,7 @@ export default class Quest {
         await this.encounter.handleMenuSelect(interaction, playerCharacter.getCharacter());
 
         if (this.encounter.isOver()) {
-            const results = await this.endEncounter();
+            const results = this.encounter.getResults();
             return results;
         }
 
