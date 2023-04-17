@@ -20,6 +20,11 @@ export interface EncounterSelection {
     democratic?: boolean;
 }
 
+export interface EncounterResults {
+    success: boolean;
+    xp: number;
+}
+
 export default class Encounter {
     characters: Character[];
 
@@ -43,6 +48,8 @@ export default class Encounter {
 
     getCharacterNames = () => this.characters.map(char => char.getName());
 
+    getXpReward = () => 10;
+
     /**
      * Returns a boolean indicating whether or not the encounter is over
      * based on its state. Each encounter type will have its own checks
@@ -57,6 +64,11 @@ export default class Encounter {
      * determining the result.
      */
     isSuccess = () => true;
+
+    getResults = () => ({
+        success: this.isSuccess(),
+        xp: this.getXpReward()
+    });
 
     getCommand = (commandName: string) => this.commands[commandName];
 

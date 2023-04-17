@@ -227,6 +227,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
 
+    getXpReward = () => Math.max(this.monsters.length * 5, 10);
+
     isOver = () => !this.getTotalCharacterHp() || !this.getTotalMonsterHp();
 
     isSuccess = () => !this.getTotalMonsterHp();

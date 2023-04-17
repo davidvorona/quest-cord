@@ -1,5 +1,6 @@
 import { rand, loadNames } from "../util";
 import Character from "./creatures/Character";
+import { defaultXpService } from "../services/XpService";
 
 const { firstNames, lastNames } = loadNames();
 
@@ -15,6 +16,8 @@ export default class PlayerCharacter {
 
     heldSpell?: string;
 
+    xp: number;
+
     lvl: number;
 
     constructor(userId: string, character: Character) {
@@ -26,6 +29,7 @@ export default class PlayerCharacter {
         // Set the name of the base character to the PC name
         this.character.setName(this.getName());
 
+        this.xp = 0;
         this.lvl = 1;
 
         console.info("Character", this.getName(),  "created");
@@ -50,6 +54,17 @@ export default class PlayerCharacter {
     getHeldSpell() {
         if (this.heldSpell) {
             return this.character.getSpell(this.heldSpell);
+        }
+    }
+
+    gainXp(xp: number) {
+        const { lvl: newLvl, xp: newXp } = defaultXpService.gainExperience(this.lvl, this.xp, xp);
+        // Set the new XP value
+        this.xp = newXp;
+        // If level has changed, set the new player level
+        if (newLvl > this.lvl) {
+            this.lvl = newLvl;
+            return this.lvl;
         }
     }
 }
