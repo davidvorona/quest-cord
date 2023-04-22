@@ -2,8 +2,9 @@ import Encounter from "./Encounter";
 import Creature from "../creatures/Creature";
 import Character from "../creatures/Character";
 import Narrator from "../Narrator";
+import Action from "../actions/Action";
 
-export default class TurnBasedEncounter extends Encounter {
+export default abstract class TurnBasedEncounter extends Encounter {
     turnIdx = 0;
 
     turnOrder: Creature[] = [];
@@ -14,19 +15,21 @@ export default class TurnBasedEncounter extends Encounter {
 
     getCurrentTurn = () => this.turnOrder[this.turnIdx];
 
-    nextTurn = () => {
+    isActionTurnConsuming(action: Action) {
+        return action.isTurnConsuming();
+    }
+
+    nextTurn() {
         if (this.turnIdx >= this.turnOrder.length - 1) {
             this.turnIdx = 0;
         } else {
             this.turnIdx++;
         }
-    };
+    }
 
     getTurnOrderNames = () => this.turnOrder.map(c => c.getName());
 
-    async handleTurn() {
-        throw new Error("Abstract method be implemented by subclass!");
-    }
+    abstract handleTurn(): Promise<void>;
 
     async handleNextTurn() {
         this.nextTurn();

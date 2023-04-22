@@ -21,6 +21,8 @@ export const isEmpty = (thing: any) =>
  */
 export const readFile = (filePath: string): string => fs.readFileSync(filePath, "utf-8");
 
+export const readDir = (filePath: string): string[] => fs.readdirSync(filePath);
+
 /**
  * Parses the stringified data to a JSON object and logs any exceptions.
  */

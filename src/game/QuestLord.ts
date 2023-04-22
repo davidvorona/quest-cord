@@ -126,16 +126,24 @@ export default class QuestLord {
     /* INTERACTIONS */
 
     async handleInteraction(interaction: Interaction) {
-        if (interaction.isChatInputCommand()) {
-            await this.handleCommandInteraction(interaction);
-        }
-        if (interaction.isStringSelectMenu()) {
-            await this.handleSelectMenuInteraction(interaction);
+        try {
+            if (interaction.isChatInputCommand()) {
+                await this.handleCommandInteraction(interaction);
+            }
+            if (interaction.isStringSelectMenu()) {
+                await this.handleSelectMenuInteraction(interaction);
+            }
+        } catch (err) {
+            console.error("Something went very wrong:", err);
         }
     }
 
     async handleCommandInteraction(interaction: ChatInputCommandInteraction) {
         try {
+            console.info(
+                `Processing command '${interaction.commandName}'`,
+                "with options", interaction.options
+            );
             if (!QuestLord.isValidInteraction(interaction)) return;
 
             if (interaction.commandName === "ping") {
@@ -195,10 +203,14 @@ export default class QuestLord {
 
     async handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
         try {
+            console.info(
+                `Processing selection '${interaction.customId}'`,
+                "with values", interaction.values
+            );
             if (!QuestLord.isValidInteraction(interaction)) return;
 
             // Choosing a target to attack
-            if (interaction.customId === "target") {
+            if (interaction.customId === "attack") {
                 await this.handleAttack(interaction);
             }
 
@@ -213,17 +225,17 @@ export default class QuestLord {
             }
 
             // Choosing an item to use
-            if (interaction.customId === "item:use") {
+            if (interaction.customId === "use") {
                 await this.handleUse(interaction);
             }
 
             // Choosing an item to buy
-            if (interaction.customId === "item:buy") {
+            if (interaction.customId === "buy") {
                 await this.handleBuy(interaction);
             }
 
             // Choosing an item to sell
-            if (interaction.customId === "item:sell") {
+            if (interaction.customId === "sell") {
                 await this.handleSell(interaction);
             }
         } catch (err) {
@@ -246,7 +258,7 @@ export default class QuestLord {
             if (subcommand === "attack") {
                 await this.promptAttack(interaction);
             }
-            if (subcommand === "cast") {
+            if (subcommand === "spell") {
                 await this.promptCastSpell(interaction);
             }
             if (subcommand === "sneak") {
@@ -417,7 +429,14 @@ export default class QuestLord {
             });
         } else {
             const direction = interaction.options.getString("direction", true) as Direction;
-            this.validateTravelDirection(guildId, direction);
+            try {
+                this.validateTravelDirection(guildId, direction);
+            } catch (err) {
+                if (err instanceof Error) {
+                    await interaction.reply({ content: err.message, ephemeral: true });
+                }
+                return;
+            }
 
             const pollBooth = quest.getPollBooth();
 
@@ -619,11 +638,9 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const results = await quest.handleEncounterCommand(interaction, command);
 
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async promptUse(interaction: CommandInteraction): Promise<void> {
@@ -698,7 +715,9 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const results = await quest.handleEncounterCommand(interaction, command);
+
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async handleAttack(interaction: SelectMenuInteraction): Promise<void> {
