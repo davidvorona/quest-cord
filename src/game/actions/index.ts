@@ -1,5 +1,5 @@
 import AttackCommand from "./AttackCommand";
-import CastCommand from "./CastCommand";
+import SpellCommand from "./SpellCommand";
 import UseCommand from "./UseCommand";
 import LookoutCommand from "./LookoutCommand";
 import BuyCommand from "./BuyCommand";
@@ -18,7 +18,7 @@ import SellSelection from "./SellSelection";
 
 export {
     AttackCommand,
-    CastCommand,
+    SpellCommand,
     UseCommand,
     LookoutCommand,
     BuyCommand,

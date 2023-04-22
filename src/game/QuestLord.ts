@@ -126,16 +126,24 @@ export default class QuestLord {
     /* INTERACTIONS */
 
     async handleInteraction(interaction: Interaction) {
-        if (interaction.isChatInputCommand()) {
-            await this.handleCommandInteraction(interaction);
-        }
-        if (interaction.isStringSelectMenu()) {
-            await this.handleSelectMenuInteraction(interaction);
+        try {
+            if (interaction.isChatInputCommand()) {
+                await this.handleCommandInteraction(interaction);
+            }
+            if (interaction.isStringSelectMenu()) {
+                await this.handleSelectMenuInteraction(interaction);
+            }
+        } catch (err) {
+            console.error("Something went very wrong:", err);
         }
     }
 
     async handleCommandInteraction(interaction: ChatInputCommandInteraction) {
         try {
+            console.info(
+                `Processing command '${interaction.commandName}'`,
+                "with options", interaction.options
+            );
             if (!QuestLord.isValidInteraction(interaction)) return;
 
             if (interaction.commandName === "ping") {
@@ -195,6 +203,10 @@ export default class QuestLord {
 
     async handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
         try {
+            console.info(
+                `Processing selection '${interaction.customId}'`,
+                "with values", interaction.values
+            );
             if (!QuestLord.isValidInteraction(interaction)) return;
 
             // Choosing a target to attack
@@ -246,7 +258,7 @@ export default class QuestLord {
             if (subcommand === "attack") {
                 await this.promptAttack(interaction);
             }
-            if (subcommand === "cast") {
+            if (subcommand === "spell") {
                 await this.promptCastSpell(interaction);
             }
             if (subcommand === "sneak") {
@@ -417,7 +429,14 @@ export default class QuestLord {
             });
         } else {
             const direction = interaction.options.getString("direction", true) as Direction;
-            this.validateTravelDirection(guildId, direction);
+            try {
+                this.validateTravelDirection(guildId, direction);
+            } catch (err) {
+                if (err instanceof Error) {
+                    await interaction.reply({ content: err.message, ephemeral: true });
+                }
+                return;
+            }
 
             const pollBooth = quest.getPollBooth();
 

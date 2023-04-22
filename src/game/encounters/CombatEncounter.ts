@@ -10,7 +10,7 @@ import { rand, shuffleArray } from "../../util";
 import Creature from "../creatures/Creature";
 import Narrator from "../Narrator";
 import {
-    CastCommand,
+    SpellCommand,
     AttackCommand,
     UseCommand,
     AttackSelection,
@@ -38,7 +38,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             description: "Strike at an enemy!"
         },
         {
-            name: "cast",
+            name: "spell",
             description: "Cast a spell"
         }
     ];
@@ -81,7 +81,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 });
             }
         }),
-        cast: new CastCommand(async (interaction: CommandInteraction, character: Character) => {
+        spell: new SpellCommand(async (interaction: CommandInteraction, character: Character) => {
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
                 .setDescription("What spell do you want to cast?");
@@ -263,6 +263,9 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.heldSpell = undefined;
     }
 
+    /**
+     * @override
+     */
     isActionTurnConsuming(action: Action) {
         let result = super.isActionTurnConsuming(action);
         // If an attack command is issued and there's only one monster, we automatically

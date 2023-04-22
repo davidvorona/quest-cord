@@ -1,8 +1,8 @@
 import { CommandExecuteFunction } from "./Action";
 import Command from "./Command";
 
-export default class CastCommand extends Command {
+export default class SpellCommand extends Command {
     constructor(execute: CommandExecuteFunction) {
-        super("cast", execute, false);
+        super("spell", execute, false);
     }
 }
