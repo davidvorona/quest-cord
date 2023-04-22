@@ -1,4 +1,4 @@
-import Action, { SelectionExecuteFunction } from "./Action";
+import Action, { SelectionExecuteFunction } from "../Action";
 
 export default abstract class Selection extends Action {
     customId: string;

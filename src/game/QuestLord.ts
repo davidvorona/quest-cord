@@ -638,11 +638,9 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const results = await quest.handleEncounterCommand(interaction, command);
 
-        if (!quest.isInEncounter()) {
-            await this.promptTravel(guildId);
-        }
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async promptUse(interaction: CommandInteraction): Promise<void> {

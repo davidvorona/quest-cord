@@ -5,13 +5,6 @@ import Narrator from "../Narrator";
 import { LookoutCommand } from "../actions";
 
 export default class LookoutEncounter extends Encounter {
-    static commands = [
-        {
-            name: "lookout",
-            description: "Take in your surroundings from a vantage point"
-        }
-    ];
-
     commands = {
         lookout: new LookoutCommand(async (interaction: CommandInteraction) => {
             await this.narrator.ponderAndReply(interaction, "You take in the view, expanding "

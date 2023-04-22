@@ -1,4 +1,4 @@
-import Action, { CommandExecuteFunction } from "./Action";
+import Action, { CommandExecuteFunction } from "../Action";
 
 export default abstract class Command extends Action {
     execute: CommandExecuteFunction;

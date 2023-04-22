@@ -3,7 +3,7 @@ import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
-import Command from "./actions/Command";
+import Command from "./actions/commands/Command";
 import { CommandInteraction, LevelGain, SelectMenuInteraction } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
