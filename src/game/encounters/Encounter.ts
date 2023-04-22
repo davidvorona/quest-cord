@@ -1,23 +1,12 @@
 import { CommandInteraction, SelectMenuInteraction } from "../../types";
+import Command from "../actions/Command";
+import Selection from "../actions/Selection";
 import Character from "../creatures/Character";
 import Narrator from "../Narrator";
 
 interface StaticCommand {
     name: string;
     description: string;
-}
-
-export interface EncounterCommand {
-    execute: (interaction: CommandInteraction, character: Character) => Promise<void>;
-    consumesTurn?: boolean;
-    democratic?: boolean;
-}
-
-export interface EncounterSelection {
-    customId: string;
-    execute: (interaction: SelectMenuInteraction, character: Character) => Promise<void>;
-    consumesTurn?: boolean;
-    democratic?: boolean;
 }
 
 export interface EncounterResults {
@@ -34,9 +23,9 @@ export default class Encounter {
 
     static commands: StaticCommand[] = [];
 
-    commands: Record<string, EncounterCommand> = {};
+    commands: Record<string, Command> = {};
 
-    menus: EncounterSelection[] = [];
+    menus: Selection[] = [];
 
     constructor(characters: Character[], narrator: Narrator, turnBased = false) {
         this.characters = characters;
@@ -82,9 +71,17 @@ export default class Encounter {
 
     getMenu = (customId: string) => this.menus.find(s => s.customId === customId);
 
+    assertAndGetMenu(customId: string) {
+        const menu = this.getMenu(customId);
+        if (!menu) {
+            throw new Error(`Invalid menu for ${this.constructor.name}: ${customId}`);
+        }
+        return menu;
+    }
+
     async handleCommand(
         interaction: CommandInteraction,
-        command: EncounterCommand,
+        command: Command,
         character: Character,
     ) {
         await command.execute(interaction, character);
