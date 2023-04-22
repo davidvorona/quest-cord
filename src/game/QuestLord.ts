@@ -210,7 +210,7 @@ export default class QuestLord {
             if (!QuestLord.isValidInteraction(interaction)) return;
 
             // Choosing a target to attack
-            if (interaction.customId === "target") {
+            if (interaction.customId === "attack") {
                 await this.handleAttack(interaction);
             }
 

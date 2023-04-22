@@ -59,7 +59,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                     .addComponents(
                         new StringSelectMenuBuilder()
-                            .setCustomId("target")
+                            .setCustomId("attack")
                             .setPlaceholder("Nothing selected")
                             .addOptions(options)
                     );
