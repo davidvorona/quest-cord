@@ -1,20 +1,20 @@
-import AttackCommand from "./AttackCommand";
-import SpellCommand from "./SpellCommand";
-import UseCommand from "./UseCommand";
-import LookoutCommand from "./LookoutCommand";
-import BuyCommand from "./BuyCommand";
-import SellCommand from "./SellCommand";
-import TalkCommand from "./TalkCommand";
-import IgnoreCommand from "./IgnoreCommand";
-import SneakCommand from "./SneakCommand";
-import SurpriseCommand from "./SurpriseCommand";
+import AttackCommand from "./commands/AttackCommand";
+import SpellCommand from "./commands/SpellCommand";
+import UseCommand from "./commands/UseCommand";
+import LookoutCommand from "./commands/LookoutCommand";
+import BuyCommand from "./commands/BuyCommand";
+import SellCommand from "./commands/SellCommand";
+import TalkCommand from "./commands/TalkCommand";
+import IgnoreCommand from "./commands/IgnoreCommand";
+import SneakCommand from "./commands/SneakCommand";
+import SurpriseCommand from "./commands/SurpriseCommand";
 
-import AttackSelection from "./AttackSelection";
-import UseSelection from "./UseSelection";
-import SpellCastSelection from "./SpellCastSelection";
-import SpellTargetSelection from "./SpellTargetSelection";
-import BuySelection from "./BuySelection";
-import SellSelection from "./SellSelection";
+import AttackSelection from "./selections/AttackSelection";
+import UseSelection from "./selections/UseSelection";
+import SpellCastSelection from "./selections/SpellCastSelection";
+import SpellTargetSelection from "./selections/SpellTargetSelection";
+import BuySelection from "./selections/BuySelection";
+import SellSelection from "./selections/SellSelection";
 
 export {
     AttackCommand,

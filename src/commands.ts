@@ -1,8 +1,9 @@
+import path from "path";
 import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import { CharacterClass } from "./types";
 import { DIRECTION, FORMATTED_DIRECTION } from "./constants";
+import { readDir } from "./util";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
-import Encounters from "./game/encounters";
 import config from "./config";
 
 const { clientId, authToken } = config;
@@ -37,22 +38,36 @@ class CommandBuilder {
     }
 
     private buildActionSubcommands(builder: SlashCommandBuilder) {
-        const commands: { name: string; description: string; }[] = [];
-        Encounters.forEach((Encounter) => {
-            Encounter.commands.forEach((command) => {
-                const exists = commands.find(c => c.name === command.name);
-                if (exists) {
-                    console.warn("Duplicate command:", command.name);
-                    return;
+        const commandsPath = path.join(__dirname, "./game/actions/commands");
+        // Filter out non-JS generated files
+        const commandFiles = readDir(commandsPath).filter(file => file.endsWith(".js"));
+
+        const commands: { Name: string; Description: string; }[] = [];
+        for (const file of commandFiles) {
+            const filePath = path.join(commandsPath, file);
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const command = require(filePath);
+            if ("CommandData" in command) {
+                if (command.CommandData.Hidden) {
+                    console.info(`Ignoring hidden action command '${command.CommandData.Name}'`);
+                } else {
+                    commands.push(command.CommandData);
                 }
-                commands.push(command);
-            });
-        });
-        commands.forEach((command) => {
+            } else {
+                if (file.startsWith("Command")) {
+                    console.info("Ignoring abstract class Command at", filePath);
+                } else {
+                    console.warn(`The command at ${filePath} is invalid`);
+                }
+            }
+        }
+
+        console.info("Loaded game commands:", commands);
+        commands.forEach((CommandData) => {
             builder.addSubcommand((subcommand) => {
                 return subcommand
-                    .setName(command.name)
-                    .setDescription(command.description);
+                    .setName(CommandData.Name)
+                    .setDescription(CommandData.Description);
             });
         });
         return builder;

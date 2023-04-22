@@ -7,17 +7,6 @@ import { SneakCommand, SurpriseCommand } from "../actions";
 export default class StealthEncounter extends Encounter {
     monsters: Monster[] = [];
 
-    static commands = [
-        {
-            name: "sneak",
-            description: "Try to sneak past the enemies"
-        },
-        {
-            name: "surprise",
-            description: "Surprise the enemies and attack!"
-        }
-    ];
-
     commands = {
         sneak: new SneakCommand(async () => {
             await this.narrator.ponderAndDescribe(

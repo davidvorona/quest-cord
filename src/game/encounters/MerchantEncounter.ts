@@ -18,17 +18,6 @@ import {
 export default class MerchantEncounter extends FreeEncounter {
     merchant: NonPlayerCharacter;
 
-    static commands = [
-        {
-            name: "buy",
-            description: "Buy items from a merchant"
-        },
-        {
-            name: "sell",
-            description: "Sell items to a merchant"
-        }
-    ];
-
     commands = {
         buy: new BuyCommand(async (interaction: CommandInteraction) => {
             const options = this.getMerchant()

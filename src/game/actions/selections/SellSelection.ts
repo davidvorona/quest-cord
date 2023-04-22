@@ -1,4 +1,4 @@
-import { SelectionExecuteFunction } from "./Action";
+import { SelectionExecuteFunction } from "../Action";
 import Selection from "./Selection";
 
 export default class SellSelection extends Selection {

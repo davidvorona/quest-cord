@@ -1,13 +1,8 @@
 import { CommandInteraction, SelectMenuInteraction } from "../../types";
-import Command from "../actions/Command";
-import Selection from "../actions/Selection";
+import Command from "../actions/commands/Command";
+import Selection from "../actions/selections/Selection";
 import Character from "../creatures/Character";
 import Narrator from "../Narrator";
-
-interface StaticCommand {
-    name: string;
-    description: string;
-}
 
 export interface EncounterResults {
     success: boolean;
@@ -20,8 +15,6 @@ export default class Encounter {
     turnBased: boolean;
 
     narrator: Narrator;
-
-    static commands: StaticCommand[] = [];
 
     commands: Record<string, Command> = {};
 

@@ -32,17 +32,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
      */
     heldSpell?: string;
 
-    static commands = [
-        {
-            name: "attack",
-            description: "Strike at an enemy!"
-        },
-        {
-            name: "spell",
-            description: "Cast a spell"
-        }
-    ];
-
     commands = {
         attack: new AttackCommand(async (interaction: CommandInteraction, character: Character) => {
             const embed = new EmbedBuilder()

@@ -7,17 +7,6 @@ import { IgnoreCommand, TalkCommand } from "../actions";
 export default class SocialEncounter extends Encounter {
     npcs: NonPlayerCharacter[] = [];
 
-    static commands = [
-        {
-            name: "talk",
-            description: "Beg, bully, or bandy your way forward"
-        },
-        {
-            name: "ignore",
-            description: "Keep to yourself and ignore the friendly figure"
-        }
-    ];
-
     commands = {
         talk: new TalkCommand(async () => {
             const npcName = this.getNpcNames()[0];
