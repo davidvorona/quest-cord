@@ -213,17 +213,17 @@ export default class QuestLord {
             }
 
             // Choosing an item to use
-            if (interaction.customId === "item:use") {
+            if (interaction.customId === "use") {
                 await this.handleUse(interaction);
             }
 
             // Choosing an item to buy
-            if (interaction.customId === "item:buy") {
+            if (interaction.customId === "buy") {
                 await this.handleBuy(interaction);
             }
 
             // Choosing an item to sell
-            if (interaction.customId === "item:sell") {
+            if (interaction.customId === "sell") {
                 await this.handleSell(interaction);
             }
         } catch (err) {
@@ -698,7 +698,9 @@ export default class QuestLord {
 
         const quest = this.quests[guildId];
         const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const results = await quest.handleEncounterCommand(interaction, command);
+
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async handleAttack(interaction: SelectMenuInteraction): Promise<void> {

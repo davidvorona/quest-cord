@@ -1,8 +1,9 @@
 import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
-import Encounter, { EncounterCommand } from "./encounters/Encounter";
+import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
+import Command from "./actions/Command";
 import { CommandInteraction, LevelGain, SelectMenuInteraction } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
@@ -195,14 +196,16 @@ export default class Quest {
         const commandName = commandNameOverride || interaction.options.getSubcommand();
         const command = this.encounter.assertAndGetCommand(commandName);
         // If turn-based, validate the player's turn
-        const consumesTurn = command && command.consumesTurn;
-        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+        if (
+            this.encounter instanceof TurnBasedEncounter
+            && this.encounter.isActionTurnConsuming(command)
+        ) {
             this.validatePlayerTurn(interaction.user.id);
         }
         return command;
     }
 
-    async handleEncounterCommand(interaction: CommandInteraction, command: EncounterCommand) {
+    async handleEncounterCommand(interaction: CommandInteraction, command: Command) {
         if (!this.isInEncounter()) {
             throw new Error("There is no active encounter!");
         }
@@ -219,7 +222,10 @@ export default class Quest {
             return results;
         }
 
-        if (this.encounter instanceof TurnBasedEncounter && command.consumesTurn) {
+        if (
+            this.encounter instanceof TurnBasedEncounter
+            && this.encounter.isActionTurnConsuming(command)
+        ) {
             await this.encounter.handleNextTurn();
             if (this.encounter.isOver()) {
                 const results = this.encounter.getResults();
@@ -234,9 +240,11 @@ export default class Quest {
         }
         const userId = interaction.user.id;
         const playerCharacter = this.assertAndGetPlayerCharacter(userId);
-        const selection = this.encounter.getMenu(interaction.customId);
-        const consumesTurn = selection && selection.consumesTurn;
-        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+        const selection = this.encounter.assertAndGetMenu(interaction.customId);
+        if (
+            this.encounter instanceof TurnBasedEncounter
+            && this.encounter.isActionTurnConsuming(selection)
+        ) {
             this.validatePlayerTurn(userId);
         }
 
@@ -247,7 +255,10 @@ export default class Quest {
             return results;
         }
 
-        if (this.encounter instanceof TurnBasedEncounter && consumesTurn) {
+        if (
+            this.encounter instanceof TurnBasedEncounter
+            && this.encounter.isActionTurnConsuming(selection)
+        ) {
             await this.encounter.handleNextTurn();
             if (this.encounter.isOver()) {
                 const results = this.encounter.getResults();
