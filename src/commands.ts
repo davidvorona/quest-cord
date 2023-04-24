@@ -48,8 +48,9 @@ class CommandBuilder {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const command = require(filePath);
             if ("CommandData" in command) {
-                if (command.CommandData.Hidden) {
-                    console.info(`Ignoring hidden action command '${command.CommandData.Name}'`);
+                const { Hidden, Name } = command.CommandData;
+                if (Hidden) {
+                    console.info(`Ignoring hidden action command '${Name}'`);
                 } else {
                     commands.push(command.CommandData);
                 }
