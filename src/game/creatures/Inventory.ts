@@ -11,13 +11,21 @@ export default class Inventory {
 
     getItems = () => this.items;
 
+    hasItem = (id: string) => this.items.findIndex(i => i.id === id) > -1;
+
     getItem = (id: string) => this.items.find(i => i.id === id);
 
     getItemQuantity = (id: string) => this.items.filter(i => i.id === id).length;
 
     removeItem = (id: string) => {
         const removeIndex = this.items.findIndex(i => i.id === id);
-        this.items.splice(removeIndex);
+        this.items.splice(removeIndex, 1);
+    };
+
+    removeItems = (itemIds: string[]) => {
+        itemIds.forEach((itemId) => {
+            this.removeItem(itemId);
+        });
     };
 
     addItem = (item: Item) => {
