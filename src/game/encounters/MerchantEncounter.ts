@@ -15,6 +15,7 @@ import {
     SellSelection
 } from "../actions";
 import Item from "../things/Item";
+import Inventory from "../creatures/Inventory";
 
 export default class MerchantEncounter extends FreeEncounter {
     merchant: NonPlayerCharacter;
@@ -69,28 +70,7 @@ export default class MerchantEncounter extends FreeEncounter {
         new BuySelection(async (interaction: SelectMenuInteraction, character: Character) => {
             const itemIds = interaction.values;
             const merchantCharacter = this.merchant.getCharacter();
-            const shop = merchantCharacter.getInventory();
-            let notInStock = false;
-            const itemsToBuy: Item[] = [];
-            itemIds.forEach((itemId) => {
-                const itemToBuy = shop.getItem(itemId);
-                if (!itemToBuy) {
-                    notInStock = true;
-                } else {
-                    itemsToBuy.push(itemToBuy);
-                }
-            });
-            if (notInStock) {
-                await this.narrator.update(interaction, {
-                    content: "The merchant no longer has this in stock!"
-                });
-                return;
-            }
-            shop.removeItems(itemIds);
-            character.addToInventory(itemsToBuy);
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription(`You purchase **${itemsToBuy.length}** items!`);
+            const embed = this.doTransaction(character, merchantCharacter, itemIds);
             await this.narrator.update(interaction, {
                 embeds: [embed],
                 components: []
@@ -98,29 +78,8 @@ export default class MerchantEncounter extends FreeEncounter {
         }),
         new SellSelection(async (interaction: SelectMenuInteraction, character: Character) => {
             const itemIds = interaction.values;
-            const inventory = character.getInventory();
-            let notInInventory = false;
-            const itemsToSell: Item[] = [];
-            itemIds.forEach((itemId) => {
-                const itemToSell = inventory.getItem(itemId);
-                if (!itemToSell) {
-                    notInInventory = true;
-                } else {
-                    itemsToSell.push(itemToSell);
-                }
-            });
-            if (notInInventory) {
-                await this.narrator.update(interaction, {
-                    content: "You don't have that item!"
-                });
-                return;
-            }
-            inventory.removeItems(itemIds);
             const merchantCharacter = this.merchant.getCharacter();
-            merchantCharacter.addToInventory(itemsToSell);
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription(`You sell **${itemsToSell.length}** items!`);
+            const embed = this.doTransaction(merchantCharacter, character, itemIds);
             await this.narrator.update(interaction, {
                 embeds: [embed],
                 components: []
@@ -140,4 +99,41 @@ export default class MerchantEncounter extends FreeEncounter {
     getMerchant = () => this.merchant;
 
     getMerchantName = () => this.merchant.getName();
+
+    doTransaction = (buyer: Character, seller: Character, itemIds: string[]) => {
+        const inventory = seller.getInventory();
+        const isPurchase = seller === this.merchant.getCharacter();
+        let notInStock = false;
+        const itemsToBuy: Item[] = [];
+        let totalValue = 0;
+        let description = "";
+        itemIds.forEach((itemId) => {
+            const itemToBuy = inventory.getItem(itemId);
+            if (!itemToBuy) {
+                notInStock = true;
+            } else {
+                itemsToBuy.push(itemToBuy);
+                totalValue += itemToBuy.value;
+            }
+        });
+        if (notInStock) {
+            description = isPurchase
+                ? "The merchant no longer has this in stock!"
+                : "You don't have that item!";
+        } else if (totalValue > buyer.getGp()) {
+            description = isPurchase
+                ? `This will cost **${totalValue}gp**, you have **${buyer.getGp()}gp**.`
+                : "The merchant cannot afford this.";
+        } else {
+            inventory.removeItems(itemIds);
+            buyer.gp -= totalValue;
+            buyer.addToInventory(itemsToBuy);
+            description = `You ${isPurchase ? "purchase" : "sell"} **${itemsToBuy.length}** `
+                + `items for **${totalValue}gp**!`;
+        }
+        return new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setDescription(description)
+            .addFields(...Inventory.getInteractionFields(itemsToBuy));
+    };
 }

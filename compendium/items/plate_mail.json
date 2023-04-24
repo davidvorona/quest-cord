@@ -3,5 +3,6 @@
     "name": "Plate Mail",
     "type": "armor",
     "ac": 4,
-    "category": "heavy"
+    "category": "heavy",
+    "value": 60
 }

@@ -3,5 +3,6 @@
     "name": "Chain Mail",
     "type": "armor",
     "ac": 3,
-    "category": "medium"
+    "category": "medium",
+    "value": 20
 }

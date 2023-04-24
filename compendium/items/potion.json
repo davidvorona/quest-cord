@@ -4,5 +4,6 @@
     "type": "consumable",
     "effects": {
         "hp": 2
-    }
+    },
+    "value": 20
 }

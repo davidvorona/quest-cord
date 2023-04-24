@@ -3,5 +3,6 @@
     "name": "Wizard Robes",
     "type": "armor",
     "ac": 0,
-    "category": "light"
+    "category": "light",
+    "value": 26
 }

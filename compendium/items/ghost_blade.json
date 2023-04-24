@@ -3,5 +3,6 @@
     "name": "Ghost Blade",
     "type": "weapon",
     "damage": 3,
-    "properties": []
+    "properties": [],
+    "value": 10
 }

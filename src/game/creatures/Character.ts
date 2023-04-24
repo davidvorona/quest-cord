@@ -40,4 +40,8 @@ export default class Character extends Creature {
     addToInventory(items: Item[]) {
         this.inventory.addItems(items);
     }
+
+    getGp() {
+        return this.gp;
+    }
 }
