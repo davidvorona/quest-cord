@@ -4,5 +4,6 @@
     "type": "consumable",
     "effects": {
         "damage": 1
-    }
+    },
+    "value": 40
 }

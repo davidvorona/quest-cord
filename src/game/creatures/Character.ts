@@ -8,6 +8,8 @@ import Inventory from "./Inventory";
 export default class Character extends Creature {
     inventory: Inventory;
 
+    gp: number;
+
     constructor(
         args: CharacterClass | BaseNonPlayerCharacter,
         equipment: Equipment,
@@ -17,6 +19,7 @@ export default class Character extends Creature {
         super(args, equipment, spells);
 
         this.inventory = new Inventory(items);
+        this.gp = 12; // Starting gold
     }
 
     useItem(itemId: string) {
@@ -36,5 +39,9 @@ export default class Character extends Creature {
 
     addToInventory(items: Item[]) {
         this.inventory.addItems(items);
+    }
+
+    getGp() {
+        return this.gp;
     }
 }

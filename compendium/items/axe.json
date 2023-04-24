@@ -3,5 +3,6 @@
     "name": "Axe",
     "type": "weapon",
     "damage": 3,
-    "properties": ["two-handed"]
+    "properties": ["two-handed"],
+    "value": 4
 }

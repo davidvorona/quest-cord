@@ -3,5 +3,6 @@
     "name": "Sword",
     "type": "weapon",
     "damage": 2,
-    "properties": []
+    "properties": [],
+    "value": 6
 }
