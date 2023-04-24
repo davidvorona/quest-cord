@@ -1,5 +1,6 @@
 {
     "id": "torch",
     "name": "Torch",
-    "type": "offhand"
+    "type": "offhand",
+    "value": 2
 }

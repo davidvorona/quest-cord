@@ -7,9 +7,12 @@ export default class Item {
 
     type: string;
 
+    value: number;
+
     constructor(data: BaseItem) {
         this.id = data.id;
         this.name = data.name;
         this.type = data.type;
+        this.value = data.value;
     }
 }

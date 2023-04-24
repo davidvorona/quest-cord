@@ -42,6 +42,29 @@ export default class Inventory {
         this.items.push(...items);
     };
 
+    static getInteractionFields = (items: Item[]) => {
+        const quantities: { item: Item, quantity: number; }[] = [];
+        items.forEach((item) => {
+            let invItem = quantities.find(i => i.item.id === item.id);
+            if (!invItem) {
+                invItem = {
+                    item,
+                    quantity: 0
+                };
+                quantities.push(invItem);
+            }
+            invItem.quantity++;
+        });
+        const stock: { value: string; name: string; }[] = [];
+        quantities.forEach((invItem) => {
+            stock.push({
+                value: invItem.quantity.toString(),
+                name: invItem.item.name
+            });
+        });
+        return stock;
+    };
+
     /**
      * Gets a convenient representation of the items, adding each to a
      * set of objects with 'item' and 'quantity' fields. Example:

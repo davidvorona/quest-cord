@@ -3,5 +3,6 @@
     "name": "Leather Armor",
     "type": "armor",
     "ac": 1,
-    "category": "light"
+    "category": "light",
+    "value": 18
 }
