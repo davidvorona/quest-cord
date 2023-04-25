@@ -14,8 +14,7 @@ export default class StealthEncounter extends Encounter {
             );
         }),
         surprise: new SurpriseCommand(async () => {
-            await this.narrator.ponderAndDescribe("You're about to mount a surprise "
-            + "attack when you reconsider, and decide to sneak past instead.");
+            await this.narrator.ponderAndDescribe("The party mounts a surprise attack!");
         })
     };
 

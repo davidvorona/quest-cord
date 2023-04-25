@@ -30,6 +30,8 @@ import SpellFactory from "../services/SpellFactory";
 import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults } from "./encounters/Encounter";
+import CombatEncounter from "./encounters/CombatEncounter";
+import StealthEncounter from "./encounters/StealthEncounter";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -531,8 +533,22 @@ export default class QuestLord {
             stealthAction,
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
-                await this.handleEncounterResults(guildId, results);
+                await quest.handleEncounterCommand(interaction, command);
+
+                if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
+                    throw new Error("Invalid stealth encounter, aborting");
+                }
+
+                const characters = quest.getCharacters();
+                const narrator = quest.getNarrator();
+                // Get monsters from the surprise encounter, add them to a combat encounter
+                const { monsters } = quest.encounter;
+                const cmbEncounter = new CombatEncounter(characters, narrator, monsters);
+
+                // End the stealth encounter
+                await quest.endEncounter();
+                // Start the combat encounter
+                await quest.startEncounter(cmbEncounter);
             }
         );
     }
