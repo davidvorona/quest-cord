@@ -167,6 +167,11 @@ export default class QuestLord {
                 await this.handleTravel(interaction);
             }
 
+            // User wants to move (in a combat encounter)
+            if (interaction.commandName === "move") {
+                await this.handleMove(interaction);
+            }
+
             // User character uses an item
             if (interaction.commandName === "use") {
                 await this.promptUse(interaction);
@@ -722,6 +727,20 @@ export default class QuestLord {
                 components: [],
                 embeds: []
             });
+        }
+    }
+
+    private async handleMove(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        // Movement only allowed for now during an encounter
+        if (quest.isInEncounter()) {
+            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
+            await quest.handleEncounterCommand(interaction, command);
+        } else {
+            throw new Error("Invalid quest state for movement, aborting");
         }
     }
 
