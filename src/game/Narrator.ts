@@ -108,9 +108,9 @@ class Narrator {
             .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
         const weapon = attacker.equipment.weapon;
         const weaponName = weapon ? weapon.name : "fists";
-        const text = textBuilder.build(weaponName, target.getName());
+        const text = textBuilder.build(weaponName, attacker.getName(), target.getName());
         await this.ponderAndDescribe(text);
-        await this.ponderAndDescribe(`You deal ${damage} damage.`);
+        await this.ponderAndDescribe(`It deals ${damage} damage.`);
     }
 
     async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {

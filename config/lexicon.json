@@ -22,10 +22,10 @@
     },
     "attack": {
         "melee": [
-            "You leap forward, striking at the $2 with your $1.",
-            "Wielding your $1, you attack the $2 with vigor.",
-            "With your $1 you carve into the $2.",
-            "You embed your $1 into the $2's shoulder."
+            "$2 leaps forward, striking at $3 with their $1.",
+            "Wielding a $1, $2 attacks $3 with vigor.",
+            "With a $1, $2 carves into $3.",
+            "$2 embeds their $1 into $3's shoulder."
         ],
         "range": [
 
