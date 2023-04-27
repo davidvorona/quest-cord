@@ -4,7 +4,7 @@ import {
     StringSelectMenuBuilder
 } from "discord.js";
 import SmartCombatLog, {
-    ActionRoleIndex,
+    ActionRole,
     LogEntryAction
 } from "../../services/SmartCombatLog";
 import TurnBasedEncounter from "./TurnBasedEncounter";
@@ -40,14 +40,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     commands = {
         attack: new AttackCommand(async (interaction: CommandInteraction, character: Character) => {
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription("Who do you want to attack?");
-            const options = this.getMonsterNames().map((n: string, idx) => ({
-                label: n,
-                value: idx.toString()
-            }));
-            if (options.length === 1) {
+            if (this.monsters.length === 1) {
                 const target = this.monsters[0];
 
                 await this.narrator.reply(interaction, {
@@ -59,6 +52,13 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
                 await this.handleAttack(character, target);
             } else {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription("Who do you want to attack?");
+                const options = this.getMonsterNames().map((n: string, idx) => ({
+                    label: n,
+                    value: idx.toString()
+                }));
                 const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                     .addComponents(
                         new StringSelectMenuBuilder()
@@ -74,14 +74,15 @@ export default class CombatEncounter extends TurnBasedEncounter {
             }
         }),
         spell: new SpellCommand(async (interaction: CommandInteraction, character: Character) => {
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription("What spell do you want to cast?");
-            const options = character.getSpells().map(s => ({
-                label: s.name,
-                value: s.id
-            }));
-            if (options.length) {
+            const spells = character.getSpells();
+            if (spells.length) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription("What spell do you want to cast?");
+                const options = spells.map(s => ({
+                    label: s.name,
+                    value: s.id
+                }));
                 const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                     .addComponents(
                         new StringSelectMenuBuilder()
@@ -142,15 +143,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             }
             this.holdSpell(spellId);
 
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription(`You choose to cast **${spell.name}**. `
-                    + "Who do you want to target?");
-            const options = this.getMonsterNames().map((n: string, idx) => ({
-                label: n,
-                value: idx.toString()
-            }));
-            if (options.length === 1) {
+            if (this.monsters.length === 1) {
                 await this.narrator.ponderAndUpdate(interaction, {
                     content: "You prepare to cast the spell...",
                     embeds: [],
@@ -159,6 +152,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
                 await this.handleSpell(character, this.monsters[0], spellId);
             } else {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setDescription(`You choose to cast **${spell.name}**. `
+                        + "Who do you want to target?");
+                const options = this.getMonsterNames().map((n: string, idx) => ({
+                    label: n,
+                    value: idx.toString()
+                }));
                 const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                     .addComponents(
                         new StringSelectMenuBuilder()
@@ -221,9 +222,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         );
     }
 
-    getMonsterByIndex(index: number): Monster {
-        return this.monsters[index];
-    }
+    getMonsterByIndex = (index: number) => this.monsters[index];
 
     getMonsterNames = () => this.monsters.map(m => m.getName());
 
@@ -231,19 +230,20 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
 
+    /**
+     * @override
+     */
     getXpReward = () => Math.max(this.monsters.length * 5, 10);
 
+    /**
+     * @override
+     */
     isOver = () => !this.getTotalCharacterHp() || !this.getTotalMonsterHp();
 
+    /**
+     * @override
+     */
     isSuccess = () => !this.getTotalMonsterHp();
-
-    private holdSpell(spellId: string) {
-        this.heldSpell = spellId;
-    }
-
-    private releaseSpell() {
-        this.heldSpell = undefined;
-    }
 
     /**
      * @override
@@ -282,21 +282,21 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
     }
 
-    private async handleMonsterTurn() {
-        const currentTurn = this.getCurrentTurn();
-        if (currentTurn instanceof Monster) {
-            const target = this.chooseTarget(currentTurn);
-            await this.handleAttack(currentTurn, target);
+    /* COMBAT METHODS */
 
-            await this.handleNextTurn();
-        }
+    private holdSpell(spellId: string) {
+        this.heldSpell = spellId;
+    }
+
+    private releaseSpell() {
+        this.heldSpell = undefined;
     }
 
     private async handleAttack(attacker: Creature, target: Creature) {
-        const damage = this.calculateDamage(attacker);
+        const damage = attacker.getDamage();
         target.setHp(target.hp - damage);
 
-        const weaponId = attacker.getWeapon()?.id || "fists";
+        const weaponId = attacker.getWeaponId();
         this.combatLog.append(
             LogEntryAction.Attack,
             weaponId,
@@ -307,8 +307,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeAttack(attacker, target, damage);
     }
 
-    private async handleSpell(attacker: Creature, target: Creature, spellId: string) {
-        const heldSpell = attacker.getSpell(spellId);
+    private async handleSpell(caster: Creature, target: Creature, spellId: string) {
+        const heldSpell = caster.getSpell(spellId);
         if (!heldSpell) {
             throw new Error("You are not holding this spell...");
         }
@@ -320,10 +320,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
             LogEntryAction.Spell,
             spellId,
             damage,
-            [this.getTurnOrderIdx(attacker), this.getTurnOrderIdx(target)]
+            [this.getTurnOrderIdx(caster), this.getTurnOrderIdx(target)]
         );
 
-        await this.narrator.describeCastSpell(attacker, heldSpell, damage);
+        await this.narrator.describeCastSpell(caster, heldSpell, damage);
 
         this.releaseSpell();
     }
@@ -331,16 +331,31 @@ export default class CombatEncounter extends TurnBasedEncounter {
     private handleUseItem(character: Character, itemId: string) {
         character.useItem(itemId);
 
+        const itemValue = 0;
         this.combatLog.append(
             LogEntryAction.Use,
             itemId,
-            0,
+            itemValue,
             [this.getTurnOrderIdx(character)]
         );
     }
 
+    /* ENEMY AI METHODS */
+
+    private async handleMonsterTurn() {
+        const currentTurn = this.getCurrentTurn();
+        if (currentTurn instanceof Monster) {
+            // TODO: Enemies should also be able to choose their action, e.g. attack,
+            // spell, item, etc., and this would inform their target (or lack thereof).
+            const target = this.chooseTarget(currentTurn);
+            await this.handleAttack(currentTurn, target);
+
+            await this.handleNextTurn();
+        }
+    }
+
     private canKillWhichCharacters(monster: Monster) {
-        const damage = this.calculateDamage(monster);
+        const damage = monster.getDamage();
         const deathList = this.characters.filter(pc => pc.hp <= damage);
         return deathList;
     }
@@ -351,7 +366,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         // 1. Is anyone currently attacking it?
         const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster);
         if (targetedTurn) {
-            const lastAttacker = this.turnOrder[targetedTurn.creatures[ActionRoleIndex.Actor]];
+            const lastAttacker = this.turnOrder[targetedTurn.creatures[ActionRole.Actor]];
             return lastAttacker;
         }
         // 2. Is anyone at very low health?
@@ -367,12 +382,5 @@ export default class CombatEncounter extends TurnBasedEncounter {
         // 4. Just pick somebody random!
         const target = chars[rand(chars.length)];
         return target;
-    }
-
-    private calculateDamage(attacker: Creature): number {
-        const baseDamage = attacker.damage;
-        const weapon = attacker.getWeapon();
-        const weaponDamage = weapon ? weapon.damage : 0;
-        return baseDamage + weaponDamage;
     }
 }

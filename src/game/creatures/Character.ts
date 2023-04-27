@@ -44,4 +44,8 @@ export default class Character extends Creature {
     getGp() {
         return this.gp;
     }
+
+    getWeaponId() {
+        return super.getWeaponId() || "fists";
+    }
 }
