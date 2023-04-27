@@ -122,7 +122,8 @@ class Narrator {
         if (encounter instanceof CombatEncounter) {
             await this.ponderAndDescribe("On your turn, you can attack with the "
                 + "**/action attack** command, or cast a spell with **/action spell**. "
-                + "You can also use items with **/use**.");
+                + "You can also use items with **/use**.\nBefore you act, you can decide "
+                + "if you want to move with **/move**.");
         } else if (encounter instanceof StealthEncounter) {
             await this.ponderAndDescribe("Choose between a stealthy approach with the "
                 + "**/action sneak** command, or surprise your enemies with **/action surprise**!");

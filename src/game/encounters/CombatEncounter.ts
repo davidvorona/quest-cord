@@ -17,6 +17,7 @@ import {
     SpellCommand,
     AttackCommand,
     UseCommand,
+    MoveCommand,
     AttackSelection,
     SpellCastSelection,
     SpellTargetSelection,
@@ -38,7 +39,29 @@ export default class CombatEncounter extends TurnBasedEncounter {
      */
     heldSpell?: string;
 
+    /**
+     * The heldMovement property is just a flag that marks whether or
+     * not the player has chosen to move on their turn. Once a turn-consuming
+     * action is completed, the heldMovement flag is checked and the
+     * player is moved in or out of melee range.
+     */
+    heldMovement?: boolean;
+
     commands = {
+        move: new MoveCommand(async (interaction: CommandInteraction) => {
+            this.heldMovement = !this.heldMovement;
+            let movementText;
+            if (this.heldMovement) {
+                movementText = "You will move once you submit your action.";
+            } else {
+                movementText = "You will no longer move before your action.";
+            }
+
+            await this.narrator.reply(interaction, {
+                ephemeral: true,
+                content: movementText
+            });
+        }),
         attack: new AttackCommand(async (interaction: CommandInteraction, character: Character) => {
             if (this.monsters.length === 1) {
                 const target = this.monsters[0];
