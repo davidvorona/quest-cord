@@ -113,9 +113,9 @@ class Narrator {
         await this.ponderAndDescribe(`You deal ${damage} damage.`);
     }
 
-    async describeCastSpell(attacker: Creature, spell: Spell) {
+    async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {
         await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at `
-            + "the enemy and deals 0 damage.");
+            + `the enemy and deals ${damage} damage.`);
     }
 
     async explainEncounter(encounter: Encounter) {

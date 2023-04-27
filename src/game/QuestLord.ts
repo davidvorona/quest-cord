@@ -760,7 +760,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterMenuSelect(interaction);
+        const results = await quest.handleEncounterMenuSelect(interaction);
+
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async handleSpellTarget(interaction: SelectMenuInteraction): Promise<void> {
