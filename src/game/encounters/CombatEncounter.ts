@@ -1,9 +1,12 @@
 import {
     ActionRowBuilder,
     EmbedBuilder,
-    StringSelectMenuBuilder,
+    StringSelectMenuBuilder
 } from "discord.js";
-import SmartCombatLog, { ATTACKER_IDX } from "../../services/SmartCombatLog";
+import SmartCombatLog, {
+    ActionRoleIndex,
+    LogEntryAction
+} from "../../services/SmartCombatLog";
 import TurnBasedEncounter from "./TurnBasedEncounter";
 import Character from "../creatures/Character";
 import Monster from "../creatures/Monster";
@@ -121,7 +124,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
             character: Character
         ) => {
             const targetIdx = Number(interaction.values[0]);
-
             const target = this.getMonsterByIndex(targetIdx);
 
             await this.narrator.update(interaction, {
@@ -155,8 +157,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                     components: []
                 });
 
-                // TODO: Actually apply the spell to the game LOL
-                await this.narrator.describeCastSpell(character, spell);
+                await this.handleSpell(character, this.monsters[0], spellId);
             } else {
                 const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                     .addComponents(
@@ -185,32 +186,26 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 components: []
             });
 
-            const heldSpell = character.getSpell(this.heldSpell);
-            if (!heldSpell) {
-                throw new Error("You are not holding this spell...");
-            }
+            const targetIdx = Number(interaction.values[0]);
+            const target = this.getMonsterByIndex(targetIdx);
 
-            // TODO: Actually apply the spell to the game LOL
-            await this.narrator.describeCastSpell(character, heldSpell);
-
-            this.releaseSpell();
+            await this.handleSpell(character, target, this.heldSpell);
         }),
         new UseSelection(async (interaction: SelectMenuInteraction, character: Character) => {
-            const item = interaction.values[0];
             try {
-                character.useItem(item);
+                const itemId = interaction.values[0];
+                this.handleUseItem(character, itemId);
+                await this.narrator.ponderAndUpdate(interaction, {
+                    content: `You use the ${itemId}.`,
+                    components: [],
+                    embeds: []
+                });
             } catch (err) {
                 await this.narrator.reply(interaction, {
                     content: "You do not have this item!",
                     ephemeral: true
                 });
-                return;
             }
-            await this.narrator.ponderAndUpdate(interaction, {
-                content: `You use the ${item}.`,
-                components: [],
-                embeds: []
-            });
         })
     ];
 
@@ -301,13 +296,47 @@ export default class CombatEncounter extends TurnBasedEncounter {
         const damage = this.calculateDamage(attacker);
         target.setHp(target.hp - damage);
 
-        const attackerIdx = this.getTurnOrderIdx(attacker);
-        const targetIdx = this.getTurnOrderIdx(target);
-        // Keep in mind, the combat log currently only records turns where
-        // a player attacks, and ignores casting spells and using items
-        this.combatLog.append(attackerIdx, targetIdx);
+        const weaponId = attacker.getWeapon()?.id || "fists";
+        this.combatLog.append(
+            LogEntryAction.Attack,
+            weaponId,
+            damage,
+            [this.getTurnOrderIdx(attacker), this.getTurnOrderIdx(target)]
+        );
 
         await this.narrator.describeAttack(attacker, target, damage);
+    }
+
+    private async handleSpell(attacker: Creature, target: Creature, spellId: string) {
+        const heldSpell = attacker.getSpell(spellId);
+        if (!heldSpell) {
+            throw new Error("You are not holding this spell...");
+        }
+
+        const damage = heldSpell.damage || 0;
+        target.setHp(target.hp - damage);
+
+        this.combatLog.append(
+            LogEntryAction.Spell,
+            spellId,
+            damage,
+            [this.getTurnOrderIdx(attacker), this.getTurnOrderIdx(target)]
+        );
+
+        await this.narrator.describeCastSpell(attacker, heldSpell, damage);
+
+        this.releaseSpell();
+    }
+
+    private handleUseItem(character: Character, itemId: string) {
+        character.useItem(itemId);
+
+        this.combatLog.append(
+            LogEntryAction.Use,
+            itemId,
+            0,
+            [this.getTurnOrderIdx(character)]
+        );
     }
 
     private canKillWhichCharacters(monster: Monster) {
@@ -322,7 +351,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         // 1. Is anyone currently attacking it?
         const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster);
         if (targetedTurn) {
-            const lastAttacker = this.turnOrder[targetedTurn[ATTACKER_IDX]];
+            const lastAttacker = this.turnOrder[targetedTurn.creatures[ActionRoleIndex.Actor]];
             return lastAttacker;
         }
         // 2. Is anyone at very low health?
@@ -330,13 +359,17 @@ export default class CombatEncounter extends TurnBasedEncounter {
         if (deathList.length) {
             return deathList[rand(deathList.length)];
         }
-        // 3. TODO: Is anyone casting spells?
-        // 4. Pick someone random.
+        // 3. Is anyone casting spells?
+        const casters = this.combatLog.getCreaturesCastingSpells(chars);
+        if (casters.length) {
+            return casters[rand(casters.length)];
+        }
+        // 4. Just pick somebody random!
         const target = chars[rand(chars.length)];
         return target;
     }
 
-    calculateDamage(attacker: Creature): number {
+    private calculateDamage(attacker: Creature): number {
         const baseDamage = attacker.damage;
         const weapon = attacker.getWeapon();
         const weaponDamage = weapon ? weapon.damage : 0;
