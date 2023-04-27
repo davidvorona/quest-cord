@@ -3,6 +3,7 @@ import {
     EmbedBuilder,
     StringSelectMenuBuilder,
 } from "discord.js";
+import SmartCombatLog, { ATTACKER_IDX } from "../../services/SmartCombatLog";
 import TurnBasedEncounter from "./TurnBasedEncounter";
 import Character from "../creatures/Character";
 import Monster from "../creatures/Monster";
@@ -23,6 +24,8 @@ import Action from "../actions/Action";
 
 export default class CombatEncounter extends TurnBasedEncounter {
     monsters: Monster[] = [];
+
+    combatLog: SmartCombatLog;
 
     /**
      * The heldSpell property is the ID of the spell selected in the
@@ -51,10 +54,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                     embeds: []
                 });
 
-                const damage = this.calculateDamage(character);
-                target.setHp(target.hp - damage);
-
-                await this.narrator.describeAttack(character, target, damage);
+                await this.handleAttack(character, target);
             } else {
                 const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                     .addComponents(
@@ -130,10 +130,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 embeds: []
             });
 
-            const damage = this.calculateDamage(character);
-            target.setHp(target.hp - damage);
-
-            await this.narrator.describeAttack(character, target, damage);
+            await this.handleAttack(character, target);
         }),
         new SpellCastSelection(async (interaction: SelectMenuInteraction, character: Character) => {
             const spellId = interaction.values[0];
@@ -222,6 +219,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.monsters = monsters;
         this.narrator = narrator;
         this.turnOrder = shuffleArray([...characters, ...monsters]);
+        this.combatLog = new SmartCombatLog(this.turnOrder);
         console.info(
             "Combat encounter started...",
             this.getCharacterNames(), "vs", this.getMonsterNames()
@@ -292,14 +290,50 @@ export default class CombatEncounter extends TurnBasedEncounter {
     private async handleMonsterTurn() {
         const currentTurn = this.getCurrentTurn();
         if (currentTurn instanceof Monster) {
-            const chars = this.getCharacters();
-            const target = chars[rand(chars.length)];
-            const damage = this.calculateDamage(currentTurn);
-            target.setHp(target.hp - damage);
-            await this.narrator.ponderAndDescribe(`${currentTurn.getName()} deals ${damage} damage `
-                + `to ${target.getName()}.`);
+            const target = this.chooseTarget(currentTurn);
+            await this.handleAttack(currentTurn, target);
+
             await this.handleNextTurn();
         }
+    }
+
+    private async handleAttack(attacker: Creature, target: Creature) {
+        const damage = this.calculateDamage(attacker);
+        target.setHp(target.hp - damage);
+
+        const attackerIdx = this.getTurnOrderIdx(attacker);
+        const targetIdx = this.getTurnOrderIdx(target);
+        // Keep in mind, the combat log currently only records turns where
+        // a player attacks, and ignores casting spells and using items
+        this.combatLog.append(attackerIdx, targetIdx);
+
+        await this.narrator.describeAttack(attacker, target, damage);
+    }
+
+    private canKillWhichCharacters(monster: Monster) {
+        const damage = this.calculateDamage(monster);
+        const deathList = this.characters.filter(pc => pc.hp <= damage);
+        return deathList;
+    }
+
+    // Enemy AI for choosing a target
+    private chooseTarget(monster: Monster) {
+        const chars = this.getCharacters();
+        // 1. Is anyone currently attacking it?
+        const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster);
+        if (targetedTurn) {
+            const lastAttacker = this.turnOrder[targetedTurn[ATTACKER_IDX]];
+            return lastAttacker;
+        }
+        // 2. Is anyone at very low health?
+        const deathList = this.canKillWhichCharacters(monster);
+        if (deathList.length) {
+            return deathList[rand(deathList.length)];
+        }
+        // 3. TODO: Is anyone casting spells?
+        // 4. Pick someone random.
+        const target = chars[rand(chars.length)];
+        return target;
     }
 
     calculateDamage(attacker: Creature): number {

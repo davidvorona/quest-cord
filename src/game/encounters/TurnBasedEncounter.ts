@@ -15,6 +15,10 @@ export default abstract class TurnBasedEncounter extends Encounter {
 
     getCurrentTurn = () => this.turnOrder[this.turnIdx];
 
+    getTurnOrderIdx(creature: Creature) {
+        return this.turnOrder.indexOf(creature);
+    }
+
     isActionTurnConsuming(action: Action) {
         return action.isTurnConsuming();
     }
