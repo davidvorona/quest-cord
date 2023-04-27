@@ -63,6 +63,10 @@ export default class Creature {
         return this.equipment.weapon;
     }
 
+    getWeaponId() {
+        return this.getWeapon()?.id ?? "";
+    }
+
     getSpell(spellId: string) {
         return this.spells.find(s => s.id === spellId);
     }
@@ -75,5 +79,13 @@ export default class Creature {
         if (effects.hp) {
             this.setHp(this.hp + effects.hp);
         }
+    }
+
+    private getWeaponDamage() {
+        return this.getWeapon()?.damage ?? 0;
+    }
+
+    getDamage(): number {
+        return this.damage + this.getWeaponDamage();
     }
 }
