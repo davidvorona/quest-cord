@@ -53,7 +53,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     commands = {
         move: new MoveCommand(async (interaction: CommandInteraction) => {
-            this.heldMovement = !this.heldMovement;
+            this.toggleMovement();
+
             let movementText;
             if (this.heldMovement) {
                 movementText = "You will move once you submit your action.";
@@ -258,6 +259,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
 
+    // We make an assertion here because the ID *should* always be valid
     getCreatureById(creatureId: string) {
         const creature = this.characters.find(c => c.id === creatureId)
             || this.monsters.find(m => m.id === creatureId);
@@ -312,7 +314,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
     async handleNextTurn() {
         await super.handleNextTurn();
         this.releaseSpell();
-        this.heldMovement = false;
+        this.completeMovement();
     }
 
     /**
@@ -332,22 +334,29 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     /* COMBAT METHODS */
 
-    private holdSpell(spellId: string) {
-        this.heldSpell = spellId;
+    private toggleMovement() {
+        this.heldMovement = !this.heldMovement;
     }
 
-    private releaseSpell() {
-        this.heldSpell = undefined;
+    private completeMovement() {
+        this.heldMovement = false;
     }
 
+    /**
+     * Movement is handled once a turn-consuming action is received and being
+     * processed. Movement is processed before or after the action is, depending
+     * on the action.
+     */
     private async handleMove(creature: Creature) {
         this.positions.moveCreature(creature.id);
+        this.completeMovement();
+
         const newPosition = this.positions.getCreaturePosition(creature.id);
-        this.heldMovement = false;
         await this.narrator.describeMovement(creature, newPosition);
     }
 
     private async handleAttack(attacker: Creature, target: Creature) {
+        // AKA, if your target is not nearby, run up to them before you attack
         if (this.heldMovement && !this.positions.compareEnemyPositions(attacker.id, target.id)) {
             await this.handleMove(attacker);
         }
@@ -368,6 +377,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
         if (this.heldMovement) {
             await this.handleMove(attacker);
         }
+    }
+
+    private holdSpell(spellId: string) {
+        this.heldSpell = spellId;
+    }
+
+    private releaseSpell() {
+        this.heldSpell = undefined;
     }
 
     private async handleSpell(caster: Creature, target: Creature, spellId: string) {
