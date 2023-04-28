@@ -1,5 +1,3 @@
-import Creature from "../../creatures/Creature";
-
 export enum ActionRole {
     Actor,
     Target
@@ -23,14 +21,14 @@ interface CombatLogEntry {
  * An incremental log of the combat encounter, currently storing the action
  * taken, the method of action, the associated number value, and the
  * index of the actor and the target in a tuple: [actorIdx, targetIdx?].
- * The actual creature can be derived from these values and the turn order.
+ * The actual creature ID can be derived from these values and the turn order.
  */
 export default class SmartCombatLog {
-    turnOrder: Creature[];
+    turnOrder: string[];
 
     log: CombatLogEntry[] = [];
 
-    constructor(turnOrder: Creature[]) {
+    constructor(turnOrder: string[]) {
         this.turnOrder = turnOrder;
     }
 
@@ -38,16 +36,16 @@ export default class SmartCombatLog {
         this.log.push({ action, method, value, creatures });
     }
 
-    getCreatureTurnOrderIdx(creature: Creature) {
-        return this.turnOrder.indexOf(creature);
+    getCreatureTurnOrderIdx(creatureId: string) {
+        return this.turnOrder.indexOf(creatureId);
     }
 
     /**
      * Takes a creature and finds the entry it was last targeted.
      */
-    getLastTurnCreatureTargeted(creature: Creature) {
+    getLastTurnCreatureTargeted(creatureId: string) {
         // Get the turn order index of the creature
-        const turnOrderIdx = this.turnOrder.indexOf(creature);
+        const turnOrderIdx = this.turnOrder.indexOf(creatureId);
         const reversedLog = [...this.log].reverse();
         // Find the index of the last entry in the log where that index was the target index
         const lastEntryIdx = reversedLog
@@ -58,26 +56,26 @@ export default class SmartCombatLog {
 
     /**
      * Takes a list of creatures and checks if any of them cast a spell on their
-     * last turn.
+     * last turn. Returns a list of IDs of creatures that cast spells.
      */
-    getCreaturesCastingSpells(creatures: Creature[]) {
+    getCreaturesCastingSpells(creatureIds: string[]) {
         // Get indexes of creatures in turn order
         const charIdx: number[] = [];
-        this.turnOrder.forEach((creature, idx) => {
-            if (creatures.indexOf(creature) > -1) {
+        this.turnOrder.forEach((creatureId, idx) => {
+            if (creatureIds.indexOf(creatureId) > -1) {
                 charIdx.push(idx);
             }
         });
-        const casters: Creature[] = [];
+        const casterIds: string[] = [];
         // Find if any of the creatures cast a spell in the last round
         charIdx.forEach((idx) => {
             const reversedLog = [...this.log].reverse();
             const charLastTurn = reversedLog
                 .find(e => e.creatures[ActionRole.Actor] === idx);
             if (charLastTurn && charLastTurn.action === LogEntryAction.Spell) {
-                casters.push(this.turnOrder[idx]);
+                casterIds.push(this.turnOrder[idx]);
             }
         });
-        return casters;
+        return casterIds;
     }
 }

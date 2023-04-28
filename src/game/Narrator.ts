@@ -15,11 +15,11 @@ import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
 import Creature from "./creatures/Creature";
 import Character from "./creatures/Character";
-import StealthEncounter from "./encounters/StealthEncounter";
-import SocialEncounter from "./encounters/SocialEncounter";
-import MerchantEncounter from "./encounters/MerchantEncounter";
-import LookoutEncounter from "./encounters/LookoutEncounter";
-import RestEncounter from "./encounters/RestEncounter";
+import StealthEncounter from "./encounters/stealth/StealthEncounter";
+import SocialEncounter from "./encounters/social/SocialEncounter";
+import MerchantEncounter from "./encounters/merchant/MerchantEncounter";
+import LookoutEncounter from "./encounters/lookout/LookoutEncounter";
+import RestEncounter from "./encounters/rest/RestEncounter";
 import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 

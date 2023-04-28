@@ -10,7 +10,7 @@ import SmartCombatLog, {
 import TurnBasedEncounter from "../TurnBasedEncounter";
 import Character from "../../creatures/Character";
 import Monster from "../../creatures/Monster";
-import { rand, shuffleArray } from "../../../util";
+import { rand } from "../../../util";
 import Creature from "../../creatures/Creature";
 import Narrator from "../../Narrator";
 import {
@@ -26,6 +26,7 @@ import {
 import { CommandInteraction, SelectMenuInteraction } from "../../../types";
 import Action from "../../actions/Action";
 import CombatPositionCache from "./CombatPositionCache";
+import TurnOrder from "../TurnOrder";
 
 export default class CombatEncounter extends TurnBasedEncounter {
     monsters: Monster[] = [];
@@ -240,9 +241,9 @@ export default class CombatEncounter extends TurnBasedEncounter {
         super(characters, narrator);
         this.monsters = monsters;
         this.narrator = narrator;
-        this.turnOrder = shuffleArray([...characters, ...monsters]);
+        this.turnOrder = new TurnOrder(this.characters, this.monsters);
         this.positions = new CombatPositionCache(this.characters, this.monsters);
-        this.combatLog = new SmartCombatLog(this.turnOrder);
+        this.combatLog = new SmartCombatLog(this.turnOrder.getTurns());
         console.info(
             "Combat encounter started...",
             this.getCharacterNames(), "vs", this.getMonsterNames()
@@ -256,6 +257,22 @@ export default class CombatEncounter extends TurnBasedEncounter {
     getTotalCharacterHp = () => this.characters.reduce((acc, curr) => acc + curr.hp, 0);
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
+
+    getCreatureById(creatureId: string) {
+        const creature = this.characters.find(c => c.id === creatureId)
+            || this.monsters.find(m => m.id === creatureId);
+        if (!creature) {
+            throw new Error(`No creature exists with ID '${creatureId}'`);
+        }
+        return creature;
+    }
+
+    getTurnOrderNames = () => this.turnOrder.getTurns().map((creatureId) => {
+        const creature = this.getCreatureById(creatureId);
+        return creature.getName();
+    });
+
+    getCurrentTurnCreature = () => this.getCreatureById(this.turnOrder.getCurrentTurn());
 
     /**
      * @override
@@ -302,7 +319,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
      * @override
      */
     async handleTurn() {
-        const currentTurn = this.getCurrentTurn();
+        const currentTurn = this.getCurrentTurnCreature();
+        if (!currentTurn) {
+            throw new Error("Invalid ID at current turn index, aborting");
+        }
         await this.narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
         // If its a monster's turn, invoke its handler
         if (currentTurn instanceof Monster) {
@@ -324,7 +344,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.positions.moveCreature(creature.id);
         const newPosition = this.positions.getCreaturePosition(creature.id);
         this.heldMovement = false;
-        console.log("Creature moved to", newPosition);
         await this.narrator.describeMovement(creature, newPosition);
     }
 
@@ -341,7 +360,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             LogEntryAction.Attack,
             weaponId,
             damage,
-            [this.getTurnOrderIdx(attacker), this.getTurnOrderIdx(target)]
+            [this.turnOrder.getIdx(attacker.id), this.turnOrder.getIdx(target.id)]
         );
 
         await this.narrator.describeAttack(attacker, target, damage);
@@ -368,7 +387,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             LogEntryAction.Spell,
             spellId,
             damage,
-            [this.getTurnOrderIdx(caster), this.getTurnOrderIdx(target)]
+            [this.turnOrder.getIdx(caster.id), this.turnOrder.getIdx(target.id)]
         );
 
         await this.narrator.describeCastSpell(caster, heldSpell, damage);
@@ -392,14 +411,17 @@ export default class CombatEncounter extends TurnBasedEncounter {
             LogEntryAction.Use,
             itemId,
             itemValue,
-            [this.getTurnOrderIdx(character)]
+            [this.turnOrder.getIdx(character.id)]
         );
     }
 
     /* ENEMY AI METHODS */
 
     private async handleMonsterTurn() {
-        const currentTurn = this.getCurrentTurn();
+        const currentTurn = this.getCurrentTurnCreature();
+        if (!currentTurn) {
+            throw new Error("Invalid ID at current turn index, aborting");
+        }
         if (currentTurn instanceof Monster) {
             // TODO: Enemies should also be able to choose their action, e.g. attack,
             // spell, item, etc., and this would inform their target (or lack thereof).
@@ -419,11 +441,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
     // Enemy AI for choosing a target
     private chooseTarget(monster: Monster) {
         const chars = this.getCharacters();
+        const charIds = chars.map(c => c.id);
         // 1. Is anyone currently attacking it?
-        const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster);
+        const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster.id);
         if (targetedTurn) {
-            const lastAttacker = this.turnOrder[targetedTurn.creatures[ActionRole.Actor]];
-            return lastAttacker;
+            const attackerIdx = targetedTurn.creatures[ActionRole.Actor];
+            return this.getCreatureById(this.turnOrder.getTurn(attackerIdx));
         }
         // 2. Is anyone at very low health?
         const deathList = this.canKillWhichCharacters(monster);
@@ -431,9 +454,9 @@ export default class CombatEncounter extends TurnBasedEncounter {
             return deathList[rand(deathList.length)];
         }
         // 3. Is anyone casting spells?
-        const casters = this.combatLog.getCreaturesCastingSpells(chars);
-        if (casters.length) {
-            return casters[rand(casters.length)];
+        const casterIds = this.combatLog.getCreaturesCastingSpells(charIds);
+        if (casterIds.length) {
+            return this.getCreatureById(casterIds[rand(casterIds.length)]);
         }
         // 4. Just pick somebody random!
         const target = chars[rand(chars.length)];

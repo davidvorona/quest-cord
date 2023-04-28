@@ -3,19 +3,19 @@ import {
     EmbedBuilder,
     StringSelectMenuBuilder
 } from "discord.js";
-import Character from "../creatures/Character";
-import FreeEncounter from "./FreeEncounter";
-import NonPlayerCharacter from "../NonPlayerCharacter";
-import { CommandInteraction, SelectMenuInteraction } from "../../types";
-import Narrator from "../Narrator";
+import Character from "../../creatures/Character";
+import FreeEncounter from "../FreeEncounter";
+import NonPlayerCharacter from "../../NonPlayerCharacter";
+import { CommandInteraction, SelectMenuInteraction } from "../../../types";
+import Narrator from "../../Narrator";
 import {
     BuyCommand,
     SellCommand,
     BuySelection,
     SellSelection
-} from "../actions";
-import Item from "../things/Item";
-import Inventory from "../creatures/Inventory";
+} from "../../actions";
+import Item from "../../things/Item";
+import Inventory from "../../creatures/Inventory";
 
 export default class MerchantEncounter extends FreeEncounter {
     merchant: NonPlayerCharacter;

@@ -31,7 +31,7 @@ import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
-import StealthEncounter from "./encounters/StealthEncounter";
+import StealthEncounter from "./encounters/stealth/StealthEncounter";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};

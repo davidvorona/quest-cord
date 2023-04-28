@@ -1,10 +1,10 @@
 import CombatEncounter from "./combat/CombatEncounter";
 import Encounter from "./Encounter";
-import LookoutEncounter from "./LookoutEncounter";
-import MerchantEncounter from "./MerchantEncounter";
-import RestEncounter from "./RestEncounter";
-import SocialEncounter from "./SocialEncounter";
-import StealthEncounter from "./StealthEncounter";
+import LookoutEncounter from "./lookout/LookoutEncounter";
+import MerchantEncounter from "./merchant/MerchantEncounter";
+import RestEncounter from "./rest/RestEncounter";
+import SocialEncounter from "./social/SocialEncounter";
+import StealthEncounter from "./stealth/StealthEncounter";
 import TurnBasedEncounter from "./TurnBasedEncounter";
 
 // Returns an array of all Encounter classes so commands service

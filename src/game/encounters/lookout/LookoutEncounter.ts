@@ -1,8 +1,8 @@
-import { CommandInteraction } from "../../types";
-import Character from "../creatures/Character";
-import Encounter from "./Encounter";
-import Narrator from "../Narrator";
-import { LookoutCommand } from "../actions";
+import { CommandInteraction } from "../../../types";
+import Character from "../../creatures/Character";
+import Encounter from "../Encounter";
+import Narrator from "../../Narrator";
+import { LookoutCommand } from "../../actions";
 
 export default class LookoutEncounter extends Encounter {
     commands = {
