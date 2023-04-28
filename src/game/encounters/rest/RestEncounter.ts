@@ -1,6 +1,6 @@
-import Character from "../creatures/Character";
-import FreeEncounter from "./FreeEncounter";
-import Narrator from "../Narrator";
+import Character from "../../creatures/Character";
+import FreeEncounter from "../FreeEncounter";
+import Narrator from "../../Narrator";
 
 export default class RestEncounter extends FreeEncounter {
     constructor(characters: Character[], narrator: Narrator) {

@@ -1,8 +1,8 @@
-import Character from "../creatures/Character";
-import Encounter from "./Encounter";
-import Monster from "../creatures/Monster";
-import Narrator from "../Narrator";
-import { SneakCommand, SurpriseCommand } from "../actions";
+import Character from "../../creatures/Character";
+import Encounter from "../Encounter";
+import Monster from "../../creatures/Monster";
+import Narrator from "../../Narrator";
+import { SneakCommand, SurpriseCommand } from "../../actions";
 
 export default class StealthEncounter extends Encounter {
     monsters: Monster[] = [];

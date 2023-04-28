@@ -40,6 +40,10 @@ export default class PlayerCharacter {
         console.info("Character", this.getName(),  "created");
     }
 
+    getCharId() {
+        return this.character.id;
+    }
+
     getName() {
         return `${this.firstName} ${this.lastName}`;
     }
