@@ -10,7 +10,8 @@ import {
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
 import { ACTIVITY } from "../constants";
-import CombatEncounter from "./encounters/CombatEncounter";
+import { CombatPosition } from "./encounters/combat/CombatPositionCache";
+import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
 import Creature from "./creatures/Creature";
 import Character from "./creatures/Character";
@@ -103,11 +104,18 @@ class Narrator {
         await this.ponderAndDescribe("Welcome to *Discordia*!");
     }
 
+    async describeMovement(creature: Creature, position: CombatPosition) {
+        const text = position === CombatPosition.Melee
+            ? `${creature.getName()} moves into the fray.`
+            : `${creature.getName()} moves out of the fray.`;
+        await this.ponderAndDescribe(text);
+    }
+
     async describeAttack(attacker: Creature, target: Creature, damage: number) {
         const textBuilder = new TextBuilder()
             .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
         const weapon = attacker.equipment.weapon;
-        const weaponName = weapon ? weapon.name : "fists";
+        const weaponName = weapon ? weapon.name : attacker.getWeaponId();
         const text = textBuilder.build(weaponName, attacker.getName(), target.getName());
         await this.ponderAndDescribe(text);
         await this.ponderAndDescribe(`It deals ${damage} damage.`);

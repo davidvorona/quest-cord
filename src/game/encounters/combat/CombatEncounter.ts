@@ -6,13 +6,13 @@ import {
 import SmartCombatLog, {
     ActionRole,
     LogEntryAction
-} from "../../services/SmartCombatLog";
-import TurnBasedEncounter from "./TurnBasedEncounter";
-import Character from "../creatures/Character";
-import Monster from "../creatures/Monster";
-import { rand, shuffleArray } from "../../util";
-import Creature from "../creatures/Creature";
-import Narrator from "../Narrator";
+} from "./SmartCombatLog";
+import TurnBasedEncounter from "../TurnBasedEncounter";
+import Character from "../../creatures/Character";
+import Monster from "../../creatures/Monster";
+import { rand, shuffleArray } from "../../../util";
+import Creature from "../../creatures/Creature";
+import Narrator from "../../Narrator";
 import {
     SpellCommand,
     AttackCommand,
@@ -22,9 +22,10 @@ import {
     SpellCastSelection,
     SpellTargetSelection,
     UseSelection,
-} from "../actions";
-import { CommandInteraction, SelectMenuInteraction } from "../../types";
-import Action from "../actions/Action";
+} from "../../actions";
+import { CommandInteraction, SelectMenuInteraction } from "../../../types";
+import Action from "../../actions/Action";
+import CombatPositionCache from "./CombatPositionCache";
 
 export default class CombatEncounter extends TurnBasedEncounter {
     monsters: Monster[] = [];
@@ -46,6 +47,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
      * player is moved in or out of melee range.
      */
     heldMovement?: boolean;
+
+    positions: CombatPositionCache;
 
     commands = {
         move: new MoveCommand(async (interaction: CommandInteraction) => {
@@ -238,6 +241,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.monsters = monsters;
         this.narrator = narrator;
         this.turnOrder = shuffleArray([...characters, ...monsters]);
+        this.positions = new CombatPositionCache(this.characters, this.monsters);
         this.combatLog = new SmartCombatLog(this.turnOrder);
         console.info(
             "Combat encounter started...",
@@ -291,6 +295,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
     async handleNextTurn() {
         await super.handleNextTurn();
         this.releaseSpell();
+        this.heldMovement = false;
     }
 
     /**
@@ -315,7 +320,19 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.heldSpell = undefined;
     }
 
+    private async handleMove(creature: Creature) {
+        this.positions.moveCreature(creature.id);
+        const newPosition = this.positions.getCreaturePosition(creature.id);
+        this.heldMovement = false;
+        console.log("Creature moved to", newPosition);
+        await this.narrator.describeMovement(creature, newPosition);
+    }
+
     private async handleAttack(attacker: Creature, target: Creature) {
+        if (this.heldMovement && !this.positions.compareEnemyPositions(attacker.id, target.id)) {
+            await this.handleMove(attacker);
+        }
+
         const damage = attacker.getDamage();
         target.setHp(target.hp - damage);
 
@@ -328,12 +345,20 @@ export default class CombatEncounter extends TurnBasedEncounter {
         );
 
         await this.narrator.describeAttack(attacker, target, damage);
+
+        if (this.heldMovement) {
+            await this.handleMove(attacker);
+        }
     }
 
     private async handleSpell(caster: Creature, target: Creature, spellId: string) {
         const heldSpell = caster.getSpell(spellId);
         if (!heldSpell) {
             throw new Error("You are not holding this spell...");
+        }
+
+        if (this.heldMovement && !this.positions.compareEnemyPositions(caster.id, target.id)) {
+            await this.handleMove(caster);
         }
 
         const damage = heldSpell.damage || 0;
@@ -348,11 +373,19 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
         await this.narrator.describeCastSpell(caster, heldSpell, damage);
 
+        if (this.heldMovement) {
+            await this.handleMove(caster);
+        }
+
         this.releaseSpell();
     }
 
-    private handleUseItem(character: Character, itemId: string) {
+    private async handleUseItem(character: Character, itemId: string) {
         character.useItem(itemId);
+
+        if (this.heldMovement) {
+            await this.handleMove(character);
+        }
 
         const itemValue = 0;
         this.combatLog.append(

@@ -1,4 +1,4 @@
-import CombatEncounter from "./CombatEncounter";
+import CombatEncounter from "./combat/CombatEncounter";
 import Encounter from "./Encounter";
 import LookoutEncounter from "./LookoutEncounter";
 import MerchantEncounter from "./MerchantEncounter";

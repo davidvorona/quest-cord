@@ -30,7 +30,7 @@ import SpellFactory from "../services/SpellFactory";
 import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults } from "./encounters/Encounter";
-import CombatEncounter from "./encounters/CombatEncounter";
+import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/StealthEncounter";
 
 export default class QuestLord {

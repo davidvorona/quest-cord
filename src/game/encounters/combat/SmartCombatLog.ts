@@ -1,4 +1,4 @@
-import Creature from "../game/creatures/Creature";
+import Creature from "../../creatures/Creature";
 
 export enum ActionRole {
     Actor,
