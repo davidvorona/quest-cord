@@ -24,7 +24,7 @@ class Spell {
     }
 
     isRanged() {
-        return this.properties.indexOf(SpellProperty.Range) > 1;
+        return this.properties.indexOf(SpellProperty.Range) > -1;
     }
 }
 

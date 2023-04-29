@@ -27,7 +27,7 @@ class Weapon extends Item {
     }
 
     isRanged() {
-        return this.properties.indexOf(WeaponProperty.Range) > 1;
+        return this.properties.indexOf(WeaponProperty.Range) > -1;
     }
 }
 

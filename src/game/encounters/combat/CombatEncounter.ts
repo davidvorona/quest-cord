@@ -355,23 +355,21 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeMovement(creature, newPosition);
     }
 
-    private mustMoveBeforeAttack(attacker: Creature, target: Creature, hasRanged = false) {
+    private mustMoveBeforeAttack(attacker: Creature, target: Creature, hasRanged: boolean) {
         const withinMeleeRange = this.positions.compareEnemyPositions(attacker.id, target.id);
         // AKA, must run to the proper range to use weapon on the enemy
         return hasRanged === withinMeleeRange;
     }
 
-    private validateAttackRange(attacker: Creature, target: Creature, hasRanged = false) {
-        // TEMP: Monsters cannot move at the moment
-        if (attacker instanceof Monster) {
-            return;
-        }
+    private validateAttackRange(attacker: Creature, target: Creature, hasRanged: boolean) {
         const targetPosition = this.positions.getCreaturePosition(target.id);
         if (targetPosition === CombatPosition.Range && !hasRanged) {
             throw new Error("This enemy is at range, you must use a ranged attack.");
         }
-        const mustMove = this.mustMoveBeforeAttack(attacker, target);
-        if (mustMove && !this.heldMovement) {
+        const mustMove = this.mustMoveBeforeAttack(attacker, target, hasRanged);
+        // Monsters are always willing to move if it means attacking their target
+        const willMove = attacker instanceof Monster ? true : this.heldMovement;
+        if (mustMove && !willMove) {
             throw new Error("You must **/move** to attack with this option!");
         }
     }
@@ -470,7 +468,20 @@ export default class CombatEncounter extends TurnBasedEncounter {
             // TODO: Enemies should also be able to choose their action, e.g. attack,
             // spell, item, etc., and this would inform their target (or lack thereof).
             const target = this.chooseTarget(monster);
-            await this.handleAttack(monster, target);
+
+            // Send a special message if they're unable to get into range
+            let rangeValidated = false;
+            try {
+                this.validateAttackRange(monster, target, monster.hasRangedWeapon());
+                rangeValidated = true;
+            } catch (err) {
+                await this.narrator.ponderAndDescribe(`The ${monster.getName()} could `
+                    + "not get into range.");
+            }
+
+            if (rangeValidated) {
+                await this.handleAttack(monster, target);
+            }
         } catch (err) {
             const monsterName = monster?.getName() || "Nameless";
             await this.narrator.ponderAndDescribe(`The ${monsterName} becomes confused...`);

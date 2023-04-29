@@ -30,6 +30,6 @@ module.exports = {
         }],
         "space-in-parens": ["error", "never"],
         "eol-last": ["error", "always"],
-        "no-console": ["error", { "allow": ["warn", "error", "info"] }]
+        "no-console": ["warn", { "allow": ["warn", "error", "info"] }]
     }
 };
