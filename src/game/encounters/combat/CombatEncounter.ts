@@ -3,10 +3,7 @@ import {
     EmbedBuilder,
     StringSelectMenuBuilder
 } from "discord.js";
-import SmartCombatLog, {
-    ActionRole,
-    LogEntryAction
-} from "./SmartCombatLog";
+import SmartCombatLog from "./SmartCombatLog";
 import TurnBasedEncounter from "../TurnBasedEncounter";
 import Character from "../../creatures/Character";
 import Monster from "../../creatures/Monster";
@@ -14,6 +11,7 @@ import { rand } from "../../../util";
 import Creature from "../../creatures/Creature";
 import Narrator from "../../Narrator";
 import {
+    Action,
     SpellCommand,
     AttackCommand,
     UseCommand,
@@ -21,11 +19,10 @@ import {
     AttackSelection,
     SpellCastSelection,
     SpellTargetSelection,
-    UseSelection,
+    UseSelection
 } from "../../actions";
 import { CommandInteraction, SelectMenuInteraction } from "../../../types";
-import Action from "../../actions/Action";
-import CombatPositionCache, { CombatPosition } from "./CombatPositionCache";
+import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
 
 export default class CombatEncounter extends TurnBasedEncounter {
@@ -355,18 +352,22 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeMovement(creature, newPosition);
     }
 
-    private mustMoveBeforeAttack(attacker: Creature, target: Creature, hasRanged: boolean) {
+    private mustMoveBeforeAttack(attacker: Creature, target: Creature, isRanged: boolean) {
         const withinMeleeRange = this.positions.compareEnemyPositions(attacker.id, target.id);
+        // If enemy is at range, assume attacker has ranged weapon and move into melee range;
+        // enemies at range can only be attacked by ranged weapons from melee range.
+        if (this.positions.isInRangePosition(target.id)) {
+            return !withinMeleeRange;
+        }
         // AKA, must run to the proper range to use weapon on the enemy
-        return hasRanged === withinMeleeRange;
+        return isRanged === withinMeleeRange;
     }
 
-    private validateAttackRange(attacker: Creature, target: Creature, hasRanged: boolean) {
-        const targetPosition = this.positions.getCreaturePosition(target.id);
-        if (targetPosition === CombatPosition.Range && !hasRanged) {
+    private validateAttackRange(attacker: Creature, target: Creature, isRanged: boolean) {
+        if (this.positions.isInRangePosition(target.id) && !isRanged) {
             throw new Error("This enemy is at range, you must use a ranged attack.");
         }
-        const mustMove = this.mustMoveBeforeAttack(attacker, target, hasRanged);
+        const mustMove = this.mustMoveBeforeAttack(attacker, target, isRanged);
         // Monsters are always willing to move if it means attacking their target
         const willMove = attacker instanceof Monster ? true : this.heldMovement;
         if (mustMove && !willMove) {
@@ -386,8 +387,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         target.setHp(target.hp - damage);
 
         const weaponId = attacker.getWeaponId();
-        this.combatLog.append(
-            LogEntryAction.Attack,
+        this.combatLog.appendAttack(
             weaponId,
             damage,
             [this.turnOrder.getIdx(attacker.id), this.turnOrder.getIdx(target.id)]
@@ -424,8 +424,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         const damage = heldSpell.damage || 0;
         target.setHp(target.hp - damage);
 
-        this.combatLog.append(
-            LogEntryAction.Spell,
+        this.combatLog.appendSpell(
             spellId,
             damage,
             [this.turnOrder.getIdx(caster.id), this.turnOrder.getIdx(target.id)]
@@ -448,8 +447,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
 
         const itemValue = 0;
-        this.combatLog.append(
-            LogEntryAction.Use,
+        this.combatLog.appendUse(
             itemId,
             itemValue,
             [this.turnOrder.getIdx(character.id)]
@@ -478,7 +476,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 await this.narrator.ponderAndDescribe(`The ${monster.getName()} could `
                     + "not get into range.");
             }
-
             if (rangeValidated) {
                 await this.handleAttack(monster, target);
             }
@@ -504,7 +501,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         // 1. Is anyone currently attacking it?
         const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster.id);
         if (targetedTurn) {
-            const attackerIdx = targetedTurn.creatures[ActionRole.Actor];
+            const attackerIdx = SmartCombatLog.getEntryActor(targetedTurn);
             return this.getCreatureById(this.turnOrder.getTurn(attackerIdx));
         }
         // 2. Is anyone at very low health?

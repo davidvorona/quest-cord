@@ -32,8 +32,28 @@ export default class SmartCombatLog {
         this.turnOrder = turnOrder;
     }
 
+    static getEntryActor(entry: CombatLogEntry) {
+        return entry.creatures[ActionRole.Actor];
+    }
+
+    static getEntryTarget(entry: CombatLogEntry) {
+        return entry.creatures[ActionRole.Target];
+    }
+
     append(action: LogEntryAction, method: string, value = 0, creatures: [number, number?]) {
         this.log.push({ action, method, value, creatures });
+    }
+
+    appendAttack(method: string, value = 0, creatures: [number, number?]) {
+        this.append(LogEntryAction.Attack, method, value, creatures);
+    }
+
+    appendSpell(method: string, value = 0, creatures: [number, number?]) {
+        this.append(LogEntryAction.Spell, method, value, creatures);
+    }
+
+    appendUse(method: string, value = 0, creatures: [number, number?]) {
+        this.append(LogEntryAction.Use, method, value, creatures);
     }
 
     getCreatureTurnOrderIdx(creatureId: string) {
@@ -49,7 +69,7 @@ export default class SmartCombatLog {
         const reversedLog = [...this.log].reverse();
         // Find the index of the last entry in the log where that index was the target index
         const lastEntryIdx = reversedLog
-            .findIndex(e => e.creatures[ActionRole.Target] === turnOrderIdx);
+            .findIndex(e => SmartCombatLog.getEntryTarget(e) === turnOrderIdx);
         // Return the log entry at that index
         return reversedLog[lastEntryIdx];
     }
@@ -71,7 +91,7 @@ export default class SmartCombatLog {
         charIdx.forEach((idx) => {
             const reversedLog = [...this.log].reverse();
             const charLastTurn = reversedLog
-                .find(e => e.creatures[ActionRole.Actor] === idx);
+                .find(e => SmartCombatLog.getEntryActor(e) === idx);
             if (charLastTurn && charLastTurn.action === LogEntryAction.Spell) {
                 casterIds.push(this.turnOrder[idx]);
             }

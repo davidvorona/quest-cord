@@ -6,6 +6,11 @@ export enum CombatPosition {
     Range
 }
 
+/**
+ * There are 3 positions in combat: the melee position, the range position
+ * of the characters, and the range position of the enemies. The range position
+ * is stored as the same bit regardless of the creature's affiliation.
+ */
 export default class CombatPositionCache {
     cache: { [id: string]: CombatPosition } = {};
 
@@ -31,6 +36,10 @@ export default class CombatPositionCache {
         }
     }
 
+    /**
+     * Assumes the two creatures are enemies, and treats equal range
+     * bits as unequal.
+     */
     compareEnemyPositions(creature1Id: string, creature2Id: string) {
         // If they don't equal each other, they are obviously not equal
         if (this.cache[creature1Id] !== this.cache[creature2Id]) {
@@ -42,5 +51,9 @@ export default class CombatPositionCache {
         }
         // Otherwise, they are both in Melee
         return true;
+    }
+
+    isInRangePosition(creatureId: string) {
+        return this.cache[creatureId] === CombatPosition.Range;
     }
 }

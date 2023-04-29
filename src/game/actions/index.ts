@@ -1,3 +1,5 @@
+import Action from "./Action";
+
 import AttackCommand from "./commands/AttackCommand";
 import SpellCommand from "./commands/SpellCommand";
 import UseCommand from "./commands/UseCommand";
@@ -18,6 +20,7 @@ import BuySelection from "./selections/BuySelection";
 import SellSelection from "./selections/SellSelection";
 
 export {
+    Action,
     MoveCommand,
     AttackCommand,
     SpellCommand,
