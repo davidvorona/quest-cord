@@ -355,32 +355,32 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeMovement(creature, newPosition);
     }
 
-    private mustMoveBeforeAttack(attacker: Creature, target: Creature) {
-        const isRangedAttack = attacker.hasRangedWeapon();
+    private mustMoveBeforeAttack(attacker: Creature, target: Creature, hasRanged = false) {
         const withinMeleeRange = this.positions.compareEnemyPositions(attacker.id, target.id);
         // AKA, must run to the proper range to use weapon on the enemy
-        return isRangedAttack === withinMeleeRange;
+        return hasRanged === withinMeleeRange;
     }
 
-    private validateAttackRange(attacker: Creature, target: Creature) {
+    private validateAttackRange(attacker: Creature, target: Creature, hasRanged = false) {
         // TEMP: Monsters cannot move at the moment
         if (attacker instanceof Monster) {
             return;
         }
         const targetPosition = this.positions.getCreaturePosition(target.id);
-        if (targetPosition === CombatPosition.Range && !attacker.hasRangedWeapon()) {
-            throw new Error("This enemy is at range, you must have a ranged weapon.");
+        if (targetPosition === CombatPosition.Range && !hasRanged) {
+            throw new Error("This enemy is at range, you must use a ranged attack.");
         }
         const mustMove = this.mustMoveBeforeAttack(attacker, target);
         if (mustMove && !this.heldMovement) {
-            throw new Error("You must **/move** to attack with your equipped weapon!");
+            throw new Error("You must **/move** to attack with this option!");
         }
     }
 
     private async handleAttack(attacker: Creature, target: Creature) {
-        this.validateAttackRange(attacker, target);
+        const hasRangedWeapon = attacker.hasRangedWeapon();
+        this.validateAttackRange(attacker, target, hasRangedWeapon);
 
-        if (this.mustMoveBeforeAttack(attacker, target)) {
+        if (this.mustMoveBeforeAttack(attacker, target, hasRangedWeapon)) {
             await this.handleMove(attacker);
         }
 
@@ -416,7 +416,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
             throw new Error("You are not holding this spell...");
         }
 
-        if (this.heldMovement && !this.positions.compareEnemyPositions(caster.id, target.id)) {
+        const isRangedSpell = heldSpell.isRanged();
+        this.validateAttackRange(caster, target, isRangedSpell);
+
+        if (this.mustMoveBeforeAttack(caster, target, isRangedSpell)) {
             await this.handleMove(caster);
         }
 
@@ -458,16 +461,21 @@ export default class CombatEncounter extends TurnBasedEncounter {
     /* ENEMY AI METHODS */
 
     private async handleMonsterTurn() {
-        const currentTurn = this.getCurrentTurnCreature();
-        if (!currentTurn) {
-            throw new Error("Invalid ID at current turn index, aborting");
-        }
-        if (currentTurn instanceof Monster) {
+        let monster;
+        try {
+            monster = this.getCurrentTurnCreature();
+            if (!(monster instanceof Monster)) {
+                throw new Error("Invalid creature for monster turn, aborting");
+            }
             // TODO: Enemies should also be able to choose their action, e.g. attack,
             // spell, item, etc., and this would inform their target (or lack thereof).
-            const target = this.chooseTarget(currentTurn);
-            await this.handleAttack(currentTurn, target);
-
+            const target = this.chooseTarget(monster);
+            await this.handleAttack(monster, target);
+        } catch (err) {
+            const monsterName = monster?.getName() || "Nameless";
+            await this.narrator.ponderAndDescribe(`The ${monsterName} becomes confused...`);
+            console.error("Unexpected failure on monster turn:", err);
+        } finally {
             await this.handleNextTurn();
         }
     }
