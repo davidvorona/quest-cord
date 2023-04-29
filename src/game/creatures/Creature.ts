@@ -67,6 +67,10 @@ export default class Creature {
         return this.getWeapon()?.id ?? "";
     }
 
+    hasRangedWeapon() {
+        return this.getWeapon()?.isRanged() ?? false;
+    }
+
     getSpell(spellId: string) {
         return this.spells.find(s => s.id === spellId);
     }

@@ -25,7 +25,7 @@ import {
 } from "../../actions";
 import { CommandInteraction, SelectMenuInteraction } from "../../../types";
 import Action from "../../actions/Action";
-import CombatPositionCache from "./CombatPositionCache";
+import CombatPositionCache, { CombatPosition } from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
 
 export default class CombatEncounter extends TurnBasedEncounter {
@@ -355,9 +355,32 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeMovement(creature, newPosition);
     }
 
+    private mustMoveBeforeAttack(attacker: Creature, target: Creature) {
+        const isRangedAttack = attacker.hasRangedWeapon();
+        const withinMeleeRange = this.positions.compareEnemyPositions(attacker.id, target.id);
+        // AKA, must run to the proper range to use weapon on the enemy
+        return isRangedAttack === withinMeleeRange;
+    }
+
+    private validateAttackRange(attacker: Creature, target: Creature) {
+        // TEMP: Monsters cannot move at the moment
+        if (attacker instanceof Monster) {
+            return;
+        }
+        const targetPosition = this.positions.getCreaturePosition(target.id);
+        if (targetPosition === CombatPosition.Range && !attacker.hasRangedWeapon()) {
+            throw new Error("This enemy is at range, you must have a ranged weapon.");
+        }
+        const mustMove = this.mustMoveBeforeAttack(attacker, target);
+        if (mustMove && !this.heldMovement) {
+            throw new Error("You must **/move** to attack with your equipped weapon!");
+        }
+    }
+
     private async handleAttack(attacker: Creature, target: Creature) {
-        // AKA, if your target is not nearby, run up to them before you attack
-        if (this.heldMovement && !this.positions.compareEnemyPositions(attacker.id, target.id)) {
+        this.validateAttackRange(attacker, target);
+
+        if (this.mustMoveBeforeAttack(attacker, target)) {
             await this.handleMove(attacker);
         }
 

@@ -13,7 +13,7 @@
     "lvlGains": [
         {
             "hp": 1,
-            "spells": ["lay on hands"]
+            "spells": ["lay_on_hands"]
         },
         {
             "hp": 1,

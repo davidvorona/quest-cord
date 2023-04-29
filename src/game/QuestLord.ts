@@ -298,6 +298,10 @@ export default class QuestLord {
                     content: errMessage,
                     ephemeral: true
                 });
+            } else {
+                await interaction.editReply({
+                    content: errMessage
+                });
             }
         }
     }
