@@ -1,0 +1,8 @@
+{
+    "id": "summon_wolf",
+    "name": "Summon Wolf",
+    "damage": 6,
+    "effects": {
+        "status": "frightened"
+    }
+}

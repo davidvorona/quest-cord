@@ -30,6 +30,8 @@ import SpellFactory from "../services/SpellFactory";
 import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults } from "./encounters/Encounter";
+import CombatEncounter from "./encounters/combat/CombatEncounter";
+import StealthEncounter from "./encounters/stealth/StealthEncounter";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -165,6 +167,11 @@ export default class QuestLord {
                 await this.handleTravel(interaction);
             }
 
+            // User wants to move (in a combat encounter)
+            if (interaction.commandName === "move") {
+                await this.handleMove(interaction);
+            }
+
             // User character uses an item
             if (interaction.commandName === "use") {
                 await this.promptUse(interaction);
@@ -239,11 +246,20 @@ export default class QuestLord {
                 await this.handleSell(interaction);
             }
         } catch (err) {
+            const errMessage = err instanceof Error
+                ? err.message : "Unable to submit selection, try again.";
             console.error(`Failed to process selection for '${interaction.customId}' `
                 + "due to:", err);
-            await interaction.update({
-                content: "Failed to handle selection, please try again.",
-            });
+            try {
+                await interaction.update({
+                    content: errMessage,
+                });
+            } catch (e) {
+                await interaction.editReply({
+                    content: errMessage
+                });
+            }
+
         }
     }
 
@@ -290,6 +306,10 @@ export default class QuestLord {
                 await interaction.reply({
                     content: errMessage,
                     ephemeral: true
+                });
+            } else {
+                await interaction.editReply({
+                    content: errMessage
                 });
             }
         }
@@ -531,8 +551,22 @@ export default class QuestLord {
             stealthAction,
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
-                await this.handleEncounterResults(guildId, results);
+                await quest.handleEncounterCommand(interaction, command);
+
+                if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
+                    throw new Error("Invalid stealth encounter, aborting");
+                }
+
+                const characters = quest.getCharacters();
+                const narrator = quest.getNarrator();
+                // Get monsters from the surprise encounter, add them to a combat encounter
+                const { monsters } = quest.encounter;
+                const cmbEncounter = new CombatEncounter(characters, narrator, monsters);
+
+                // End the stealth encounter
+                await quest.endEncounter();
+                // Start the combat encounter
+                await quest.startEncounter(cmbEncounter);
             }
         );
     }
@@ -709,6 +743,20 @@ export default class QuestLord {
         }
     }
 
+    private async handleMove(interaction: CommandInteraction): Promise<void> {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        // Movement only allowed for now during an encounter
+        if (quest.isInEncounter()) {
+            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
+            await quest.handleEncounterCommand(interaction, command);
+        } else {
+            throw new Error("Invalid quest state for movement, aborting");
+        }
+    }
+
     private async promptAttack(interaction: CommandInteraction): Promise<void> {
         const guildId = interaction.guildId;
         this.assertQuestStarted(guildId);
@@ -744,7 +792,9 @@ export default class QuestLord {
         this.assertQuestStarted(guildId);
 
         const quest = this.quests[guildId];
-        await quest.handleEncounterMenuSelect(interaction);
+        const results = await quest.handleEncounterMenuSelect(interaction);
+
+        await this.handleEncounterResults(guildId, results);
     }
 
     private async handleSpellTarget(interaction: SelectMenuInteraction): Promise<void> {

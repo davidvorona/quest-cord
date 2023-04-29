@@ -10,15 +10,16 @@ import {
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
 import { ACTIVITY } from "../constants";
-import CombatEncounter from "./encounters/CombatEncounter";
+import { CombatPosition } from "./encounters/combat/CombatPositionCache";
+import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
 import Creature from "./creatures/Creature";
 import Character from "./creatures/Character";
-import StealthEncounter from "./encounters/StealthEncounter";
-import SocialEncounter from "./encounters/SocialEncounter";
-import MerchantEncounter from "./encounters/MerchantEncounter";
-import LookoutEncounter from "./encounters/LookoutEncounter";
-import RestEncounter from "./encounters/RestEncounter";
+import StealthEncounter from "./encounters/stealth/StealthEncounter";
+import SocialEncounter from "./encounters/social/SocialEncounter";
+import MerchantEncounter from "./encounters/merchant/MerchantEncounter";
+import LookoutEncounter from "./encounters/lookout/LookoutEncounter";
+import RestEncounter from "./encounters/rest/RestEncounter";
 import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 
@@ -103,26 +104,34 @@ class Narrator {
         await this.ponderAndDescribe("Welcome to *Discordia*!");
     }
 
+    async describeMovement(creature: Creature, position: CombatPosition) {
+        const text = position === CombatPosition.Melee
+            ? `${creature.getName()} moves into the fray.`
+            : `${creature.getName()} moves out of the fray.`;
+        await this.ponderAndDescribe(text);
+    }
+
     async describeAttack(attacker: Creature, target: Creature, damage: number) {
         const textBuilder = new TextBuilder()
             .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
         const weapon = attacker.equipment.weapon;
-        const weaponName = weapon ? weapon.name : "fists";
-        const text = textBuilder.build(weaponName, target.getName());
+        const weaponName = weapon ? weapon.name : attacker.getWeaponId();
+        const text = textBuilder.build(weaponName, attacker.getName(), target.getName());
         await this.ponderAndDescribe(text);
-        await this.ponderAndDescribe(`You deal ${damage} damage.`);
+        await this.ponderAndDescribe(`It deals ${damage} damage.`);
     }
 
-    async describeCastSpell(attacker: Creature, spell: Spell) {
+    async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {
         await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at `
-            + "the enemy and deals 0 damage.");
+            + `the enemy and deals ${damage} damage.`);
     }
 
     async explainEncounter(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
             await this.ponderAndDescribe("On your turn, you can attack with the "
                 + "**/action attack** command, or cast a spell with **/action spell**. "
-                + "You can also use items with **/use**.");
+                + "You can also use items with **/use**.\nBefore you act, you can decide "
+                + "if you want to move with **/move**.");
         } else if (encounter instanceof StealthEncounter) {
             await this.ponderAndDescribe("Choose between a stealthy approach with the "
                 + "**/action sneak** command, or surprise your enemies with **/action surprise**!");

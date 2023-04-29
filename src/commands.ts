@@ -162,6 +162,9 @@ class CommandBuilder {
             new SlashCommandBuilder()
                 .setName("use")
                 .setDescription("Use an item from your inventory"),
+            new SlashCommandBuilder()
+                .setName("move")
+                .setDescription("Move in or out of melee range"),
             // /action - Used for encounter-specific subcommands
             this.buildActionSubcommands(
                 new SlashCommandBuilder()
@@ -171,7 +174,6 @@ class CommandBuilder {
         ];
     }
 }
-
 
 // NOTE: It seems (at least for guild commands) that Discord rate-limits requests to the
 // PUT endpoint. The limit of clustered requests seems to be as low as 2, with the 3rd

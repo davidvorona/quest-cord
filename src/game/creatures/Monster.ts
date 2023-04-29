@@ -17,4 +17,8 @@ export default class Monster extends Creature {
         this.loot = loot;
         this.zones = args.zones;
     }
+
+    getWeaponId() {
+        return super.getWeaponId() || "claws";
+    }
 }

@@ -29,6 +29,7 @@ module.exports = {
             "asyncArrow": "always"
         }],
         "space-in-parens": ["error", "never"],
-        "eol-last": ["error", "always"]
+        "eol-last": ["error", "always"],
+        "no-console": ["warn", { "allow": ["warn", "error", "info"] }]
     }
 };

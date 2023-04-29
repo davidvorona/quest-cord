@@ -1,0 +1,28 @@
+{
+    "id": "ranger",
+    "name": "Ranger",
+    "hp": 13,
+    "damage": 3,
+    "equipment": {
+        "weapon": "longbow",
+        "armor": "leather_armor"
+    },
+    "spells": [],
+    "items": ["potion"],
+    "lvlGains": [
+        {
+            "hp": 1
+        },
+        {
+            "spells": ["fire_bolt"],
+            "damage": 1
+        },
+        {
+            "hp": 1
+        },
+        {
+            "spells": ["summon_wolf"],
+            "damage": 1
+        }
+    ]
+}

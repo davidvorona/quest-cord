@@ -1,3 +1,5 @@
+import Action from "./Action";
+
 import AttackCommand from "./commands/AttackCommand";
 import SpellCommand from "./commands/SpellCommand";
 import UseCommand from "./commands/UseCommand";
@@ -8,6 +10,7 @@ import TalkCommand from "./commands/TalkCommand";
 import IgnoreCommand from "./commands/IgnoreCommand";
 import SneakCommand from "./commands/SneakCommand";
 import SurpriseCommand from "./commands/SurpriseCommand";
+import MoveCommand from "./commands/MoveCommand";
 
 import AttackSelection from "./selections/AttackSelection";
 import UseSelection from "./selections/UseSelection";
@@ -17,6 +20,8 @@ import BuySelection from "./selections/BuySelection";
 import SellSelection from "./selections/SellSelection";
 
 export {
+    Action,
+    MoveCommand,
     AttackCommand,
     SpellCommand,
     UseCommand,

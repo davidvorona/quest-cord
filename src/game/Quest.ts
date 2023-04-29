@@ -181,7 +181,7 @@ export default class Quest {
 
         const currentTurn = this.encounter.getCurrentTurn();
         const myPlayerCharacter = this.assertAndGetPlayerCharacter(userId);
-        if (currentTurn !== myPlayerCharacter.getCharacter()) {
+        if (currentTurn !== myPlayerCharacter.getCharId()) {
             throw new Error("It's not your turn!");
         }
     }

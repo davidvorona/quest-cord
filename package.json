@@ -1,6 +1,6 @@
 {
   "name": "quest-lord",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "DnDiscord runs a text-based RPG in Discord.",
   "main": "index.js",
   "scripts": {

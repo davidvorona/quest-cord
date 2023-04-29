@@ -1,8 +1,8 @@
-import Character from "../creatures/Character";
-import Encounter from "./Encounter";
-import Narrator from "../Narrator";
-import NonPlayerCharacter from "../NonPlayerCharacter";
-import { IgnoreCommand, TalkCommand } from "../actions";
+import Character from "../../creatures/Character";
+import Encounter from "../Encounter";
+import Narrator from "../../Narrator";
+import NonPlayerCharacter from "../../NonPlayerCharacter";
+import { IgnoreCommand, TalkCommand } from "../../actions";
 
 export default class SocialEncounter extends Encounter {
     npcs: NonPlayerCharacter[] = [];

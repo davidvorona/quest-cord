@@ -57,6 +57,7 @@ export interface BaseSpell {
     id: string;
     name: string;
     damage?: number;
+    properties?: string[];
     effects?: Effects
 }
 
