@@ -1,6 +1,7 @@
 {
     "id": "scream",
     "name": "Scream",
+    "properties": ["range"],
     "effects": {
         "status": "frightened"
     }

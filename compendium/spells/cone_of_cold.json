@@ -2,6 +2,7 @@
     "id": "cone_of_cold",
     "name": "Cone of Cold",
     "damage": 4,
+    "properties": ["range"],
     "effects": {
         "status": "freezing"
     }

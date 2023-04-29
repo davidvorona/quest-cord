@@ -246,11 +246,20 @@ export default class QuestLord {
                 await this.handleSell(interaction);
             }
         } catch (err) {
+            const errMessage = err instanceof Error
+                ? err.message : "Unable to submit selection, try again.";
             console.error(`Failed to process selection for '${interaction.customId}' `
                 + "due to:", err);
-            await interaction.update({
-                content: "Failed to handle selection, please try again.",
-            });
+            try {
+                await interaction.update({
+                    content: errMessage,
+                });
+            } catch (e) {
+                await interaction.editReply({
+                    content: errMessage
+                });
+            }
+
         }
     }
 

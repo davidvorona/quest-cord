@@ -2,6 +2,7 @@
     "id": "fire_bolt",
     "name": "Fire Bolt",
     "damage": 2,
+    "properties": ["range"],
     "effects": {
         "status": "burning"
     }
