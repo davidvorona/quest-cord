@@ -1,25 +1,33 @@
-# QuestCord
+# QuestCord (working title)
 
-QuestCord is a bot and gamemaster, otherwise known as **Quest Lord**. **Quest Lord** brings users into the cruel world of *Discordia* as characters and immerses those characters in a quest. With a little bit of luck and skill, and a lot of Discord engagement, the party can overcome the challenges they face and become stronger, or they can die and join *Discordia's* ever-growing list of casualties.
+QuestCord is a bot and gamemaster, otherwise known as **Quest Lord**. **Quest Lord** brings users into the cruel world of *Discordia (working title)* as characters and immerses those characters in a quest. With a little bit of luck and skill, and a lot of Discord engagement, the party can overcome the challenges they face and become stronger, or they can die and join *Discordia's* ever-growing list of casualties.
 
-## engaging users
+## Wiki
 
-- a server mod can manually start a quest for a group of users
-- if a group of users are talking, QL might start a quest for them
-- if a group is in VC, QL might start a quest for them
+*The wiki contains information on the game's design and development workflow.*
 
-## creating characters
+[Visit the wiki](https://github.com/davidvorona/quest-cord/wiki)
 
-- once users are added to a quest, they will be prompted to create characters
-- the only choice presented to the user is the class
-- once all characters are created, the quest begins
+## Development
 
-## starting a quest
+*Two config files are required to run locally:*
 
-- a quest will start with a basic combat encounter
-- this will teach most of the game's mechanics
+config/config.json
+```
+{
+    "CLIENT_ID": "YOUR_CLIENT_ID",
+    "FORCE_ENCOUNTER_TYPE": null
+}
+```
 
-## random encounters
+config/auth.json
+```
+{
+    "TOKEN": "YOUR_TOKEN"
+}
+```
 
-- random encounters occur when users engage with the server
-- the more users in the party that are involved, the greater the chance an encounter will occur
+*Then run the following commands:*
+
+1. `npm install`
+2. `npm start`
