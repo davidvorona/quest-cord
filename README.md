@@ -4,15 +4,19 @@ QuestCord is a bot and gamemaster, otherwise known as **Quest Lord**. **Quest Lo
 
 ## Wiki
 
-*The wiki contains information on the game's design and development workflow.*
+The wiki contains information on the game's design and development workflow.
 
 [Visit the wiki](https://github.com/davidvorona/quest-cord/wiki)
 
+## Compendium
+
+To contribute to the compendium, which is the **Quest Lord's** library of monsters, biomes, items, classes, spells, and npcs, add to or update in the `compendium/` directory.
+
 ## Development
 
-*Two config files are required to run locally:*
+Two config files are required to run locally:
 
-config/config.json
+*config/config.json*
 ```
 {
     "CLIENT_ID": "YOUR_CLIENT_ID",
@@ -20,14 +24,14 @@ config/config.json
 }
 ```
 
-config/auth.json
+*config/auth.json*
 ```
 {
     "TOKEN": "YOUR_TOKEN"
 }
 ```
 
-*Then run the following commands:*
+Then run the following commands:
 
 1. `npm install`
 2. `npm start`
