@@ -903,6 +903,7 @@ export default class QuestLord {
             "*Your party was slaughtered, and so ends this thread of destiny...*"
         );
         delete this.quests[channelId];
+        delete this.forceEncounters[channelId];
     }
 
     private async promptTravel(guildId: string, channelId: string) {
