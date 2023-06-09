@@ -1,7 +1,7 @@
 import path from "path";
 import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import { CharacterClass } from "./types";
-import { DIRECTION, FORMATTED_DIRECTION } from "./constants";
+import { DIRECTION, EncounterType, FORMATTED_DIRECTION } from "./constants";
 import { readDir } from "./util";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 import config from "./config";
@@ -171,10 +171,23 @@ class CommandBuilder {
                     .setName("action")
                     .setDescription("What do you want to do?")
             ),
-            // THIS IS A DEBUG COMMAND
+            // DEBUG COMMANDS
             new SlashCommandBuilder()
                 .setName("forcefail")
-                .setDescription("Force the quest to end")
+                .setDescription("Force the quest to end"),
+            new SlashCommandBuilder()
+                .setName("forceencounter")
+                .setDescription("Force an encounter type for a quest")
+                .addStringOption((option) => {
+                    return option
+                        .setName("type")
+                        .setDescription("Choose an encounter type")
+                        .addChoices(
+                            ...Object
+                                .keys(EncounterType)
+                                .map(type => ({ name: type, value: type }))
+                        );
+                })
         ];
     }
 }
