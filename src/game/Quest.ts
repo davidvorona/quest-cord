@@ -13,6 +13,8 @@ export default class Quest {
 
     readonly guildId: string;
 
+    readonly channelId: string;
+
     readonly narrator: Narrator;
 
     readonly pollBooth: PollBooth;
@@ -23,10 +25,11 @@ export default class Quest {
 
     encounter?: Encounter;
 
-    constructor(guildId: string, userIds: string[], narrator: Narrator) {
+    constructor(guildId: string, channelId: string, userIds: string[], narrator: Narrator) {
         console.info("Accepting new quest...");
         this.id = createRandomId();
         this.guildId = guildId;
+        this.channelId = channelId;
         this.pcs = this.initPlayers(userIds);
         this.narrator = narrator;
         this.pollBooth = new PollBooth(narrator, userIds);
