@@ -68,14 +68,14 @@ export default class QuestLord {
         }
     }
 
-    private assertQuestStarted(guildId: string) {
-        if (isEmpty(this.quests[guildId])) {
+    private assertQuestStarted(channelId: string) {
+        if (isEmpty(this.quests[channelId])) {
             throw new Error("Quest not started, aborting");
         }
     }
 
-    private assertQuestNotStarted(guildId: string) {
-        if (!isEmpty(this.quests[guildId])) {
+    private assertQuestNotStarted(channelId: string) {
+        if (!isEmpty(this.quests[channelId])) {
             throw new Error("Quest already started, aborting");
         }
     }
@@ -272,8 +272,8 @@ export default class QuestLord {
     private async handleAction(interaction: CommandInteraction): Promise<void> {
         const subcommand = interaction.options.getSubcommand();
         try {
-            const guildId = interaction.guildId;
-            this.assertQuestStarted(guildId);
+            const channelId = interaction.channelId;
+            this.assertQuestStarted(channelId);
 
             if (subcommand === "attack") {
                 await this.promptAttack(interaction);
@@ -320,10 +320,6 @@ export default class QuestLord {
     }
 
     private async startQuest(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertWorldNotGenerated(guildId);
-        this.assertQuestNotStarted(guildId);
-
         // Get the players and validate the channel permissions
         const players = getPlayersFromStartCommand(interaction);
         const { errors, isValid } = QuestLord.validateStartCommandOptions(interaction, players);
@@ -332,8 +328,10 @@ export default class QuestLord {
             return;
         }
 
+        const { guildId } = interaction;
+
         // Create and register world for guild
-        const world = new World(guildId);
+        const world = this.worlds[guildId] || new World(guildId);
         this.worlds[guildId] = world;
 
         // Create narrator for quest
@@ -341,15 +339,19 @@ export default class QuestLord {
         if (!(questChannel instanceof TextChannel)) {
             throw new Error(`Invalid channel '${questChannel.id}' of type '${questChannel.type}'`);
         }
+
+        const channelId = questChannel.id;
+        this.assertQuestNotStarted(channelId);
+
         const narrator = new Narrator(guildId, questChannel);
 
         // Create quest for user(s)
         const userIds = players.map(p => p.id);
-        const quest = new Quest(guildId, userIds, narrator);
+        const quest = new Quest(guildId, channelId, userIds, narrator);
         quest.setPartyCoordinates(world.getRandomCoordinates());
 
         // Register new quest
-        this.quests[guildId] = quest;
+        this.quests[channelId] = quest;
 
         // Defer reply in case guild commands take a while
         await interaction.deferReply({ ephemeral: true });
@@ -366,10 +368,10 @@ export default class QuestLord {
     }
 
     private async createCharacter(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const narrator = quest.getNarrator();
         const userId = interaction.user.id;
         // Ensure user is in questing party
@@ -415,11 +417,11 @@ export default class QuestLord {
         }
     }
 
-    private validateTravelDirection(guildId: string, direction: Direction) {
+    private validateTravelDirection(guildId: string, channelId: string, direction: Direction) {
         const world = this.worlds[guildId];
-        this.assertQuestStarted(guildId);
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const coordinates = quest.getPartyCoordinates();
 
         try {
@@ -433,10 +435,10 @@ export default class QuestLord {
     }
 
     private async handleTravel(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         // TODO: Probably need a better way to handle difference between a quest
         // being created and a quest being started.
         if (!quest.areAllCharactersCreated()) {
@@ -454,7 +456,7 @@ export default class QuestLord {
         } else {
             const direction = interaction.options.getString("direction", true) as Direction;
             try {
-                this.validateTravelDirection(guildId, direction);
+                this.validateTravelDirection(guildId, channelId, direction);
             } catch (err) {
                 if (err instanceof Error) {
                     await interaction.reply({ content: err.message, ephemeral: true });
@@ -480,7 +482,7 @@ export default class QuestLord {
                     // Store current biome string in a variable for use
                     const biome = world.getBiome(coordinates);
 
-                    const [x, y] = this.validateTravelDirection(guildId, vote);
+                    const [x, y] = this.validateTravelDirection(guildId, channelId, vote);
 
                     // If traveling from a free encounter, end that encounter
                     if (quest.encounter instanceof FreeEncounter) {
@@ -506,10 +508,10 @@ export default class QuestLord {
     }
 
     private async handleSneak(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         quest.validateEncounterCommand(interaction);
 
         const pollBooth = quest.getPollBooth();
@@ -528,16 +530,16 @@ export default class QuestLord {
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
                 const results = await quest.handleEncounterCommand(interaction, command);
-                await this.handleEncounterResults(guildId, results);
+                await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
     private async handleSurprise(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         quest.validateEncounterCommand(interaction);
 
         const pollBooth = quest.getPollBooth();
@@ -576,10 +578,10 @@ export default class QuestLord {
     }
 
     private async handleTalk(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         quest.validateEncounterCommand(interaction);
 
         const pollBooth = quest.getPollBooth();
@@ -598,16 +600,16 @@ export default class QuestLord {
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
                 const results = await quest.handleEncounterCommand(interaction, command);
-                await this.handleEncounterResults(guildId, results);
+                await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
     private async handleIgnore(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         quest.validateEncounterCommand(interaction);
 
         const pollBooth = quest.getPollBooth();
@@ -626,66 +628,66 @@ export default class QuestLord {
             async (vote: string) => {
                 const command = quest.validateEncounterCommand(interaction, vote);
                 const results = await quest.handleEncounterCommand(interaction, command);
-                await this.handleEncounterResults(guildId, results);
+                await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
     private async promptBuy(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const command = quest.validateEncounterCommand(interaction);
         await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleBuy(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const results = await quest.handleEncounterMenuSelect(interaction);
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     private async promptSell(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const command = quest.validateEncounterCommand(interaction);
         await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleSell(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const results = await quest.handleEncounterMenuSelect(interaction);
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     // TODO: This would be an example of a command anyone can do that doesn't require
     // a poll to be executed. We need a way to lock this command until it resolves so
     // submissions by multiple users don't cause a race condition.
     private async handleLookout(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const command = quest.validateEncounterCommand(interaction);
         const results = await quest.handleEncounterCommand(interaction, command);
 
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     private async promptUse(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         // For using items, we only really validate it during an encounter
         if (quest.isInEncounter()) {
             // Override the command name here since typical encounter commands are
@@ -717,13 +719,13 @@ export default class QuestLord {
     }
 
     private async handleUse(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         if (quest.isInEncounter()) {
             const results = await quest.handleEncounterMenuSelect(interaction);
-            await this.handleEncounterResults(guildId, results);
+            await this.handleEncounterResults(guildId, channelId, results);
         } else {
             // TODO: This code is a copy of what is in the base CombatEncounter 'menus' list,
             // we should avoid repeating it here.
@@ -748,10 +750,10 @@ export default class QuestLord {
     }
 
     private async handleMove(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         // Movement only allowed for now during an encounter
         if (quest.isInEncounter()) {
             const command = quest.validateEncounterCommand(interaction, interaction.commandName);
@@ -762,60 +764,60 @@ export default class QuestLord {
     }
 
     private async promptAttack(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const command = quest.validateEncounterCommand(interaction);
         const results = await quest.handleEncounterCommand(interaction, command);
 
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     private async handleAttack(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const results = await quest.handleEncounterMenuSelect(interaction);
 
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     private async promptCastSpell(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const command = quest.validateEncounterCommand(interaction);
         await quest.handleEncounterCommand(interaction, command);
     }
 
     private async handleCastSpell(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const results = await quest.handleEncounterMenuSelect(interaction);
 
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     private async handleSpellTarget(interaction: SelectMenuInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const results = await quest.handleEncounterMenuSelect(interaction);
 
-        await this.handleEncounterResults(guildId, results);
+        await this.handleEncounterResults(guildId, channelId, results);
     }
 
     private async displayInventory(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
 
         const quantities = pc.getCharacter().getInventory().getQuantities();
@@ -842,10 +844,10 @@ export default class QuestLord {
     }
 
     private async displayStatus(interaction: CommandInteraction): Promise<void> {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
 
         const className = pc.getCharacter().baseId;
@@ -869,11 +871,11 @@ export default class QuestLord {
     }
 
     private async logMapDisplay(interaction: CommandInteraction) {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
         const world = this.worlds[guildId];
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
 
         const map = world.stringify(quest.getPartyCoordinates());
         console.info(map);
@@ -885,20 +887,20 @@ export default class QuestLord {
 
     /* OTHER METHODS */
 
-    private async failQuest(guildId: string): Promise<void> {
-        const quest = this.quests[guildId];
+    private async failQuest(channelId: string): Promise<void> {
+        const quest = this.quests[channelId];
         const narrator = quest.getNarrator();
         await narrator.ponderAndDescribe(
             "*Your party was slaughtered, and so ends this thread of destiny...*"
         );
-        delete this.quests[guildId];
+        delete this.quests[channelId];
     }
 
-    private async promptTravel(guildId: string) {
-        this.assertQuestStarted(guildId);
+    private async promptTravel(guildId: string, channelId: string) {
+        this.assertQuestStarted(channelId);
 
         const world = this.worlds[guildId];
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
 
         // Describe surroundings
         const narrator = quest.getNarrator();
@@ -908,9 +910,9 @@ export default class QuestLord {
             + "choose a direction.");
     }
 
-    private async awardExperience(guildId: string, xpReward: number) {
-        this.assertQuestStarted(guildId);
-        const quest = this.quests[guildId];
+    private async awardExperience(channelId: string, xpReward: number) {
+        this.assertQuestStarted(channelId);
+        const quest = this.quests[channelId];
 
         const narrator = quest.getNarrator();
         await narrator.ponderAndDescribe(`The party is awarded ${xpReward} XP.`);
@@ -925,33 +927,37 @@ export default class QuestLord {
         }
     }
 
-    private async handleEncounterResults(guildId: string, results?: EncounterResults) {
+    private async handleEncounterResults(
+        guildId: string,
+        channelId: string,
+        results?: EncounterResults
+    ) {
         // If results are undefined, it means encounter did not end
         if (results === undefined) {
             return;
         }
         // If there are results, encounter is over
-        this.assertQuestStarted(guildId);
-        const quest = this.quests[guildId];
+        this.assertQuestStarted(channelId);
+        const quest = this.quests[channelId];
         await quest.endEncounter();
         // If success, continue quest
         if (results.success) {
             // Award XP from encounter results to party
-            await this.awardExperience(guildId, results.xp);
-            await this.promptTravel(guildId);
+            await this.awardExperience(channelId, results.xp);
+            await this.promptTravel(guildId, channelId);
         // If not success, quest ends
         } else {
-            await this.failQuest(guildId);
+            await this.failQuest(channelId);
         }
     }
 
     /* DEBUG */
 
     private async forceFailQuest(interaction: CommandInteraction) {
-        const guildId = interaction.guildId;
-        this.assertQuestStarted(guildId);
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
 
-        const quest = this.quests[guildId];
+        const quest = this.quests[channelId];
         console.info(`Forcing quest '${quest.id}' to end...`);
 
         await interaction.reply({
@@ -959,6 +965,6 @@ export default class QuestLord {
             ephemeral: true
         });
 
-        await this.failQuest(guildId);
+        await this.failQuest(channelId);
     }
 }
