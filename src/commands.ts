@@ -171,6 +171,10 @@ class CommandBuilder {
                     .setName("action")
                     .setDescription("What do you want to do?")
             ),
+            // THIS IS A DEBUG COMMAND
+            new SlashCommandBuilder()
+                .setName("forcefail")
+                .setDescription("Force the quest to end")
         ];
     }
 }
@@ -183,7 +187,7 @@ export default async function setGuildCommands(guildId: string, args?: CommandBu
     const builder = new CommandBuilder(args);
     const commands = builder.build();
     try {
-        console.log(`Refreshing application (/) commands for guild ${guildId}`);
+        console.info(`Refreshing application (/) commands for guild ${guildId}`);
         await rest.put(
             Routes.applicationGuildCommands(clientId, guildId),
             { body: commands }

@@ -196,6 +196,10 @@ export default class QuestLord {
             if (interaction.commandName === "map") {
                 await this.logMapDisplay(interaction);
             }
+
+            if (interaction.commandName === "forcefail") {
+                await this.forceFailQuest(interaction);
+            }
         } catch (err) {
             console.error(`Failed to process '/${interaction.commandName}' command `
                 + "due to:", err);
@@ -939,5 +943,22 @@ export default class QuestLord {
         } else {
             await this.failQuest(guildId);
         }
+    }
+
+    /* DEBUG */
+
+    private async forceFailQuest(interaction: CommandInteraction) {
+        const guildId = interaction.guildId;
+        this.assertQuestStarted(guildId);
+
+        const quest = this.quests[guildId];
+        console.info(`Forcing quest '${quest.id}' to end...`);
+
+        await interaction.reply({
+            content: "Killing the heroes and ending the quest...",
+            ephemeral: true
+        });
+
+        await this.failQuest(guildId);
     }
 }
