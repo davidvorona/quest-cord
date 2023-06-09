@@ -32,6 +32,7 @@ import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
+import { EncounterType } from "../constants";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -45,6 +46,8 @@ export default class QuestLord {
     spellFactory: SpellFactory;
 
     encounterBuilder: EncounterBuilder;
+
+    forceEncounters: Record<string, EncounterType> = {};
 
     constructor(compendium: CompendiumReader) {
         console.info("Summoning the Quest Lord...");
@@ -197,8 +200,12 @@ export default class QuestLord {
                 await this.logMapDisplay(interaction);
             }
 
+            // Debug commands
             if (interaction.commandName === "forcefail") {
                 await this.forceFailQuest(interaction);
+            }
+            if (interaction.commandName === "forceencounter") {
+                await this.forceEncounterType(interaction);
             }
         } catch (err) {
             console.error(`Failed to process '/${interaction.commandName}' command `
@@ -411,8 +418,9 @@ export default class QuestLord {
             const partyBiome = world.getBiome(quest.getPartyCoordinates());
             await narrator.describeSurroundings(partyBiome);
 
+            const forceType = this.forceEncounters[channelId];
             const encounter = this.encounterBuilder
-                .build(partyBiome, quest.getCharacters(), narrator);
+                .build(partyBiome, quest.getCharacters(), narrator, forceType);
             await quest.startEncounter(encounter);
         }
     }
@@ -499,8 +507,9 @@ export default class QuestLord {
                     await narrator.describeTravel(biome, newBiome);
 
                     // Now that the party has reached a new location, start the next encounter
+                    const forceType = this.forceEncounters[channelId];
                     const encounter = this.encounterBuilder
-                        .build(newBiome, quest.getCharacters(), narrator);
+                        .build(newBiome, quest.getCharacters(), narrator, forceType);
                     await quest.startEncounter(encounter);
                 }
             );
@@ -966,5 +975,26 @@ export default class QuestLord {
         });
 
         await this.failQuest(channelId);
+    }
+
+    private async forceEncounterType(interaction: CommandInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+
+        const encounterType = interaction.options.getString("type") as EncounterType;
+        let content = "";
+        if (!encounterType) {
+            content = "Removing forced encounter type for quest...";
+            console.info(`Removing forced encounter type for quest '${quest.id}'...`);
+            delete this.forceEncounters[channelId];
+        } else {
+            content = `Setting forced encounter type to '${encounterType}'`;
+            console.info(`Forcing '${encounterType}' encounters for quest '${quest.id}'...`);
+            this.forceEncounters[channelId] = encounterType;
+        }
+
+        await interaction.reply({ content, ephemeral: true });
     }
 }

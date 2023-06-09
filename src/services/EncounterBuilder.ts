@@ -10,15 +10,7 @@ import RestEncounter from "../game/encounters/rest/RestEncounter";
 import CreatureFactory from "./CreatureFactory";
 import { randInList } from "../util";
 import config from "../config";
-
-export const EncounterType = {
-    Combat: "Combat",      // Typical combat encounter
-    Stealth: "Stealth",    // WIP: Choose between avoiding or surprising monsters
-    Social: "Social",      // WIP: An encounter that involves a social interaction
-    Merchant: "Merchant",  // WIP: An encounter with a traveling merchant with goods for sale
-    Lookout: "Lookout",    // WIP: Get to a vantage point for greater map visibility
-    Rest: "Rest"           // WIP: A day where nothing happens, characters can rest and get buff
-} as const;
+import { EncounterType } from "../constants";
 
 class EncounterBuilder {
     creatureFactory: CreatureFactory;
@@ -27,8 +19,10 @@ class EncounterBuilder {
         this.creatureFactory = creatureFactory;
     }
 
-    build(biome: string, characters: Character[], narrator: Narrator) {
-        const encounterType = config.forceEncounterType || randInList(Object.keys(EncounterType));
+    build(biome: string, characters: Character[], narrator: Narrator, forceType?: string) {
+        // Quest-specific forced type > instance-specific forced type > random type
+        const encounterType = forceType || config.forceEncounterType
+            || randInList(Object.keys(EncounterType));
         switch (encounterType) {
         case (EncounterType.Combat): {
             const monsters = this.creatureFactory

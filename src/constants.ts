@@ -42,3 +42,12 @@ export const FORMATTED_DIRECTION = {
 export const WORLD_DIMENSION = 40 as const;
 
 export const REGION_DIMENSION = 4 as const;
+
+export enum EncounterType {
+    Combat = "Combat",      // Typical combat encounter
+    Stealth = "Stealth",    // WIP: Choose between avoiding or surprising monsters
+    Social = "Social",      // WIP: An encounter that involves a social interaction
+    Merchant = "Merchant",  // WIP: An encounter with a traveling merchant with goods for sale
+    Lookout = "Lookout",    // WIP: Get to a vantage point for greater map visibility
+    Rest = "Rest"           // WIP: A day where nothing happens, characters can rest and get buff
+}
