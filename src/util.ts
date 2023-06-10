@@ -45,10 +45,9 @@ export const rand = (max: number) => Math.floor(Math.random() * Math.floor(max))
 /**
  * Returns a random element from the given list.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const randInList = (list: unknown[]) => {
+export function randInList<T>(list: T[]): T {
     return list[rand(list.length)];
-};
+}
 
 /**
  * Returns a random key in an object.

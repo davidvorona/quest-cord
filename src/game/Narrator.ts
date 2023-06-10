@@ -22,6 +22,7 @@ import LookoutEncounter from "./encounters/lookout/LookoutEncounter";
 import RestEncounter from "./encounters/rest/RestEncounter";
 import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
+import { PollingMethod } from "./polls/Poll";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -39,6 +40,10 @@ class Narrator {
     constructor(guildId: string, channel: TextChannel) {
         this.guildId = guildId;
         this.channel = channel;
+    }
+
+    async describe(payload: string | BaseMessageOptions) {
+        await this.channel.send(payload);
     }
 
     async ponderAndDescribe(payload: string | BaseMessageOptions) {
@@ -237,6 +242,14 @@ class Narrator {
     async describeSurroundings(biome: string) {
         await this.ponderAndDescribe("You take stock of your surroundings - currently you're "
             + `in the ${biome}.`);
+    }
+
+    async describePollResults(method: PollingMethod) {
+        if (method === PollingMethod.Random) {
+            await this.describe("Poll result was a tie. QuestLord determining outcome...");
+        } else {
+            await this.describe(`Poll winner was determined by '${method}' vote.`);
+        }
     }
 }
 

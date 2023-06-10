@@ -66,10 +66,14 @@ export default class PollBooth {
         // Cast the vote
         poll.castVote(voterId, vote);
         console.info(`User '${voterId}' casts vote for '${vote}'`);
+        if (this.voters.length > 1) {
+            await this.narrator.describe("A vote has been cast!");
+        }
         // Get and handle the result if it exists
-        const result = poll.findResult();
-        if (result) {
-            await poll.handleResult(result);
+        const results = poll.findResults();
+        if (results.result && results.method) {
+            await this.narrator.describePollResults(results.method);
+            await poll.handleResult(results.result);
             this.closePoll(type);
         }
     }
