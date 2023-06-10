@@ -1,5 +1,13 @@
+import { randInList } from "../../util";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ResultCallback = (voteResult: any) => Promise<void>;
+
+export enum PollingMethod {
+    Majority = "Majority",
+    Highest = "Highest",
+    Random = "Random"
+}
 
 export default class Poll {
     resultCallbackLocked = false;
@@ -35,16 +43,19 @@ export default class Poll {
         return counts;
     }
 
-    private findHighestVote() {
+    private findHighestVotes() {
         const counts = this.findVoteCounts();
         // Default to first vote
-        let highestVote = Object.values(this.votes)[0];
+        let highestVotes = [Object.values(this.votes)[0]];
         Object.keys(counts).forEach((vote) => {
+            const highestVote = highestVotes[0];
             if (counts[vote] > counts[highestVote]) {
-                highestVote = vote;
+                highestVotes = [vote];
+            } else if (counts[vote] === counts[highestVote]) {
+                highestVotes.push(vote);
             }
         });
-        return highestVote;
+        return highestVotes;
     }
 
     private findMajorityVote() {
@@ -74,15 +85,28 @@ export default class Poll {
      * vote or - if a winner has still not been decided - randomly chosen
      * between the highest.
      */
-    findResult() {
+    findResults() {
         let result = this.findMajorityVote();
+        let method;
         if (result) {
+            method = PollingMethod.Majority;
             console.info("Result found (majority):", result);
         } else if (this.countVotes() >= this.voters.length) {
-            result = this.findHighestVote();
-            console.info("Result found (highest):", result);
+            const highestVotes = this.findHighestVotes();
+            if (highestVotes.length === 1) {
+                method = PollingMethod.Highest;
+                result = highestVotes[0];
+                console.info("Result found (highest):", result);
+            } else {
+                method = PollingMethod.Random;
+                result = randInList(highestVotes);
+                console.info("Result found (random):", result);
+            }
         }
-        return result;
+        return {
+            result,
+            method
+        };
     }
 
     castVote(voterId: string, value: string) {

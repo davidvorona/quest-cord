@@ -216,11 +216,13 @@ export default class QuestLord {
                 await this.forceEncounterType(interaction);
             }
         } catch (err) {
+            const errMessage = err instanceof Error
+                ? err.message : "Unable to handle command, try again.";
             console.error(`Failed to process '/${interaction.commandName}' command `
-                + "due to:", err);
+                + "due to:", errMessage);
             if (!interaction.replied) {
                 await interaction.reply({
-                    content: "Failed to handle command, please try again later.",
+                    content: errMessage,
                     ephemeral: true
                 });
             }
