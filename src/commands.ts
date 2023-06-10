@@ -81,6 +81,9 @@ class CommandBuilder {
                 .setName("ping")
                 .setDescription("Replies with pong!")
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            new SlashCommandBuilder()
+                .setName("help")
+                .setDescription("Get a list of helpful commands"),
             // /start
             new SlashCommandBuilder()
                 .setName("start")
@@ -209,3 +212,32 @@ export default async function setGuildCommands(guildId: string, args?: CommandBu
         console.error(error);
     }
 }
+
+export const getHelpText = () => {
+    type CommandHelp = Record<string, string>;
+    const commands: CommandHelp = {
+        start: "Start a quest for a party",
+        play: "Create a character for a quest",
+        inventory: "Show your character's current inventory",
+        status: "Show your character's current status",
+        travel: "Travel in between encounters",
+        use: "Use an item from your inventory",
+        move: "Move in a combat encounter",
+        action: "Use an action in an encounter"
+    };
+    const debugCommands: CommandHelp = {
+        forcefail: "Force a quest to fail",
+        forceencounter: "Force an encounter type in a quest"
+    };
+    const joinCommands = (c: CommandHelp) => {
+        const commandKeys = Object.keys(c);
+        const maxLengthKey = Math.max(...commandKeys.map((key) => {
+            return key.length;
+        }));
+        return commandKeys
+            .map(key => `/${key.padEnd(maxLengthKey)} :: ${c[key]}`)
+            .join("\n");
+    };
+    return `\`\`\`asciidoc\n${joinCommands(commands)}\`\`\`` +
+        `\`\`\`asciidoc\n[DEBUG]\n${joinCommands(debugCommands)}\`\`\``;
+};

@@ -33,6 +33,7 @@ import { EncounterResults } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
+import { getHelpText } from "../commands";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -153,6 +154,13 @@ export default class QuestLord {
 
             if (interaction.commandName === "ping") {
                 await interaction.reply("pong!");
+            }
+
+            if (interaction.commandName === "help") {
+                await interaction.reply({
+                    content: getHelpText(),
+                    ephemeral: true
+                });
             }
 
             // Mod manually starts a quest for users
