@@ -43,7 +43,7 @@ export default class Poll {
         return counts;
     }
 
-    private findHighestVote() {
+    private findHighestVotes() {
         const counts = this.findVoteCounts();
         // Default to first vote
         let highestVotes = [Object.values(this.votes)[0]];
@@ -92,7 +92,7 @@ export default class Poll {
             method = PollingMethod.Majority;
             console.info("Result found (majority):", result);
         } else if (this.countVotes() >= this.voters.length) {
-            const highestVotes = this.findHighestVote();
+            const highestVotes = this.findHighestVotes();
             if (highestVotes.length === 1) {
                 method = PollingMethod.Highest;
                 result = highestVotes[0];
