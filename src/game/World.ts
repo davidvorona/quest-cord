@@ -159,6 +159,48 @@ class World {
         return worldStr;
     }
 
+    getLocalFramingCoordinates([x, y]: [number, number] = [-1, -1]) {
+        const normalize = (c: number) => {
+            if (c < 0) {
+                return 0;
+            }
+            if (c > WORLD_DIMENSION - 1) {
+                return WORLD_DIMENSION - 1;
+            }
+            return c;
+        };
+        return {
+            startingX: normalize(x - REGION_DIMENSION),
+            startingY: normalize(y - REGION_DIMENSION),
+            endingX: normalize(x + REGION_DIMENSION),
+            endingY: normalize(y + REGION_DIMENSION)
+        };
+    }
+
+    stringifyLocal([partyX, partyY]: [number, number] = [-1, -1]) {
+        let worldStr = "";
+        const c = this.getLocalFramingCoordinates([partyX, partyY]);
+        for (let cy = c.startingY; cy <= c.endingY; cy++) {
+            for (let cx = c.startingX; cx <= c.endingX; cx++) {
+                const biome = this.matrix[cy][cx];
+                if (cx === partyX && cy === partyY) {
+                    worldStr += "🧑";
+                } else {
+                    let emoji = biomesData[biome].emoji;
+                    // Normalizes emoji length on Discord
+                    if (biome === BIOME.FOREST || biome === BIOME.JUNGLE) {
+                        emoji += " ";
+                    }
+                    worldStr += emoji;
+                }
+            }
+            if (cy !== c.endingY) {
+                worldStr += "\n";
+            }
+        }
+        return worldStr;
+    }
+
     /**
      * Bit of 0 indicates the fault axis is vertical, 1 indicates it's horizontal.
      */

@@ -144,7 +144,7 @@ class CommandBuilder {
             // /map
             new SlashCommandBuilder()
                 .setName("map")
-                .setDescription("Display the map"),
+                .setDescription("Display the local map"),
             // /travel
             new SlashCommandBuilder()
                 .setName("travel")
