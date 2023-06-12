@@ -205,7 +205,7 @@ export default class QuestLord {
 
             // User wants to look at the map
             if (interaction.commandName === "map") {
-                await this.logMapDisplay(interaction);
+                await this.displayLocalMap(interaction);
             }
 
             // Debug commands
@@ -889,7 +889,7 @@ export default class QuestLord {
         });
     }
 
-    private async logMapDisplay(interaction: CommandInteraction) {
+    private async displayLocalMap(interaction: CommandInteraction) {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -898,8 +898,10 @@ export default class QuestLord {
 
         const map = world.stringify(quest.getPartyCoordinates());
         console.info(map);
+
+        const localMap = world.stringifyLocal(quest.getPartyCoordinates());
         await interaction.reply({
-            content: "Printed map to the console.",
+            content: localMap,
             ephemeral: true
         });
     }
