@@ -22,11 +22,11 @@ import {
     SpellTargetSelection,
     UseSelection
 } from "../../actions";
+import Spell, { AttackSpell } from "../../things/Spell";
+import Weapon from "../../things/Weapon";
 import { CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
-import Spell, { AttackSpell } from "../../things/Spell";
-import Weapon from "../../things/Weapon";
 
 interface AttackOption {
     target: Creature;
@@ -397,13 +397,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
     }
 
-    private isTargetInRange(target: Creature, hasRangedAttack: boolean) {
-        if (this.positions.isInRangePosition(target.id)) {
-            return hasRangedAttack;
-        }
-        return true;
-    }
-
     private async handleAttack(attacker: Creature, target: Creature) {
         const hasRangedWeapon = attacker.hasRangedWeapon();
         this.validateAttackRange(attacker, target, hasRangedWeapon);
@@ -485,24 +478,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     /* ENEMY AI METHODS */
 
-    private async handleMonsterAttack(monster: Monster, attackOption: AttackOption) {
-        const { target, attack } = attackOption;
-        if (attack instanceof Spell) {
-            await this.handleSpell(monster, target, attack.id);
-        } else {
-            await this.handleAttack(monster, target);
-        }
-    }
-
-    private compileMonsterAttacks(monster: Monster) {
-        const weapon = monster.getWeapon();
-        const attacks = [...monster.getMeleeAttackSpells(), ...monster.getRangedAttackSpells()];
-        if (weapon) {
-            attacks.push(weapon);
-        }
-        return attacks;
-    }
-
     private async handleMonsterTurn() {
         let monster;
         try {
@@ -511,13 +486,13 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 throw new Error("Invalid creature for monster turn, aborting");
             }
 
-            const attacks = this.compileMonsterAttacks(monster);
+            const attacks = this.listMonsterAttacks(monster);
             if (attacks.length == 0) {
                 throw new Error("Monster has no attacks available, aborting");
             }
 
             // Ordered by target priority
-            const attackOptions = this.compileAttackOptions(monster, attacks);
+            const attackOptions = this.getValidSortedAttackOptions(monster, attacks);
             if (attackOptions.length === 0) {
                 throw new Error("Monster has no valid attack options!");
             }
@@ -547,18 +522,46 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
     }
 
+    private async handleMonsterAttack(monster: Monster, attackOption: AttackOption) {
+        const { target, attack } = attackOption;
+        if (attack instanceof Spell) {
+            await this.handleSpell(monster, target, attack.id);
+        } else {
+            await this.handleAttack(monster, target);
+        }
+    }
+
+    private listMonsterAttacks(monster: Monster) {
+        const weapon = monster.getWeapon();
+        const attacks = [...monster.getMeleeAttackSpells(), ...monster.getRangedAttackSpells()];
+        if (weapon) {
+            attacks.push(weapon);
+        }
+        return attacks;
+    }
+
+    /**
+     * Takes a target and a list of attacks, and returns a list of attack
+     * option objects that are valid against the target at their respective
+     * ranges. Other conditions can be added later as needed.
+     */
     getValidAttackOptionsForTarget(
         attacks: (AttackSpell<Spell> | Weapon)[],
         target: Creature,
         reason?: string
     ): AttackOption[] {
-        return attacks.filter((attack) => {
-            const isRangedAttack = attack.isRanged();
-            return this.isTargetInRange(target, isRangedAttack);
-        }).map(attack => ({ target, attack, reason }));
+        const inRangePosition = this.positions.isInRangePosition(target.id);
+        return attacks
+            .filter(a => inRangePosition ? a.isRanged() : true)
+            .map(attack => ({ target, attack, reason }));
     }
 
-    private compileAttackOptions(
+    /**
+     * Compiles a sorted list of attack options ordered by target priority, and only
+     * listing attacks that are valid against each target. This method treats attack
+     * options with the same attack and target as distinct if they have different reasons.
+     */
+    private getValidSortedAttackOptions(
         monster: Monster,
         attacks: (AttackSpell<Spell> | Weapon)[]
     ) {
