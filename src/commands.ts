@@ -223,7 +223,8 @@ export const getHelpText = () => {
         travel: "Travel in between encounters",
         use: "Use an item from your inventory",
         move: "Move in a combat encounter",
-        action: "Use an action in an encounter"
+        action: "Use an action in an encounter",
+        skip: "Skip your turn in a combat encounter"
     };
     const debugCommands: CommandHelp = {
         forcefail: "Force a quest to fail",

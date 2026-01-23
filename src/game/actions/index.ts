@@ -11,6 +11,7 @@ import IgnoreCommand from "./commands/IgnoreCommand";
 import SneakCommand from "./commands/SneakCommand";
 import SurpriseCommand from "./commands/SurpriseCommand";
 import MoveCommand from "./commands/MoveCommand";
+import SkipCommand from "./commands/SkipCommand";
 
 import AttackSelection from "./selections/AttackSelection";
 import UseSelection from "./selections/UseSelection";
@@ -25,6 +26,7 @@ export {
     AttackCommand,
     SpellCommand,
     UseCommand,
+    SkipCommand,
     LookoutCommand,
     BuyCommand,
     SellCommand,

@@ -2,7 +2,7 @@ import { BaseCreature, Effects } from "../../types";
 import { createRandomId } from "../../util";
 import Item from "../things/Item";
 import Weapon from "../things/Weapon";
-import Spell from "../things/Spell";
+import Spell, { AttackSpell } from "../things/Spell";
 
 export interface Equipment {
     weapon?: Weapon;
@@ -77,6 +77,18 @@ export default class Creature {
 
     getSpells() {
         return this.spells;
+    }
+
+    isAttackSpell<S extends Spell>(spell: Spell): spell is AttackSpell<S> {
+        return spell.damage !== undefined && spell.damage > 0;
+    }
+
+    getMeleeAttackSpells()  {
+        return this.spells.filter(this.isAttackSpell).filter(s => !s.isRanged());
+    }
+
+    getRangedAttackSpells() {
+        return this.spells.filter(this.isAttackSpell).filter(s => s.isRanged());
     }
 
     applyEffects(effects: Effects) {

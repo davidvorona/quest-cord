@@ -319,6 +319,9 @@ export default class QuestLord {
             if (subcommand === "lookout") {
                 await this.handleLookout(interaction);
             }
+            if (subcommand === "skip") {
+                await this.handleSkipTurn(interaction);
+            }
         } catch (e) {
             const errMessage = e instanceof Error
                 ? e.message : "Unable to complete action, try again.";
@@ -830,6 +833,19 @@ export default class QuestLord {
         const results = await quest.handleEncounterMenuSelect(interaction);
 
         await this.handleEncounterResults(guildId, channelId, results);
+    }
+
+    private async handleSkipTurn(interaction: CommandInteraction): Promise<void> {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        if (quest.isInEncounter()) {
+            const command = quest.validateEncounterCommand(interaction);
+            await quest.handleEncounterCommand(interaction, command);
+        } else {
+            throw new Error("Invalid quest state for skipping turn, aborting");
+        }
     }
 
     private async displayInventory(interaction: CommandInteraction): Promise<void> {

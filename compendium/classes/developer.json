@@ -6,7 +6,7 @@
     "equipment": {
         "weapon": "sword"
     },
-    "spells": ["fire_bolt"],
+    "spells": ["fire_bolt", "disintegrate"],
     "items": ["elixir", "potion", "ear", "torch", "skull", "wand"],
     "lvlGains": []
 }

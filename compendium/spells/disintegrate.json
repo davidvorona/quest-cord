@@ -1,0 +1,6 @@
+{
+    "id": "disintegrate",
+    "name": "Disintegrate",
+    "damage": 24,
+    "properties": ["range"]
+}

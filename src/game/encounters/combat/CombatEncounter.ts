@@ -16,6 +16,7 @@ import {
     AttackCommand,
     UseCommand,
     MoveCommand,
+    SkipCommand,
     AttackSelection,
     SpellCastSelection,
     SpellTargetSelection,
@@ -24,6 +25,14 @@ import {
 import { CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
+import Spell, { AttackSpell } from "../../things/Spell";
+import Weapon from "../../things/Weapon";
+
+interface AttackOption {
+    target: Creature;
+    attack: AttackSpell<Spell> | Weapon;
+    reason?: string;
+}
 
 export default class CombatEncounter extends TurnBasedEncounter {
     monsters: Monster[] = [];
@@ -35,6 +44,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
      * 'spell:cast' command, temporarily cached until the user chooses
      * a target. There can only ever be one, since a single user can
      * only hold one spell, and combat encounters are turn-based.
+     * TODO: This would change if we ever support preselecting actions for
+     * future turns OR if ever have spells that are held for multiple turns.
      */
     heldSpell?: string;
 
@@ -140,6 +151,17 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 ephemeral: true,
                 embeds: [embed],
                 components: [row]
+            });
+        }),
+        skip: new SkipCommand(async (interaction: CommandInteraction, character: Character) => {
+            if (this.heldMovement) {
+                await this.handleMove(character);
+            }
+
+            await this.narrator.ponderAndReply(interaction, {
+                content: `${character.getName()} skips their turn.`,
+                components: [],
+                embeds: []
             });
         })
     };
@@ -352,7 +374,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeMovement(creature, newPosition);
     }
 
-    private mustMoveBeforeAttack(attacker: Creature, target: Creature, isRanged: boolean) {
+    private mustMoveBeforeAttack(attacker: Creature, target: Creature, isRangedAttack: boolean) {
         const withinMeleeRange = this.positions.compareEnemyPositions(attacker.id, target.id);
         // If enemy is at range, assume attacker has ranged weapon and move into melee range;
         // enemies at range can only be attacked by ranged weapons from melee range.
@@ -360,19 +382,26 @@ export default class CombatEncounter extends TurnBasedEncounter {
             return !withinMeleeRange;
         }
         // AKA, must run to the proper range to use weapon on the enemy
-        return isRanged === withinMeleeRange;
+        return isRangedAttack === withinMeleeRange;
     }
 
-    private validateAttackRange(attacker: Creature, target: Creature, isRanged: boolean) {
-        if (this.positions.isInRangePosition(target.id) && !isRanged) {
+    private validateAttackRange(attacker: Creature, target: Creature, isRangedAttack: boolean) {
+        if (this.positions.isInRangePosition(target.id) && !isRangedAttack) {
             throw new Error("This enemy is at range, you must use a ranged attack.");
         }
-        const mustMove = this.mustMoveBeforeAttack(attacker, target, isRanged);
+        const mustMove = this.mustMoveBeforeAttack(attacker, target, isRangedAttack);
         // Monsters are always willing to move if it means attacking their target
         const willMove = attacker instanceof Monster ? true : this.heldMovement;
         if (mustMove && !willMove) {
             throw new Error("You must **/move** to attack with this option!");
         }
+    }
+
+    private isTargetInRange(target: Creature, hasRangedAttack: boolean) {
+        if (this.positions.isInRangePosition(target.id)) {
+            return hasRangedAttack;
+        }
+        return true;
     }
 
     private async handleAttack(attacker: Creature, target: Creature) {
@@ -456,6 +485,24 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     /* ENEMY AI METHODS */
 
+    private async handleMonsterAttack(monster: Monster, attackOption: AttackOption) {
+        const { target, attack } = attackOption;
+        if (attack instanceof Spell) {
+            await this.handleSpell(monster, target, attack.id);
+        } else {
+            await this.handleAttack(monster, target);
+        }
+    }
+
+    private compileMonsterAttacks(monster: Monster) {
+        const weapon = monster.getWeapon();
+        const attacks = [...monster.getMeleeAttackSpells(), ...monster.getRangedAttackSpells()];
+        if (weapon) {
+            attacks.push(weapon);
+        }
+        return attacks;
+    }
+
     private async handleMonsterTurn() {
         let monster;
         try {
@@ -463,22 +510,34 @@ export default class CombatEncounter extends TurnBasedEncounter {
             if (!(monster instanceof Monster)) {
                 throw new Error("Invalid creature for monster turn, aborting");
             }
-            // TODO: Enemies should also be able to choose their action, e.g. attack,
-            // spell, item, etc., and this would inform their target (or lack thereof).
-            const target = this.chooseTarget(monster);
 
-            // Send a special message if they're unable to get into range
-            let rangeValidated = false;
-            try {
-                this.validateAttackRange(monster, target, monster.hasRangedWeapon());
-                rangeValidated = true;
-            } catch (err) {
-                await this.narrator.ponderAndDescribe(`The ${monster.getName()} could `
-                    + "not get into range.");
+            const attacks = this.compileMonsterAttacks(monster);
+            if (attacks.length == 0) {
+                throw new Error("Monster has no attacks available, aborting");
             }
-            if (rangeValidated) {
-                await this.handleAttack(monster, target);
+
+            // Ordered by target priority
+            const attackOptions = this.compileAttackOptions(monster, attacks);
+            if (attackOptions.length === 0) {
+                throw new Error("Monster has no valid attack options!");
             }
+
+            // Extremely simple AI: choose highest priority target, and then find highest damage
+            // attack option against that target
+            // TODO: Prefer staying at range over going into melee
+            // TODO: Can very easily improve AI by resorting options based on score that
+            // weighs priority, damage, status effects, resistances, etc
+            const chosenTarget = attackOptions[0].target;
+            const chosenAttackOption = attackOptions
+                .filter((ao) => ao.target === chosenTarget)
+                .sort((a, b) => b.attack.damage - a.attack.damage)[0];
+
+            console.info(attackOptions.length, "attack options for", monster.getName(), ", chose", {
+                target: chosenTarget.getName(),
+                attack: chosenAttackOption.attack.name,
+                reason: chosenAttackOption.reason
+            });
+            await this.handleMonsterAttack(monster, chosenAttackOption);
         } catch (err) {
             const monsterName = monster?.getName() || "Nameless";
             await this.narrator.ponderAndDescribe(`The ${monsterName} becomes confused...`);
@@ -488,34 +547,50 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
     }
 
-    private canKillWhichCharacters(monster: Monster) {
-        const damage = monster.getDamage();
-        const deathList = this.characters.filter(pc => pc.hp <= damage);
-        return deathList;
+    getValidAttackOptionsForTarget(
+        attacks: (AttackSpell<Spell> | Weapon)[],
+        target: Creature,
+        reason?: string
+    ): AttackOption[] {
+        return attacks.filter((attack) => {
+            const isRangedAttack = attack.isRanged();
+            return this.isTargetInRange(target, isRangedAttack);
+        }).map(attack => ({ target, attack, reason }));
     }
 
-    // Enemy AI for choosing a target
-    private chooseTarget(monster: Monster) {
-        const chars = this.getCharacters();
-        const charIds = chars.map(c => c.id);
+    private compileAttackOptions(
+        monster: Monster,
+        attacks: (AttackSpell<Spell> | Weapon)[]
+    ) {
+        const attackOptions: AttackOption[] = [];
         // 1. Is anyone currently attacking it?
         const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster.id);
         if (targetedTurn) {
             const attackerIdx = SmartCombatLog.getEntryActor(targetedTurn);
-            return this.getCreatureById(this.turnOrder.getTurn(attackerIdx));
+            const lastAttacker = this.getCreatureById(this.turnOrder.getTurn(attackerIdx));
+            attackOptions.push(
+                ...this.getValidAttackOptionsForTarget(attacks, lastAttacker, "revenge"));
         }
+        const chars = this.getCharacters();
         // 2. Is anyone at very low health?
-        const deathList = this.canKillWhichCharacters(monster);
-        if (deathList.length) {
-            return deathList[rand(deathList.length)];
-        }
+        chars.forEach((pc) => {
+            const koAttacks = this.getValidAttackOptionsForTarget(attacks, pc, "execute")
+                .filter((attackOption) => {
+                    const attack = attackOption.attack;
+                    return pc.hp <= attack.damage;
+                });
+            attackOptions.push(...koAttacks);
+        });
         // 3. Is anyone casting spells?
+        const charIds = chars.map(c => c.id);
         const casterIds = this.combatLog.getCreaturesCastingSpells(charIds);
-        if (casterIds.length) {
-            return this.getCreatureById(casterIds[rand(casterIds.length)]);
-        }
+        casterIds.forEach((casterId) => {
+            const caster = this.getCreatureById(casterId);
+            attackOptions.push(...this.getValidAttackOptionsForTarget(attacks, caster, "caster"));
+        });
         // 4. Just pick somebody random!
-        const target = chars[rand(chars.length)];
-        return target;
+        const randomTarget = chars[rand(chars.length)];
+        attackOptions.push(...this.getValidAttackOptionsForTarget(attacks, randomTarget, "random"));
+        return attackOptions;
     }
 }

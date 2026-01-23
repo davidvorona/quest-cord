@@ -4,6 +4,9 @@ import Narrator from "../../Narrator";
 import NonPlayerCharacter from "../../NonPlayerCharacter";
 import { IgnoreCommand, TalkCommand } from "../../actions";
 
+// Idea for social encounter: they meet a traveler; on success, it gives info about an
+// area (a cell in the world grid) nearby, and reveals it on their local map.
+
 export default class SocialEncounter extends Encounter {
     npcs: NonPlayerCharacter[] = [];
 
