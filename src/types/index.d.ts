@@ -3,7 +3,7 @@ import {
     Guild,
     Interaction,
     StringSelectMenuInteraction,
-    TextBasedChannel
+    TextChannel
 } from "discord.js";
 
 /* Structure of JSON file with bot token */
@@ -110,7 +110,7 @@ export type Direction = "north" | "south" | "east" | "west";
 export type QuestLordInteraction<T extends Interaction> = T & {
     guildId: string;
     guild: Guild;
-    channel: TextBasedChannel;
+    channel: TextChannel;
 };
 
 export type CommandInteraction = QuestLordInteraction<ChatInputCommandInteraction>;

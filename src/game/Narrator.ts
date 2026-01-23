@@ -5,7 +5,10 @@ import {
     EmbedBuilder,
     StringSelectMenuInteraction,
     InteractionUpdateOptions,
-    TextChannel
+    TextChannel,
+    InteractionEditReplyOptions,
+    InteractionDeferReplyOptions,
+    MessageFlags
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
@@ -60,11 +63,11 @@ class Narrator {
 
     async ponderAndReply(
         interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
-        payload: string | InteractionReplyOptions
+        payload: string | InteractionEditReplyOptions,
+        ephemeral = false
     ) {
-        const ephemeral = typeof payload !== "string" ? payload.ephemeral : false;
         if (!interaction.deferred) {
-            await interaction.deferReply({ ephemeral });
+            await interaction.deferReply({ flags: ephemeral ? MessageFlags.Ephemeral : undefined });
         }
         await delay(rand(Narrator.TIME_TO_PONDER));
         await interaction.editReply(payload);

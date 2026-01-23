@@ -9,7 +9,8 @@ import {
     EmbedBuilder,
     GuildMember,
     PermissionsBitField,
-    AttachmentBuilder
+    AttachmentBuilder,
+    MessageFlags
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -378,8 +379,7 @@ export default class QuestLord {
 
         await narrator.ponderAndReply(interaction, {
             content: `Quest created for **${players.length}** players...`,
-            ephemeral: true
-        });
+        },  true);
 
         // Invite players to create characters and join the quest
         await narrator.ponderAndDescribe(
@@ -420,8 +420,7 @@ export default class QuestLord {
         // is attached to the PlayerCharacter object
         await narrator.ponderAndReply(interaction, {
             content: `Character *${pc.getName()}*, level ${pc.lvl} ${optionClass}, created...`,
-            ephemeral: true
-        });
+        }, true);
 
         // If adding this character completes the party, then start the quest with an encounter
         if (quest.areAllCharactersCreated()) {

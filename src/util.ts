@@ -6,7 +6,7 @@ import {
     EmbedBuilder,
     GuildMember,
     PermissionsBitField,
-    TextBasedChannel
+    TextChannel
 } from "discord.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,11 +124,11 @@ export const shuffleArray = (array: any[]) => array
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const sendTypingAndWait = async (channel: TextBasedChannel, ms: number) => {
+export const sendTypingAndWait = async (channel: TextChannel, ms: number) => {
     await channel.sendTyping();
     await delay(ms);
 };
 
-export const sendTypingAndWaitRandom = async (channel: TextBasedChannel, ms: number) => {
+export const sendTypingAndWaitRandom = async (channel: TextChannel, ms: number) => {
     await sendTypingAndWait(channel, rand(ms));
 };
