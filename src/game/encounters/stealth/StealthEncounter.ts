@@ -3,8 +3,12 @@ import Encounter from "../Encounter";
 import Monster from "../../creatures/Monster";
 import Narrator from "../../Narrator";
 import { SneakCommand, SurpriseCommand } from "../../actions";
+import { EncounterType } from "../../../constants";
 
 export default class StealthEncounter extends Encounter {
+    type = EncounterType.Stealth;
+    description = "Trying to avoid detection... :shushing_face:";
+
     monsters: Monster[] = [];
 
     commands = {

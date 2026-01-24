@@ -10,7 +10,11 @@ import {
     GuildMember,
     PermissionsBitField,
     AttachmentBuilder,
-    MessageFlags
+    MessageFlags,
+    ButtonInteraction,
+    ButtonBuilder,
+    ContainerBuilder,
+    ButtonStyle,
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -21,7 +25,8 @@ import {
     Direction,
     QuestLordInteraction,
     CommandInteraction,
-    SelectMenuInteraction
+    SelectMenuInteraction,
+    ButtonPressInteraction
 } from "../types";
 import { getPlayersFromStartCommand, isEmpty, sendMissingPermissionsMessage } from "../util";
 import Quest from "./Quest";
@@ -35,6 +40,7 @@ import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
+import QuestButton from "./buttons/QuestButton";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -139,6 +145,9 @@ export default class QuestLord {
             }
             if (interaction.isStringSelectMenu()) {
                 await this.handleSelectMenuInteraction(interaction);
+            }
+            if (interaction.isButton()) {
+                await this.handleButtonInteraction(interaction);
             }
         } catch (err) {
             console.error("Something went very wrong:", err);
@@ -285,6 +294,33 @@ export default class QuestLord {
         }
     }
 
+    private async handleButtonInteraction(interaction: ButtonInteraction) {
+        try {
+            console.info(
+                `Processing button '${interaction.customId}'`
+            );
+            if (!QuestLord.isValidInteraction(interaction)) return;
+
+            if (interaction.customId === "quest") {
+                await this.displayQuest(interaction);
+            }
+            if (interaction.customId === "map") {
+                await this.displayLocalMap(interaction);
+            }
+        } catch (err) {
+            const errMessage = err instanceof Error
+                ? err.message : "Unable to handle button, try again.";
+            console.error(`Failed to process '/${interaction.customId}' button `
+                + "due to:", errMessage);
+            if (!interaction.replied) {
+                await interaction.reply({
+                    content: errMessage,
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+        }
+    }
+
     // Actions are all things that can be done during encounters, or that have special
     // rules during encounters
     private async handleAction(interaction: CommandInteraction): Promise<void> {
@@ -425,6 +461,11 @@ export default class QuestLord {
         // If adding this character completes the party, then start the quest with an encounter
         if (quest.areAllCharactersCreated()) {
             await narrator.describeNewParty(quest.getCharacters());
+
+            const questButton = new QuestButton();
+            const components = [new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(questButton.button)];
+            await narrator.describe({ components });
 
             const world = this.worlds[guildId];
             const partyBiome = world.getBiome(quest.getPartyCoordinates());
@@ -847,6 +888,72 @@ export default class QuestLord {
         }
     }
 
+    async displayQuest(interaction: ButtonPressInteraction | CommandInteraction) {
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+
+        const className = pc.getCharacter().baseId;
+        const file = new AttachmentBuilder(`assets/${className}.png`);
+
+        const world = this.worlds[guildId];
+        const coords = quest.getPartyCoordinates();
+        const direction = world.getDirectionFromTwoCoordinates(
+            quest.getPartyLastCoordinates(), coords) || "nowhere";
+        const biome = world.getBiome(coords);
+        const encounterDesc = quest.getEncounter()?.getDescription() || "Exploring...";
+
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("# Questing - *Day 1*"))
+            .addSeparatorComponents(separator => separator)
+            .addSectionComponents((section) =>
+                section.addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(":scroll: *Character*"),
+                (textDisplay) => textDisplay.setContent(`## ${pc.getName()}`),
+                (textDisplay) => textDisplay.setContent(`### Level ${pc.lvl} ${className}`))
+                    .setThumbnailAccessory((thumbnail) =>
+                        thumbnail
+                            .setURL(`attachment://${className}.png`)
+                            .setDescription(`alt text ${className}`)))
+            .addSeparatorComponents(separator => separator)
+            .addSectionComponents((section) =>
+                section.addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(":map: *Bearings*"),
+                (textDisplay) => textDisplay
+                    .setContent(`### ${
+                        biome === "beach" ? "At" : "In"
+                    } the ${biome}, heading ${direction}`),
+                (textDisplay) => textDisplay.setContent(encounterDesc))
+                    .setButtonAccessory(button => button
+                        .setCustomId("map")
+                        .setLabel("See Local Map")
+                        .setStyle(ButtonStyle.Secondary)));
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+                .setCustomId("character")
+                .setLabel("See Character")
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId("inventory")
+                .setLabel("View Inventory")
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId("encounter")
+                .setLabel("View Encounter")
+                .setStyle(ButtonStyle.Danger)
+        );
+
+        await interaction.reply({
+            components: [container, buttonRow],
+            files: [file],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+        });
+    }
+
     private async displayInventory(interaction: CommandInteraction): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
@@ -904,7 +1011,7 @@ export default class QuestLord {
         });
     }
 
-    private async displayLocalMap(interaction: CommandInteraction) {
+    private async displayLocalMap(interaction: CommandInteraction | ButtonPressInteraction) {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 

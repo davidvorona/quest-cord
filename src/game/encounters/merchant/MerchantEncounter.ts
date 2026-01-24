@@ -7,6 +7,7 @@ import Character from "../../creatures/Character";
 import FreeEncounter from "../FreeEncounter";
 import NonPlayerCharacter from "../../NonPlayerCharacter";
 import { CommandInteraction, SelectMenuInteraction } from "../../../types";
+import { EncounterType } from "../../../constants";
 import Narrator from "../../Narrator";
 import {
     BuyCommand,
@@ -18,6 +19,9 @@ import Item from "../../things/Item";
 import Inventory from "../../creatures/Inventory";
 
 export default class MerchantEncounter extends FreeEncounter {
+    type = EncounterType.Merchant;
+    description = "Trading with a merchant! :coin:";
+
     merchant: NonPlayerCharacter;
 
     commands = {

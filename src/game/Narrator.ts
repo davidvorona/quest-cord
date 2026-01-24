@@ -1,5 +1,4 @@
 import {
-    BaseMessageOptions,
     ChatInputCommandInteraction,
     InteractionReplyOptions,
     EmbedBuilder,
@@ -7,8 +6,9 @@ import {
     InteractionUpdateOptions,
     TextChannel,
     InteractionEditReplyOptions,
-    InteractionDeferReplyOptions,
-    MessageFlags
+    MessageFlags,
+    MessagePayload,
+    MessageCreateOptions
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
@@ -45,11 +45,11 @@ class Narrator {
         this.channel = channel;
     }
 
-    async describe(payload: string | BaseMessageOptions) {
+    async describe(payload: string | MessagePayload | MessageCreateOptions) {
         await this.channel.send(payload);
     }
 
-    async ponderAndDescribe(payload: string | BaseMessageOptions) {
+    async ponderAndDescribe(payload: string | MessagePayload | MessageCreateOptions) {
         await sendTypingAndWaitRandom(this.channel, Narrator.TIME_TO_PONDER);
         await this.channel.send(payload);
     }

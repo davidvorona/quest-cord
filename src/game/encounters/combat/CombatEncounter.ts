@@ -8,6 +8,7 @@ import TurnBasedEncounter from "../TurnBasedEncounter";
 import Character from "../../creatures/Character";
 import Monster from "../../creatures/Monster";
 import { rand } from "../../../util";
+import { EncounterType } from "../../../constants";
 import Creature from "../../creatures/Creature";
 import Narrator from "../../Narrator";
 import {
@@ -35,6 +36,9 @@ interface AttackOption {
 }
 
 export default class CombatEncounter extends TurnBasedEncounter {
+    type = EncounterType.Combat;
+    description = "In a fight! :crossed_swords:";
+
     monsters: Monster[] = [];
 
     combatLog: SmartCombatLog;

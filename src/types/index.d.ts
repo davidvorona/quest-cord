@@ -1,4 +1,5 @@
 import {
+    ButtonInteraction,
     ChatInputCommandInteraction,
     Guild,
     Interaction,
@@ -115,3 +116,4 @@ export type QuestLordInteraction<T extends Interaction> = T & {
 
 export type CommandInteraction = QuestLordInteraction<ChatInputCommandInteraction>;
 export type SelectMenuInteraction = QuestLordInteraction<StringSelectMenuInteraction>;
+export type ButtonPressInteraction = QuestLordInteraction<ButtonInteraction>;

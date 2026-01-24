@@ -20,11 +20,17 @@ export default class Encounter {
 
     menus: Selection[] = [];
 
+    // Strings for display purposes
+    type: string = "";
+    description = "In an encounter...";
+
     constructor(characters: Character[], narrator: Narrator, turnBased = false) {
         this.characters = characters;
         this.narrator = narrator;
         this.turnBased = turnBased;
     }
+
+    getDescription = () => this.description;
 
     getCharacters = () => this.characters;
 
