@@ -76,4 +76,8 @@ export default class PlayerCharacter {
             return this.lvl;
         }
     }
+
+    getEquipment() {
+        return this.character.equipment;
+    }
 }

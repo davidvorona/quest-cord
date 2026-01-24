@@ -15,6 +15,8 @@ import {
     ButtonBuilder,
     ContainerBuilder,
     ButtonStyle,
+    SectionBuilder,
+    TextDisplayBuilder,
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -307,6 +309,12 @@ export default class QuestLord {
             if (interaction.customId === "map") {
                 await this.displayLocalMap(interaction);
             }
+            if (interaction.customId === "inventory") {
+                await this.displayInventory(interaction);
+            }
+            if (interaction.customId === "character") {
+                await this.displayStatus(interaction);
+            }
         } catch (err) {
             const errMessage = err instanceof Error
                 ? err.message : "Unable to handle button, try again.";
@@ -463,9 +471,14 @@ export default class QuestLord {
             await narrator.describeNewParty(quest.getCharacters());
 
             const questButton = new QuestButton();
-            const components = [new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(questButton.button)];
-            await narrator.describe({ components });
+            const container = new SectionBuilder()
+                .addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent("# Welcome to Discordia!"))
+                .setButtonAccessory(questButton.button);
+            await narrator.ponderAndDescribe({
+                components: [container],
+                flags: MessageFlags.IsComponentsV2
+            });
 
             const world = this.worlds[guildId];
             const partyBiome = world.getBiome(quest.getPartyCoordinates());
@@ -954,7 +967,9 @@ export default class QuestLord {
         });
     }
 
-    private async displayInventory(interaction: CommandInteraction): Promise<void> {
+    private async displayInventory(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -962,29 +977,31 @@ export default class QuestLord {
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
 
         const quantities = pc.getCharacter().getInventory().getQuantities();
-        const description = quantities.length
-            ? `${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}`
-            : "Inventory is empty";
-        const fields = quantities.map((q) => ({
-            name: q.item.name,
-            value: q.quantity.toString(),
-            inline: true
-        }));
-        const thumbnail = new AttachmentBuilder("assets/inventory.png");
-        const embed = new EmbedBuilder()
-            .setColor("#0099ff")
-            .setTitle("Your inventory")
-            .setAuthor({ name: description })
-            .setThumbnail("attachment://inventory.png")
-            .addFields(fields);
+        const description = `*${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}*`;
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`# Inventory (${description})`));
+        quantities.forEach((q, idx) => {
+            container.addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`*${q.item.name}* x${q.quantity}`));
+            if (idx < quantities.length - 1) {
+                container.addSeparatorComponents(separator => separator);
+            }
+        });
+        if (quantities.length === 0) {
+            container.addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("*Inventory is empty*"));
+        }
         await interaction.reply({
-            embeds: [embed],
-            ephemeral: true,
-            files: [thumbnail]
+            components: [container],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     }
 
-    private async displayStatus(interaction: CommandInteraction): Promise<void> {
+    private async displayStatus(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -993,21 +1010,55 @@ export default class QuestLord {
 
         const className = pc.getCharacter().baseId;
         const thumbnail = new AttachmentBuilder(`assets/${className}.png`);
-        const embed = new EmbedBuilder()
-            .setColor("#0099ff")
-            .setTitle(pc.getName())
-            .setDescription(`Level ${pc.lvl} ${className}`)
-            .setThumbnail(`attachment://${className}.png`)
-            .addFields(
-                {
-                    name: "Hitpoints",
-                    value: `${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}`
-                }
+
+        const equipmentTextDisplay = [];
+        const equipment = pc.getEquipment();
+        if (equipment.weapon) {
+            equipmentTextDisplay.push(`Weapon: *${equipment.weapon.name}*`);
+        }
+        if (equipment.offhand) {
+            equipmentTextDisplay.push(`Offhand: *${equipment.offhand.name}*`);
+        }
+        if (equipment.armor) {
+            equipmentTextDisplay.push(`Armor: *${equipment.armor.name}*`);
+        }
+        if (equipment.helm) {
+            equipmentTextDisplay.push(`Helm: *${equipment.helm.name}*`);
+        }
+        if (equipment.boots) {
+            equipmentTextDisplay.push(`Boots: *${equipment.boots.name}*`);
+        }
+        if (equipment.cape) {
+            equipmentTextDisplay.push(`Cape: *${equipment.cape.name}*`);
+        }
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`# ${pc.getName()}`))
+            .addSeparatorComponents(separator => separator)
+            .addSectionComponents((section) =>
+                section.addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(`### :bar_chart: Level ${pc.lvl} ${className}`),
+                (textDisplay) => textDisplay.setContent(
+                    `### :fireworks: *${pc.xp} / 150* xp to level`))
+                    .setThumbnailAccessory((thumbnail) =>
+                        thumbnail
+                            .setURL(`attachment://${className}.png`)
+                            .setDescription(`alt text ${className}`)))
+            .addSeparatorComponents(separator => separator)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(
+                    `### :heart: *${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}*`))
+            .addSeparatorComponents(separator => separator)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("### :crossed_swords: Equipment"),
+            ...equipmentTextDisplay.map(d =>
+                (textDisplay: TextDisplayBuilder) => textDisplay.setContent(d))
             );
         await interaction.reply({
-            embeds: [embed],
-            ephemeral: true,
-            files: [thumbnail]
+            components: [container],
+            files: [thumbnail],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     }
 

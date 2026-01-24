@@ -109,7 +109,6 @@ class Narrator {
             });
             await this.ponderAndDescribe(text3);
         }
-        await this.ponderAndDescribe("Welcome to *Discordia*!");
     }
 
     async describeMovement(creature: Creature, position: CombatPosition) {
