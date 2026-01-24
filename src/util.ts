@@ -8,6 +8,7 @@ import {
     PermissionsBitField,
     TextChannel
 } from "discord.js";
+import { ButtonPressInteraction, CommandInteraction } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isEmpty = (thing: any) =>
@@ -132,3 +133,10 @@ export const sendTypingAndWait = async (channel: TextChannel, ms: number) => {
 export const sendTypingAndWaitRandom = async (channel: TextChannel, ms: number) => {
     await sendTypingAndWait(channel, rand(ms));
 };
+
+export const getEncounterInteractionName = (
+    interaction: CommandInteraction | ButtonPressInteraction
+) =>
+    interaction.isCommand()
+        ? interaction.options.getSubcommand()
+        : interaction.customId;

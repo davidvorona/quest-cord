@@ -26,6 +26,7 @@ import RestEncounter from "./encounters/rest/RestEncounter";
 import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
+import { ButtonPressInteraction } from "../types";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -55,14 +56,16 @@ class Narrator {
     }
 
     async reply(
-        interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
+        interaction: ChatInputCommandInteraction
+            | StringSelectMenuInteraction | ButtonPressInteraction,
         payload: string | InteractionReplyOptions
     ) {
         await interaction.reply(payload);
     }
 
     async ponderAndReply(
-        interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
+        interaction: ChatInputCommandInteraction
+            | StringSelectMenuInteraction | ButtonPressInteraction,
         payload: string | InteractionEditReplyOptions,
         ephemeral = false
     ) {

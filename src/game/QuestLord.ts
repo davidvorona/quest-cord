@@ -30,7 +30,12 @@ import {
     SelectMenuInteraction,
     ButtonPressInteraction
 } from "../types";
-import { getPlayersFromStartCommand, isEmpty, sendMissingPermissionsMessage } from "../util";
+import {
+    getEncounterInteractionName,
+    getPlayersFromStartCommand,
+    isEmpty,
+    sendMissingPermissionsMessage
+} from "../util";
 import Quest from "./Quest";
 import World from "./World";
 import Narrator from "./Narrator";
@@ -42,7 +47,6 @@ import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
-import QuestButton from "./buttons/QuestButton";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -306,14 +310,69 @@ export default class QuestLord {
             if (interaction.customId === "quest") {
                 await this.displayQuest(interaction);
             }
+
             if (interaction.customId === "map") {
                 await this.displayLocalMap(interaction);
             }
+
             if (interaction.customId === "inventory") {
                 await this.displayInventory(interaction);
             }
+
             if (interaction.customId === "character") {
                 await this.displayStatus(interaction);
+            }
+
+            if (interaction.customId === "encounter") {
+                await this.displayEncounter(interaction);
+            }
+
+            if (interaction.customId === "move") {
+                await this.handleMove(interaction);
+            }
+
+            if (interaction.customId === "skip") {
+                await this.handleSkipTurn(interaction);
+            }
+
+            if (interaction.customId === "attack") {
+                await this.promptAttack(interaction);
+            }
+
+            if (interaction.customId === "spell") {
+                await this.promptCastSpell(interaction);
+            }
+
+            if (interaction.customId === "use") {
+                await this.promptUse(interaction);
+            }
+
+            if (interaction.customId === "lookout") {
+                await this.handleLookout(interaction);
+            }
+
+            if (interaction.customId === "buy") {
+                await this.promptBuy(interaction);
+            }
+
+            if (interaction.customId === "sell") {
+                await this.promptSell(interaction);
+            }
+
+            if (interaction.customId === "talk") {
+                await this.handleTalk(interaction);
+            }
+
+            if (interaction.customId === "ignore") {
+                await this.handleIgnore(interaction);
+            }
+
+            if (interaction.customId === "sneak") {
+                await this.handleSneak(interaction);
+            }
+
+            if (interaction.customId === "surprise") {
+                await this.handleSurprise(interaction);
             }
         } catch (err) {
             const errMessage = err instanceof Error
@@ -470,11 +529,13 @@ export default class QuestLord {
         if (quest.areAllCharactersCreated()) {
             await narrator.describeNewParty(quest.getCharacters());
 
-            const questButton = new QuestButton();
             const container = new SectionBuilder()
                 .addTextDisplayComponents((textDisplay) =>
                     textDisplay.setContent("# Welcome to Discordia!"))
-                .setButtonAccessory(questButton.button);
+                .setButtonAccessory(new ButtonBuilder()
+                    .setCustomId("quest")
+                    .setLabel("See Quest")
+                    .setStyle(ButtonStyle.Primary));
             await narrator.ponderAndDescribe({
                 components: [container],
                 flags: MessageFlags.IsComponentsV2
@@ -582,15 +643,17 @@ export default class QuestLord {
         }
     }
 
-    private async handleSneak(interaction: CommandInteraction): Promise<void> {
+    private async handleSneak(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const stealthAction = interaction.options.getSubcommand();
+        const stealthAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -603,22 +666,24 @@ export default class QuestLord {
             PollType.Stealth,
             stealthAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                const results = await quest.handleEncounterInteraction(interaction, command);
                 await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
-    private async handleSurprise(interaction: CommandInteraction): Promise<void> {
+    private async handleSurprise(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const stealthAction = interaction.options.getSubcommand();
+        const stealthAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -631,8 +696,8 @@ export default class QuestLord {
             PollType.Stealth,
             stealthAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                await quest.handleEncounterInteraction(interaction, command);
 
                 if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
                     throw new Error("Invalid stealth encounter, aborting");
@@ -652,15 +717,17 @@ export default class QuestLord {
         );
     }
 
-    private async handleTalk(interaction: CommandInteraction): Promise<void> {
+    private async handleTalk(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const socialAction = interaction.options.getSubcommand();
+        const socialAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -673,22 +740,24 @@ export default class QuestLord {
             PollType.Social,
             socialAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                const results = await quest.handleEncounterInteraction(interaction, command);
                 await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
-    private async handleIgnore(interaction: CommandInteraction): Promise<void> {
+    private async handleIgnore(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const socialAction = interaction.options.getSubcommand();
+        const socialAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -701,20 +770,22 @@ export default class QuestLord {
             PollType.Social,
             socialAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                const results = await quest.handleEncounterInteraction(interaction, command);
                 await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
-    private async promptBuy(interaction: CommandInteraction): Promise<void> {
+    private async promptBuy(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, command);
     }
 
     private async handleBuy(interaction: SelectMenuInteraction): Promise<void> {
@@ -726,13 +797,15 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async promptSell(interaction: CommandInteraction): Promise<void> {
+    private async promptSell(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, command);
     }
 
     private async handleSell(interaction: SelectMenuInteraction): Promise<void> {
@@ -747,18 +820,22 @@ export default class QuestLord {
     // TODO: This would be an example of a command anyone can do that doesn't require
     // a poll to be executed. We need a way to lock this command until it resolves so
     // submissions by multiple users don't cause a race condition.
-    private async handleLookout(interaction: CommandInteraction): Promise<void> {
+    private async handleLookout(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        const results = await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        const results = await quest.handleEncounterInteraction(interaction, command);
 
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async promptUse(interaction: CommandInteraction): Promise<void> {
+    private async promptUse(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -767,8 +844,10 @@ export default class QuestLord {
         if (quest.isInEncounter()) {
             // Override the command name here since typical encounter commands are
             // subcommands of /action
-            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
-            await quest.handleEncounterCommand(interaction, command);
+            const commandNameOverride = interaction.isCommand()
+                ? interaction.commandName : interaction.customId;
+            const command = quest.validateEncounterInteraction(interaction, commandNameOverride);
+            await quest.handleEncounterInteraction(interaction, command);
         // Otherwise, let them use items to their heart's content
         } else {
             // TODO: This code is a copy of what is in the base CombatEncounter 'commands' list,
@@ -824,27 +903,32 @@ export default class QuestLord {
         }
     }
 
-    private async handleMove(interaction: CommandInteraction): Promise<void> {
+    private async handleMove(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
         // Movement only allowed for now during an encounter
         if (quest.isInEncounter()) {
-            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
-            await quest.handleEncounterCommand(interaction, command);
+            const action = quest.validateEncounterInteraction(
+                interaction, getEncounterInteractionName(interaction));
+            await quest.handleEncounterInteraction(interaction, action);
         } else {
             throw new Error("Invalid quest state for movement, aborting");
         }
     }
 
-    private async promptAttack(interaction: CommandInteraction): Promise<void> {
+    private async promptAttack(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        const results = await quest.handleEncounterCommand(interaction, command);
+        const action = quest.validateEncounterInteraction(interaction);
+        const results = await quest.handleEncounterInteraction(interaction, action);
 
         await this.handleEncounterResults(guildId, channelId, results);
     }
@@ -859,13 +943,15 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async promptCastSpell(interaction: CommandInteraction): Promise<void> {
+    private async promptCastSpell(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, command);
     }
 
     private async handleCastSpell(interaction: SelectMenuInteraction): Promise<void> {
@@ -888,14 +974,16 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async handleSkipTurn(interaction: CommandInteraction): Promise<void> {
+    private async handleSkipTurn(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
         if (quest.isInEncounter()) {
-            const command = quest.validateEncounterCommand(interaction);
-            await quest.handleEncounterCommand(interaction, command);
+            const command = quest.validateEncounterInteraction(interaction);
+            await quest.handleEncounterInteraction(interaction, command);
         } else {
             throw new Error("Invalid quest state for skipping turn, aborting");
         }
@@ -981,7 +1069,10 @@ export default class QuestLord {
         const container = new ContainerBuilder()
             .setAccentColor(0x0099ff)
             .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(`# Inventory (${description})`));
+                textDisplay.setContent(`# Inventory (${description})`))
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`### :coin: ${pc.getCharacter().getGp()} gp`))
+            .addSeparatorComponents(separator => separator);
         quantities.forEach((q, idx) => {
             container.addTextDisplayComponents((textDisplay) =>
                 textDisplay.setContent(`*${q.item.name}* x${q.quantity}`));
@@ -1001,7 +1092,7 @@ export default class QuestLord {
 
     private async displayStatus(
         interaction: CommandInteraction | ButtonPressInteraction
-    ): Promise<void> {
+    ) {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -1077,6 +1168,67 @@ export default class QuestLord {
             content: localMap,
             ephemeral: true
         });
+    }
+
+    private async displayEncounter(interaction: CommandInteraction | ButtonPressInteraction) {
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+
+        if (quest.isInEncounter()) {
+            const world = this.worlds[guildId];
+            const biome = world.getBiome(quest.getPartyCoordinates());
+            const encounterDesc = quest.encounter.getDescription() || "Exploring...";
+
+            const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+
+            const components = [];
+            const container = new ContainerBuilder()
+                .setAccentColor(0x0099ff)
+                .addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(`# ${encounterDesc}`))
+                .addSeparatorComponents(separator => separator)
+                .addSectionComponents((section) =>
+                    section.addTextDisplayComponents((textDisplay) =>
+                        textDisplay.setContent(
+                            `### :heart: ${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}`),
+                    (textDisplay) => textDisplay
+                        .setContent(`### :map: ${
+                            biome === "beach" ? "At" : "In"
+                        } the ${biome}`))
+                        .setButtonAccessory(button => button
+                            .setCustomId("map")
+                            .setLabel("See Local Map")
+                            .setStyle(ButtonStyle.Secondary)));
+            const buttons = quest.encounter.buttons;
+            const row0 = new ActionRowBuilder<ButtonBuilder>();
+            const row1 = new ActionRowBuilder<ButtonBuilder>();
+            for (const action in buttons) {
+                const button = buttons[action];
+                if (button.row === 0) {
+                    row0.addComponents(button.getButton());
+                } else {
+                    row1.addComponents(button.getButton());
+                }
+            }
+            components.push(container);
+            if (row0.components.length > 0) {
+                components.push(row0);
+            }
+            if (row1.components.length > 0) {
+                components.push(row1);
+            }
+            await interaction.reply({
+                components,
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+        } else {
+            await interaction.reply({
+                content: "The party is not currently in an encounter.",
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
     }
 
     /* OTHER METHODS */
