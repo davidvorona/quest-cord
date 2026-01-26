@@ -17,10 +17,12 @@ import {
     ButtonStyle,
     SectionBuilder,
     TextDisplayBuilder,
+    StringSelectMenuOptionBuilder
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
 import EncounterBuilder from "../services/EncounterBuilder";
+import CharacterCreator from "../services/CharacterCreator";
 import { PollType } from "./polls/PollBooth";
 import CreatureFactory from "../services/CreatureFactory";
 import {
@@ -28,7 +30,7 @@ import {
     QuestLordInteraction,
     CommandInteraction,
     SelectMenuInteraction,
-    ButtonPressInteraction
+    ButtonPressInteraction,
 } from "../types";
 import {
     getEncounterInteractionName,
@@ -63,12 +65,15 @@ export default class QuestLord {
 
     forceEncounters: Record<string, EncounterType> = {};
 
+    compendium: CompendiumReader;
+
     constructor(compendium: CompendiumReader) {
         console.info("Summoning the Quest Lord...");
         this.itemFactory = new ItemFactory(compendium);
         this.spellFactory = new SpellFactory(compendium);
         this.creatureFactory = new CreatureFactory(compendium, this.itemFactory, this.spellFactory);
         this.encounterBuilder = new EncounterBuilder(this.creatureFactory);
+        this.compendium = compendium;
     }
 
     /* VALIDATION */
@@ -186,7 +191,7 @@ export default class QuestLord {
 
             // User creates a character to join quest
             if (interaction.commandName === "play") {
-                await this.createCharacter(interaction);
+                await this.startCharacterCreation(interaction);
             }
 
             // User requests to travel in a direction
@@ -282,6 +287,11 @@ export default class QuestLord {
             if (interaction.customId === "sell") {
                 await this.handleSell(interaction);
             }
+
+            if (interaction.customId === "choose-direction") {
+                const direction = interaction.values[0] as Direction;
+                await this.handleTravel(interaction, direction);
+            }
         } catch (err) {
             const errMessage = err instanceof Error
                 ? err.message : "Unable to submit selection, try again.";
@@ -307,6 +317,30 @@ export default class QuestLord {
             );
             if (!QuestLord.isValidInteraction(interaction)) return;
 
+            if (interaction.customId === "play") {
+                await this.startCharacterCreation(interaction);
+            }
+
+            if (interaction.customId === "char-creator-next") {
+                await this.createCharacterNext(interaction);
+            }
+
+            if (interaction.customId === "char-creator-back") {
+                await this.createCharacterBack(interaction);
+            }
+
+            if (interaction.customId === "next-class") {
+                await this.cycleCharacterClass(interaction);
+            }
+
+            if (interaction.customId === "next-profession") {
+                await this.cycleCharacterProfession(interaction);
+            }
+
+            if (interaction.customId.includes("choose-gift-")) {
+                await this.chooseCharacterGift(interaction);
+            }
+
             if (interaction.customId === "quest") {
                 await this.displayQuest(interaction);
             }
@@ -325,6 +359,10 @@ export default class QuestLord {
 
             if (interaction.customId === "encounter") {
                 await this.displayEncounter(interaction);
+            }
+
+            if (interaction.customId === "travel") {
+                await this.promptTravel(interaction.guildId, interaction.channelId);
             }
 
             if (interaction.customId === "move") {
@@ -383,6 +421,10 @@ export default class QuestLord {
                 await interaction.reply({
                     content: errMessage,
                     flags: MessageFlags.Ephemeral
+                });
+            } else {
+                await interaction.editReply({
+                    content: errMessage
                 });
             }
         }
@@ -484,18 +526,28 @@ export default class QuestLord {
             content: `Quest created for **${players.length}** players...`,
         },  true);
 
+        const container = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(
+                    `${players.join(" ")} A quest has been posted...`))
+            .setButtonAccessory((button => button
+                .setCustomId("play").setLabel("Accept Quest").setStyle(ButtonStyle.Success)));
+
+
         // Invite players to create characters and join the quest
-        await narrator.ponderAndDescribe(
-            `${players.join(" ")} Adventure calls you, **/play** to journey to *Discordia*...`
-        );
+        await narrator.ponderAndDescribe({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+        });
     }
 
-    private async createCharacter(interaction: CommandInteraction): Promise<void> {
-        const { guildId, channelId } = interaction;
+    private async startCharacterCreation(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
+        const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const narrator = quest.getNarrator();
         const userId = interaction.user.id;
         // Ensure user is in questing party
         if (!quest.isUserInParty(userId)) {
@@ -504,8 +556,8 @@ export default class QuestLord {
                 ephemeral: true
             });
             return;
-        // Ensure user has not already created a character
         }
+        // Ensure user has not already created a character
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
@@ -514,42 +566,198 @@ export default class QuestLord {
             return;
         }
 
-        const optionClass = interaction.options.getString("class", true);
-        const character = this.creatureFactory.createClassCharacter(optionClass);
-        const { lvlGains } = this.creatureFactory.getCharacterClass(optionClass);
-        const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+        const characterCreator = new CharacterCreator(this.compendium);
+        quest.setCharacterCreator(userId, characterCreator);
 
-        // The name of the base character is the class name, the character name
-        // is attached to the PlayerCharacter object
-        await narrator.ponderAndReply(interaction, {
-            content: `Character *${pc.getName()}*, level ${pc.lvl} ${optionClass}, created...`,
-        }, true);
+        await characterCreator.showStep(interaction, true);
+    }
 
-        // If adding this character completes the party, then start the quest with an encounter
-        if (quest.areAllCharactersCreated()) {
-            await narrator.describeNewParty(quest.getCharacters());
+    private async createCharacterNext(interaction: ButtonPressInteraction) {
+        const { channelId, guildId } = interaction;
 
-            const container = new SectionBuilder()
-                .addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent("# Welcome to Discordia!"))
-                .setButtonAccessory(new ButtonBuilder()
-                    .setCustomId("quest")
-                    .setLabel("See Quest")
-                    .setStyle(ButtonStyle.Primary));
-            await narrator.ponderAndDescribe({
-                components: [container],
-                flags: MessageFlags.IsComponentsV2
+        this.assertQuestStarted(channelId);
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
             });
-
-            const world = this.worlds[guildId];
-            const partyBiome = world.getBiome(quest.getPartyCoordinates());
-            await narrator.describeSurroundings(partyBiome);
-
-            const forceType = this.forceEncounters[channelId];
-            const encounter = this.encounterBuilder
-                .build(partyBiome, quest.getCharacters(), narrator, forceType);
-            await quest.startEncounter(encounter);
+            return;
         }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        if (!characterCreator.isAtFinalStep()) {
+            characterCreator.nextStep();
+            await characterCreator.showStep(interaction);
+        } else {
+            const narrator = quest.getNarrator();
+            const character = this.creatureFactory
+                .createClassCharacter(characterCreator.getClassId());
+            const { lvlGains } = this.creatureFactory
+                .getCharacterClass(characterCreator.getClassId());
+            const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+
+            // The name of the base character is the class name, the character name
+            // is attached to the PlayerCharacter object
+            await narrator.ponderAndReply(interaction, {
+                content: `Character *${pc.getName()}*, level ${pc.lvl} ` +
+                    `${characterCreator.getClassId()}, created...`,
+            }, true);
+
+            // If adding this character completes the party, then start the quest with an encounter
+            if (quest.areAllCharactersCreated()) {
+                await narrator.describeNewParty(quest.getCharacters());
+
+                const container = new SectionBuilder()
+                    .addTextDisplayComponents((textDisplay) =>
+                        textDisplay.setContent("# Welcome to Discordia!"))
+                    .setButtonAccessory(new ButtonBuilder()
+                        .setCustomId("quest")
+                        .setLabel("See Quest")
+                        .setStyle(ButtonStyle.Primary));
+                await narrator.ponderAndDescribe({
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
+                });
+
+                const world = this.worlds[guildId];
+                const partyBiome = world.getBiome(quest.getPartyCoordinates());
+                await narrator.describeSurroundings(partyBiome);
+
+                const forceType = this.forceEncounters[channelId];
+                const encounter = this.encounterBuilder
+                    .build(partyBiome, quest.getCharacters(), narrator, forceType);
+                await quest.startEncounter(encounter);
+            }
+        }
+    }
+
+    private async createCharacterBack(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        characterCreator.prevStep();
+        await characterCreator.showStep(interaction);
+    }
+
+    private async cycleCharacterClass(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        characterCreator.nextClass();
+        await characterCreator.showStep(interaction);
+    }
+
+    private async cycleCharacterProfession(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        characterCreator.nextProfession();
+        await characterCreator.showStep(interaction);
+    }
+
+    private async chooseCharacterGift(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        const giftId = interaction.customId.split("-")[2];
+        characterCreator.chooseGift(Number(giftId));
+        await characterCreator.showStep(interaction);
     }
 
     private validateTravelDirection(guildId: string, channelId: string, direction: Direction) {
@@ -569,7 +777,10 @@ export default class QuestLord {
         }
     }
 
-    private async handleTravel(interaction: CommandInteraction): Promise<void> {
+    private async handleTravel(
+        interaction: CommandInteraction | ButtonPressInteraction | SelectMenuInteraction,
+        directionParam?: Direction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -589,7 +800,9 @@ export default class QuestLord {
                 ephemeral: true
             });
         } else {
-            const direction = interaction.options.getString("direction", true) as Direction;
+            const direction = interaction.isCommand()
+                ? interaction.options.getString("direction", true) as Direction
+                : directionParam as Direction;
             try {
                 this.validateTravelDirection(guildId, channelId, direction);
             } catch (err) {
@@ -1071,7 +1284,7 @@ export default class QuestLord {
             .addTextDisplayComponents((textDisplay) =>
                 textDisplay.setContent(`# Inventory (${description})`))
             .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(`### :coin: ${pc.getCharacter().getGp()} gp`))
+                textDisplay.setContent(`### :coin: ${pc.getCharacter().getGp()} gold`))
             .addSeparatorComponents(separator => separator);
         quantities.forEach((q, idx) => {
             container.addTextDisplayComponents((textDisplay) =>
@@ -1253,8 +1466,42 @@ export default class QuestLord {
         const narrator = quest.getNarrator();
         const partyBiome = world.getBiome(quest.getPartyCoordinates());
         await narrator.describeSurroundings(partyBiome);
-        await narrator.ponderAndDescribe("Where would you like to go? Use **/travel** to "
-            + "choose a direction.");
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) => textDisplay
+                .setContent("# Where would you like to go? :person_walking_facing_right:"))
+            .addSeparatorComponents((separator) => separator)
+            .addActionRowComponents((actionRow) =>
+                actionRow.setComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId("choose-direction")
+                        .setPlaceholder("Choose a direction")
+                        .addOptions(
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("North")
+                                .setValue("north")
+                                .setDescription("Travel north"),
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("South")
+                                .setValue("south")
+                                .setDescription("Travel south"),
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("East")
+                                .setValue("east")
+                                .setDescription("Travel east"),
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("West")
+                                .setValue("west")
+                                .setDescription("Travel west")
+                        )
+                ),
+            )
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("*Waiting for the party to choose a direction...*"));
+        await narrator.ponderAndDescribe({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+        });
     }
 
     private async awardExperience(channelId: string, xpReward: number) {

@@ -41,3 +41,5 @@ Rubic
 Sumor
 Teesmak
 Bagelly
+Nipnary
+Kruug

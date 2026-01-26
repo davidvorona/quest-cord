@@ -8,7 +8,9 @@ import {
     InteractionEditReplyOptions,
     MessageFlags,
     MessagePayload,
-    MessageCreateOptions
+    MessageCreateOptions,
+    ButtonStyle,
+    SectionBuilder
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
@@ -157,11 +159,19 @@ class Narrator {
         } else if (encounter instanceof RestEncounter) {
             await this.ponderAndDescribe("The days is yours! Rest, relax, and feel free to "
                 + "check your character status with **/status**.");
-        } else {
-            await this.ponderAndDescribe("You can travel with the **/travel** command.");
         }
         if (encounter instanceof FreeEncounter) {
-            await this.ponderAndDescribe("Whenever you're ready, use **/travel** to move on.");
+            const section = new SectionBuilder()
+                .addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent("Whenever you're ready, you can travel to move on."))
+                .setButtonAccessory(button => button
+                    .setCustomId("travel")
+                    .setLabel("Travel")
+                    .setStyle(ButtonStyle.Success));
+            await this.ponderAndDescribe({
+                components: [section],
+                flags: MessageFlags.IsComponentsV2
+            });
         }
     }
 

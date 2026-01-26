@@ -4,7 +4,7 @@ import Action, { ButtonExecuteFunction } from "../Action";
 
 type ButtonRow = 0 | 1;
 
-export default class Button extends Action {
+export default abstract class Button extends Action {
     customId: string;
 
     row: ButtonRow = 0;

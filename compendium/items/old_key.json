@@ -1,0 +1,7 @@
+{
+    "id": "old_key",
+    "name": "Old Key",
+    "description": "A rusty old key that fits a rusty old lock.",
+    "type": "treasure",
+    "value": 6
+}

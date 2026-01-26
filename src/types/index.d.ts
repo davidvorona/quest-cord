@@ -40,6 +40,7 @@ export interface BaseItem {
     name: string;
     type: string;
     value: number;
+    description?: string;
 }
 
 export interface BaseWeapon extends BaseItem {

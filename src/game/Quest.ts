@@ -1,3 +1,4 @@
+import { Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
@@ -13,6 +14,7 @@ import {
 } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
+import CharacterCreator from "../services/CharacterCreator";
 
 export default class Quest {
     readonly id: string;
@@ -24,6 +26,8 @@ export default class Quest {
     readonly narrator: Narrator;
 
     readonly pollBooth: PollBooth;
+
+    characterCreators: Record<Snowflake, CharacterCreator> = {};
 
     pcs: Record<string, PlayerCharacter | null> = {};
 
@@ -46,6 +50,14 @@ export default class Quest {
         const players: Record<string, null> = {};
         userIds.forEach(id => (players[id] = null));
         return players;
+    }
+
+    getCharacterCreator(userId: Snowflake) {
+        return this.characterCreators[userId];
+    }
+
+    setCharacterCreator(userId: Snowflake, creator: CharacterCreator) {
+        this.characterCreators[userId] = creator;
     }
 
     getNarrator() {
