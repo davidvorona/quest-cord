@@ -1,6 +1,7 @@
 {
     "id": "potion",
     "name": "Potion",
+    "description": "A small vial of red liquid that is warm to the touch.",
     "type": "consumable",
     "effects": {
         "hp": 2

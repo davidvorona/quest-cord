@@ -4,9 +4,11 @@
     "hp": 100,
     "damage": 5,
     "equipment": {
-        "weapon": "sword"
+        "weapon": "sword",
+        "offhand": "shield",
+        "armor": "chain_mail"
     },
-    "spells": ["fire_bolt"],
+    "spells": ["fire_bolt", "disintegrate"],
     "items": ["elixir", "potion", "ear", "torch", "skull", "wand"],
     "lvlGains": []
 }

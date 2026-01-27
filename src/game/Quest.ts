@@ -1,12 +1,20 @@
+import { Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
 import Command from "./actions/commands/Command";
-import { CommandInteraction, LevelGain, SelectMenuInteraction } from "../types";
+import Button from "./actions/buttons/Button";
+import {
+    ButtonPressInteraction,
+    CommandInteraction,
+    LevelGain,
+    SelectMenuInteraction
+} from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
+import CharacterCreator from "../services/CharacterCreator";
 
 export default class Quest {
     readonly id: string;
@@ -19,8 +27,11 @@ export default class Quest {
 
     readonly pollBooth: PollBooth;
 
+    characterCreators: Record<Snowflake, CharacterCreator> = {};
+
     pcs: Record<string, PlayerCharacter | null> = {};
 
+    lastCoordinates: [number, number] = [0, 0];
     coordinates: [number, number] = [0, 0];
 
     encounter?: Encounter;
@@ -39,6 +50,14 @@ export default class Quest {
         const players: Record<string, null> = {};
         userIds.forEach(id => (players[id] = null));
         return players;
+    }
+
+    getCharacterCreator(userId: Snowflake) {
+        return this.characterCreators[userId];
+    }
+
+    setCharacterCreator(userId: Snowflake, creator: CharacterCreator) {
+        this.characterCreators[userId] = creator;
     }
 
     getNarrator() {
@@ -123,11 +142,16 @@ export default class Quest {
     }
 
     setPartyCoordinates(coordinates: [number, number]) {
+        this.lastCoordinates = this.coordinates;
         this.coordinates = coordinates;
     }
 
     getPartyCoordinates() {
         return this.coordinates;
+    }
+
+    getPartyLastCoordinates() {
+        return this.lastCoordinates;
     }
 
     getEncounter() {
@@ -189,36 +213,55 @@ export default class Quest {
         }
     }
 
-    validateEncounterCommand(interaction: CommandInteraction, commandNameOverride?: string) {
+    validateEncounterInteraction(
+        interaction: CommandInteraction | ButtonPressInteraction,
+        commandNameOverride?: string
+    ) {
         if (!this.isInEncounter()) {
             throw new Error("There is no active encounter!");
         }
         // Assert interaction user has a valid player character
         this.assertPlayerCharacterExists(interaction.user.id);
-        // Validate the command itself
-        const commandName = commandNameOverride || interaction.options.getSubcommand();
-        const command = this.encounter.assertAndGetCommand(commandName);
+        // Validate the interaction itself
+        let action;
+        if (interaction.isCommand()) {
+            action = this.encounter
+                .assertAndGetCommand(commandNameOverride || interaction.options.getSubcommand());
+        } else {
+            action = this.encounter.assertAndGetButton(interaction.customId);
+        }
         // If turn-based, validate the player's turn
         if (
             this.encounter instanceof TurnBasedEncounter
-            && this.encounter.isActionTurnConsuming(command)
+            && this.encounter.isActionTurnConsuming(action)
         ) {
             this.validatePlayerTurn(interaction.user.id);
         }
-        return command;
+        return action;
     }
 
-    async handleEncounterCommand(interaction: CommandInteraction, command: Command) {
+    async handleEncounterInteraction(
+        interaction: CommandInteraction | ButtonPressInteraction,
+        action: Command | Button
+    ) {
         if (!this.isInEncounter()) {
             throw new Error("There is no active encounter!");
         }
         const playerCharacter = this.assertAndGetPlayerCharacter(interaction.user.id);
 
-        await this.encounter.handleCommand(
-            interaction,
-            command,
-            playerCharacter.getCharacter()
-        );
+        if (interaction.isCommand()) {
+            await this.encounter.handleCommand(
+                interaction,
+                action as Command,
+                playerCharacter.getCharacter()
+            );
+        } else if (interaction.isButton()) {
+            await this.encounter.handleButton(
+                interaction,
+                action as Button,
+                playerCharacter.getCharacter()
+            );
+        }
 
         if (this.encounter.isOver()) {
             const results = this.encounter.getResults();
@@ -227,7 +270,7 @@ export default class Quest {
 
         if (
             this.encounter instanceof TurnBasedEncounter
-            && this.encounter.isActionTurnConsuming(command)
+            && this.encounter.isActionTurnConsuming(action)
         ) {
             await this.encounter.handleNextTurn();
             if (this.encounter.isOver()) {

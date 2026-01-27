@@ -1,6 +1,7 @@
 {
     "id": "elixir",
     "name": "Elixir",
+    "description": "A frothing concoction that promises power.",
     "type": "consumable",
     "effects": {
         "damage": 1

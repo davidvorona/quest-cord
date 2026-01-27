@@ -6,86 +6,111 @@ import {
 import Character from "../../creatures/Character";
 import FreeEncounter from "../FreeEncounter";
 import NonPlayerCharacter from "../../NonPlayerCharacter";
-import { CommandInteraction, SelectMenuInteraction } from "../../../types";
+import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../../types";
+import { EncounterType } from "../../../constants";
 import Narrator from "../../Narrator";
 import {
     BuyCommand,
     SellCommand,
     BuySelection,
-    SellSelection
+    SellSelection,
+    BuyButton,
+    SellButton
 } from "../../actions";
 import Item from "../../things/Item";
 import Inventory from "../../creatures/Inventory";
 
 export default class MerchantEncounter extends FreeEncounter {
+    type = EncounterType.Merchant;
+    description = "Trading with a merchant! :coin:";
+
     merchant: NonPlayerCharacter;
 
-    commands = {
-        buy: new BuyCommand(async (interaction: CommandInteraction) => {
-            const options = this.getMerchant()
-                .getCharacter()
-                .getInventory()
-                .getInteractionOptions();
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription("What do you want to buy?");
-            const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-                .addComponents(
-                    new StringSelectMenuBuilder()
-                        .setCustomId("buy")
-                        .setPlaceholder("Nothing selected")
-                        .setMinValues(1)
-                        .setMaxValues(options.length)
-                        .addOptions(options)
-                );
-            await this.narrator.reply(interaction, {
-                ephemeral: true,
-                embeds: [embed],
-                components: [row]
-            });
-        }),
-        sell: new SellCommand(async (interaction: CommandInteraction, character: Character) => {
-            const options = character.getInventory().getInteractionOptions();
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setDescription("What do you want to sell?");
-            const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-                .addComponents(
-                    new StringSelectMenuBuilder()
-                        .setCustomId("sell")
-                        .setPlaceholder("Nothing selected")
-                        .setMinValues(1)
-                        .setMaxValues(options.length)
-                        .addOptions(options)
-                );
-            await this.narrator.reply(interaction, {
-                ephemeral: true,
-                embeds: [embed],
-                components: [row]
-            });
-        })
+    handlePlayerBuy = async (interaction: CommandInteraction | ButtonPressInteraction) => {
+        const options = this.getMerchant()
+            .getCharacter()
+            .getInventory()
+            .getInteractionOptions();
+        const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setDescription("What do you want to buy?");
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId("buy")
+                    .setPlaceholder("Nothing selected")
+                    .setMinValues(1)
+                    .setMaxValues(options.length)
+                    .addOptions(options)
+            );
+        await this.narrator.reply(interaction, {
+            ephemeral: true,
+            embeds: [embed],
+            components: [row]
+        });
     };
 
-    menus = [
-        new BuySelection(async (interaction: SelectMenuInteraction, character: Character) => {
-            const itemIds = interaction.values;
-            const merchantCharacter = this.merchant.getCharacter();
-            const embed = this.doTransaction(character, merchantCharacter, itemIds);
-            await this.narrator.update(interaction, {
-                embeds: [embed],
-                components: []
-            });
-        }),
-        new SellSelection(async (interaction: SelectMenuInteraction, character: Character) => {
-            const itemIds = interaction.values;
-            const merchantCharacter = this.merchant.getCharacter();
-            const embed = this.doTransaction(merchantCharacter, character, itemIds);
-            await this.narrator.update(interaction, {
-                embeds: [embed],
-                components: []
-            });
-        })
-    ];
+    handlePlayerSell = async (
+        interaction: CommandInteraction | ButtonPressInteraction,
+        character: Character
+    ) => {
+        const options = character.getInventory().getInteractionOptions();
+        const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setDescription("What do you want to sell?");
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId("sell")
+                    .setPlaceholder("Nothing selected")
+                    .setMinValues(1)
+                    .setMaxValues(options.length)
+                    .addOptions(options)
+            );
+        await this.narrator.reply(interaction, {
+            ephemeral: true,
+            embeds: [embed],
+            components: [row]
+        });
+    };
+
+    handlePlayerBuySelection = async (interaction: SelectMenuInteraction, character: Character) => {
+        const itemIds = interaction.values;
+        const merchantCharacter = this.merchant.getCharacter();
+        const embed = this.doTransaction(character, merchantCharacter, itemIds);
+        await this.narrator.update(interaction, {
+            embeds: [embed],
+            components: []
+        });
+    };
+
+    handlePlayerSellSelection = async (
+        interaction: SelectMenuInteraction,
+        character: Character
+    ) => {
+        const itemIds = interaction.values;
+        const merchantCharacter = this.merchant.getCharacter();
+        const embed = this.doTransaction(merchantCharacter, character, itemIds);
+        await this.narrator.update(interaction, {
+            embeds: [embed],
+            components: []
+        });
+    };
+
+    commands = {
+        buy: new BuyCommand(this.handlePlayerBuy),
+        sell: new SellCommand(this.handlePlayerSell)
+    };
+
+    menus = {
+        buy: new BuySelection(this.handlePlayerBuySelection),
+        sell: new SellSelection(this.handlePlayerSellSelection)
+    };
+
+    buttons = {
+        buy: new BuyButton(this.handlePlayerBuy),
+        sell: new SellButton(this.handlePlayerSell)
+    };
 
     constructor(characters: Character[], narrator: Narrator, merchant: NonPlayerCharacter) {
         super(characters, narrator);

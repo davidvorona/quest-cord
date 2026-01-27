@@ -9,20 +9,35 @@ import {
     EmbedBuilder,
     GuildMember,
     PermissionsBitField,
-    AttachmentBuilder
+    AttachmentBuilder,
+    MessageFlags,
+    ButtonInteraction,
+    ButtonBuilder,
+    ContainerBuilder,
+    ButtonStyle,
+    SectionBuilder,
+    TextDisplayBuilder,
+    StringSelectMenuOptionBuilder
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
 import EncounterBuilder from "../services/EncounterBuilder";
+import CharacterCreator from "../services/CharacterCreator";
 import { PollType } from "./polls/PollBooth";
 import CreatureFactory from "../services/CreatureFactory";
 import {
     Direction,
     QuestLordInteraction,
     CommandInteraction,
-    SelectMenuInteraction
+    SelectMenuInteraction,
+    ButtonPressInteraction,
 } from "../types";
-import { getPlayersFromStartCommand, isEmpty, sendMissingPermissionsMessage } from "../util";
+import {
+    getEncounterInteractionName,
+    getPlayersFromStartCommand,
+    isEmpty,
+    sendMissingPermissionsMessage
+} from "../util";
 import Quest from "./Quest";
 import World from "./World";
 import Narrator from "./Narrator";
@@ -50,12 +65,15 @@ export default class QuestLord {
 
     forceEncounters: Record<string, EncounterType> = {};
 
+    compendium: CompendiumReader;
+
     constructor(compendium: CompendiumReader) {
         console.info("Summoning the Quest Lord...");
         this.itemFactory = new ItemFactory(compendium);
         this.spellFactory = new SpellFactory(compendium);
         this.creatureFactory = new CreatureFactory(compendium, this.itemFactory, this.spellFactory);
         this.encounterBuilder = new EncounterBuilder(this.creatureFactory);
+        this.compendium = compendium;
     }
 
     /* VALIDATION */
@@ -139,6 +157,9 @@ export default class QuestLord {
             if (interaction.isStringSelectMenu()) {
                 await this.handleSelectMenuInteraction(interaction);
             }
+            if (interaction.isButton()) {
+                await this.handleButtonInteraction(interaction);
+            }
         } catch (err) {
             console.error("Something went very wrong:", err);
         }
@@ -170,7 +191,7 @@ export default class QuestLord {
 
             // User creates a character to join quest
             if (interaction.commandName === "play") {
-                await this.createCharacter(interaction);
+                await this.startCharacterCreation(interaction);
             }
 
             // User requests to travel in a direction
@@ -266,6 +287,11 @@ export default class QuestLord {
             if (interaction.customId === "sell") {
                 await this.handleSell(interaction);
             }
+
+            if (interaction.customId === "choose-direction") {
+                const direction = interaction.values[0] as Direction;
+                await this.handleTravel(interaction, direction);
+            }
         } catch (err) {
             const errMessage = err instanceof Error
                 ? err.message : "Unable to submit selection, try again.";
@@ -281,6 +307,126 @@ export default class QuestLord {
                 });
             }
 
+        }
+    }
+
+    private async handleButtonInteraction(interaction: ButtonInteraction) {
+        try {
+            console.info(
+                `Processing button '${interaction.customId}'`
+            );
+            if (!QuestLord.isValidInteraction(interaction)) return;
+
+            if (interaction.customId === "play") {
+                await this.startCharacterCreation(interaction);
+            }
+
+            if (interaction.customId === "char-creator-next") {
+                await this.createCharacterNext(interaction);
+            }
+
+            if (interaction.customId === "char-creator-back") {
+                await this.createCharacterBack(interaction);
+            }
+
+            if (interaction.customId === "next-class") {
+                await this.cycleCharacterClass(interaction);
+            }
+
+            if (interaction.customId === "next-profession") {
+                await this.cycleCharacterProfession(interaction);
+            }
+
+            if (interaction.customId.includes("choose-gift-")) {
+                await this.chooseCharacterGift(interaction);
+            }
+
+            if (interaction.customId === "quest") {
+                await this.displayQuest(interaction);
+            }
+
+            if (interaction.customId === "map") {
+                await this.displayLocalMap(interaction);
+            }
+
+            if (interaction.customId === "inventory") {
+                await this.displayInventory(interaction);
+            }
+
+            if (interaction.customId === "character") {
+                await this.displayStatus(interaction);
+            }
+
+            if (interaction.customId === "encounter") {
+                await this.displayEncounter(interaction);
+            }
+
+            if (interaction.customId === "travel") {
+                await this.promptTravel(interaction.guildId, interaction.channelId);
+            }
+
+            if (interaction.customId === "move") {
+                await this.handleMove(interaction);
+            }
+
+            if (interaction.customId === "skip") {
+                await this.handleSkipTurn(interaction);
+            }
+
+            if (interaction.customId === "attack") {
+                await this.promptAttack(interaction);
+            }
+
+            if (interaction.customId === "spell") {
+                await this.promptCastSpell(interaction);
+            }
+
+            if (interaction.customId === "use") {
+                await this.promptUse(interaction);
+            }
+
+            if (interaction.customId === "lookout") {
+                await this.handleLookout(interaction);
+            }
+
+            if (interaction.customId === "buy") {
+                await this.promptBuy(interaction);
+            }
+
+            if (interaction.customId === "sell") {
+                await this.promptSell(interaction);
+            }
+
+            if (interaction.customId === "talk") {
+                await this.handleTalk(interaction);
+            }
+
+            if (interaction.customId === "ignore") {
+                await this.handleIgnore(interaction);
+            }
+
+            if (interaction.customId === "sneak") {
+                await this.handleSneak(interaction);
+            }
+
+            if (interaction.customId === "surprise") {
+                await this.handleSurprise(interaction);
+            }
+        } catch (err) {
+            const errMessage = err instanceof Error
+                ? err.message : "Unable to handle button, try again.";
+            console.error(`Failed to process '/${interaction.customId}' button `
+                + "due to:", errMessage);
+            if (!interaction.replied) {
+                await interaction.reply({
+                    content: errMessage,
+                    flags: MessageFlags.Ephemeral
+                });
+            } else {
+                await interaction.editReply({
+                    content: errMessage
+                });
+            }
         }
     }
 
@@ -318,6 +464,9 @@ export default class QuestLord {
             }
             if (subcommand === "lookout") {
                 await this.handleLookout(interaction);
+            }
+            if (subcommand === "skip") {
+                await this.handleSkipTurn(interaction);
             }
         } catch (e) {
             const errMessage = e instanceof Error
@@ -375,21 +524,30 @@ export default class QuestLord {
 
         await narrator.ponderAndReply(interaction, {
             content: `Quest created for **${players.length}** players...`,
-            ephemeral: true
-        });
+        },  true);
+
+        const container = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(
+                    `${players.join(" ")} A quest has been posted...`))
+            .setButtonAccessory((button => button
+                .setCustomId("play").setLabel("Accept Quest").setStyle(ButtonStyle.Success)));
+
 
         // Invite players to create characters and join the quest
-        await narrator.ponderAndDescribe(
-            `${players.join(" ")} Adventure calls you, **/play** to journey to *Discordia*...`
-        );
+        await narrator.ponderAndDescribe({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+        });
     }
 
-    private async createCharacter(interaction: CommandInteraction): Promise<void> {
-        const { guildId, channelId } = interaction;
+    private async startCharacterCreation(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
+        const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const narrator = quest.getNarrator();
         const userId = interaction.user.id;
         // Ensure user is in questing party
         if (!quest.isUserInParty(userId)) {
@@ -398,8 +556,8 @@ export default class QuestLord {
                 ephemeral: true
             });
             return;
-        // Ensure user has not already created a character
         }
+        // Ensure user has not already created a character
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
@@ -408,31 +566,198 @@ export default class QuestLord {
             return;
         }
 
-        const optionClass = interaction.options.getString("class", true);
-        const character = this.creatureFactory.createClassCharacter(optionClass);
-        const { lvlGains } = this.creatureFactory.getCharacterClass(optionClass);
-        const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+        const characterCreator = new CharacterCreator(this.compendium);
+        quest.setCharacterCreator(userId, characterCreator);
 
-        // The name of the base character is the class name, the character name
-        // is attached to the PlayerCharacter object
-        await narrator.ponderAndReply(interaction, {
-            content: `Character *${pc.getName()}*, level ${pc.lvl} ${optionClass}, created...`,
-            ephemeral: true
-        });
+        await characterCreator.showStep(interaction, true);
+    }
 
-        // If adding this character completes the party, then start the quest with an encounter
-        if (quest.areAllCharactersCreated()) {
-            await narrator.describeNewParty(quest.getCharacters());
+    private async createCharacterNext(interaction: ButtonPressInteraction) {
+        const { channelId, guildId } = interaction;
 
-            const world = this.worlds[guildId];
-            const partyBiome = world.getBiome(quest.getPartyCoordinates());
-            await narrator.describeSurroundings(partyBiome);
-
-            const forceType = this.forceEncounters[channelId];
-            const encounter = this.encounterBuilder
-                .build(partyBiome, quest.getCharacters(), narrator, forceType);
-            await quest.startEncounter(encounter);
+        this.assertQuestStarted(channelId);
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
         }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        if (!characterCreator.isAtFinalStep()) {
+            characterCreator.nextStep();
+            await characterCreator.showStep(interaction);
+        } else {
+            const narrator = quest.getNarrator();
+            const character = this.creatureFactory
+                .createClassCharacter(characterCreator.getClassId());
+            const { lvlGains } = this.creatureFactory
+                .getCharacterClass(characterCreator.getClassId());
+            const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+
+            // The name of the base character is the class name, the character name
+            // is attached to the PlayerCharacter object
+            await narrator.ponderAndReply(interaction, {
+                content: `Character *${pc.getName()}*, level ${pc.lvl} ` +
+                    `${characterCreator.getClassId()}, created...`,
+            }, true);
+
+            // If adding this character completes the party, then start the quest with an encounter
+            if (quest.areAllCharactersCreated()) {
+                await narrator.describeNewParty(quest.getCharacters());
+
+                const container = new SectionBuilder()
+                    .addTextDisplayComponents((textDisplay) =>
+                        textDisplay.setContent("# Welcome to Discordia!"))
+                    .setButtonAccessory(new ButtonBuilder()
+                        .setCustomId("quest")
+                        .setLabel("See Quest")
+                        .setStyle(ButtonStyle.Primary));
+                await narrator.ponderAndDescribe({
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
+                });
+
+                const world = this.worlds[guildId];
+                const partyBiome = world.getBiome(quest.getPartyCoordinates());
+                await narrator.describeSurroundings(partyBiome);
+
+                const forceType = this.forceEncounters[channelId];
+                const encounter = this.encounterBuilder
+                    .build(partyBiome, quest.getCharacters(), narrator, forceType);
+                await quest.startEncounter(encounter);
+            }
+        }
+    }
+
+    private async createCharacterBack(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        characterCreator.prevStep();
+        await characterCreator.showStep(interaction);
+    }
+
+    private async cycleCharacterClass(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        characterCreator.nextClass();
+        await characterCreator.showStep(interaction);
+    }
+
+    private async cycleCharacterProfession(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        characterCreator.nextProfession();
+        await characterCreator.showStep(interaction);
+    }
+
+    private async chooseCharacterGift(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const userId = interaction.user.id;
+        // Ensure user is in questing party
+        if (!quest.isUserInParty(userId)) {
+            await interaction.reply({
+                content: "Destiny has not claimed you yet, your time will come...",
+                ephemeral: true
+            });
+            return;
+        }
+        // Ensure user has not already created a character
+        if (quest.isCharacterCreated(userId)) {
+            await interaction.reply({
+                content: "You already have a character in the questing party.",
+                ephemeral: true
+            });
+            return;
+        }
+
+        const characterCreator = quest.getCharacterCreator(userId);
+
+        const giftId = interaction.customId.split("-")[2];
+        characterCreator.chooseGift(Number(giftId));
+        await characterCreator.showStep(interaction);
     }
 
     private validateTravelDirection(guildId: string, channelId: string, direction: Direction) {
@@ -452,7 +777,10 @@ export default class QuestLord {
         }
     }
 
-    private async handleTravel(interaction: CommandInteraction): Promise<void> {
+    private async handleTravel(
+        interaction: CommandInteraction | ButtonPressInteraction | SelectMenuInteraction,
+        directionParam?: Direction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -472,7 +800,9 @@ export default class QuestLord {
                 ephemeral: true
             });
         } else {
-            const direction = interaction.options.getString("direction", true) as Direction;
+            const direction = interaction.isCommand()
+                ? interaction.options.getString("direction", true) as Direction
+                : directionParam as Direction;
             try {
                 this.validateTravelDirection(guildId, channelId, direction);
             } catch (err) {
@@ -526,15 +856,17 @@ export default class QuestLord {
         }
     }
 
-    private async handleSneak(interaction: CommandInteraction): Promise<void> {
+    private async handleSneak(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const stealthAction = interaction.options.getSubcommand();
+        const stealthAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -547,22 +879,24 @@ export default class QuestLord {
             PollType.Stealth,
             stealthAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                const results = await quest.handleEncounterInteraction(interaction, command);
                 await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
-    private async handleSurprise(interaction: CommandInteraction): Promise<void> {
+    private async handleSurprise(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const stealthAction = interaction.options.getSubcommand();
+        const stealthAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -575,8 +909,8 @@ export default class QuestLord {
             PollType.Stealth,
             stealthAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                await quest.handleEncounterInteraction(interaction, command);
 
                 if (!quest.isInEncounter() || !(quest.encounter instanceof StealthEncounter)) {
                     throw new Error("Invalid stealth encounter, aborting");
@@ -596,15 +930,17 @@ export default class QuestLord {
         );
     }
 
-    private async handleTalk(interaction: CommandInteraction): Promise<void> {
+    private async handleTalk(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const socialAction = interaction.options.getSubcommand();
+        const socialAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -617,22 +953,24 @@ export default class QuestLord {
             PollType.Social,
             socialAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                const results = await quest.handleEncounterInteraction(interaction, command);
                 await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
-    private async handleIgnore(interaction: CommandInteraction): Promise<void> {
+    private async handleIgnore(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        quest.validateEncounterCommand(interaction);
+        quest.validateEncounterInteraction(interaction);
 
         const pollBooth = quest.getPollBooth();
-        const socialAction = interaction.options.getSubcommand();
+        const socialAction = getEncounterInteractionName(interaction);
 
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
@@ -645,20 +983,22 @@ export default class QuestLord {
             PollType.Social,
             socialAction,
             async (vote: string) => {
-                const command = quest.validateEncounterCommand(interaction, vote);
-                const results = await quest.handleEncounterCommand(interaction, command);
+                const command = quest.validateEncounterInteraction(interaction, vote);
+                const results = await quest.handleEncounterInteraction(interaction, command);
                 await this.handleEncounterResults(guildId, channelId, results);
             }
         );
     }
 
-    private async promptBuy(interaction: CommandInteraction): Promise<void> {
+    private async promptBuy(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, command);
     }
 
     private async handleBuy(interaction: SelectMenuInteraction): Promise<void> {
@@ -670,13 +1010,15 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async promptSell(interaction: CommandInteraction): Promise<void> {
+    private async promptSell(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, command);
     }
 
     private async handleSell(interaction: SelectMenuInteraction): Promise<void> {
@@ -691,18 +1033,22 @@ export default class QuestLord {
     // TODO: This would be an example of a command anyone can do that doesn't require
     // a poll to be executed. We need a way to lock this command until it resolves so
     // submissions by multiple users don't cause a race condition.
-    private async handleLookout(interaction: CommandInteraction): Promise<void> {
+    private async handleLookout(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        const results = await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        const results = await quest.handleEncounterInteraction(interaction, command);
 
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async promptUse(interaction: CommandInteraction): Promise<void> {
+    private async promptUse(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -711,8 +1057,10 @@ export default class QuestLord {
         if (quest.isInEncounter()) {
             // Override the command name here since typical encounter commands are
             // subcommands of /action
-            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
-            await quest.handleEncounterCommand(interaction, command);
+            const commandNameOverride = interaction.isCommand()
+                ? interaction.commandName : interaction.customId;
+            const command = quest.validateEncounterInteraction(interaction, commandNameOverride);
+            await quest.handleEncounterInteraction(interaction, command);
         // Otherwise, let them use items to their heart's content
         } else {
             // TODO: This code is a copy of what is in the base CombatEncounter 'commands' list,
@@ -768,27 +1116,32 @@ export default class QuestLord {
         }
     }
 
-    private async handleMove(interaction: CommandInteraction): Promise<void> {
+    private async handleMove(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
         // Movement only allowed for now during an encounter
         if (quest.isInEncounter()) {
-            const command = quest.validateEncounterCommand(interaction, interaction.commandName);
-            await quest.handleEncounterCommand(interaction, command);
+            const action = quest.validateEncounterInteraction(
+                interaction, getEncounterInteractionName(interaction));
+            await quest.handleEncounterInteraction(interaction, action);
         } else {
             throw new Error("Invalid quest state for movement, aborting");
         }
     }
 
-    private async promptAttack(interaction: CommandInteraction): Promise<void> {
+    private async promptAttack(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        const results = await quest.handleEncounterCommand(interaction, command);
+        const action = quest.validateEncounterInteraction(interaction);
+        const results = await quest.handleEncounterInteraction(interaction, action);
 
         await this.handleEncounterResults(guildId, channelId, results);
     }
@@ -803,13 +1156,15 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async promptCastSpell(interaction: CommandInteraction): Promise<void> {
+    private async promptCastSpell(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        const command = quest.validateEncounterCommand(interaction);
-        await quest.handleEncounterCommand(interaction, command);
+        const command = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, command);
     }
 
     private async handleCastSpell(interaction: SelectMenuInteraction): Promise<void> {
@@ -832,7 +1187,90 @@ export default class QuestLord {
         await this.handleEncounterResults(guildId, channelId, results);
     }
 
-    private async displayInventory(interaction: CommandInteraction): Promise<void> {
+    private async handleSkipTurn(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        if (quest.isInEncounter()) {
+            const command = quest.validateEncounterInteraction(interaction);
+            await quest.handleEncounterInteraction(interaction, command);
+        } else {
+            throw new Error("Invalid quest state for skipping turn, aborting");
+        }
+    }
+
+    async displayQuest(interaction: ButtonPressInteraction | CommandInteraction) {
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+
+        const className = pc.getCharacter().baseId;
+        const file = new AttachmentBuilder(`assets/${className}.png`);
+
+        const world = this.worlds[guildId];
+        const coords = quest.getPartyCoordinates();
+        const direction = world.getDirectionFromTwoCoordinates(
+            quest.getPartyLastCoordinates(), coords) || "nowhere";
+        const biome = world.getBiome(coords);
+        const encounterDesc = quest.getEncounter()?.getDescription() || "Exploring...";
+
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("# Questing - *Day 1*"))
+            .addSeparatorComponents(separator => separator)
+            .addSectionComponents((section) =>
+                section.addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(":scroll: *Character*"),
+                (textDisplay) => textDisplay.setContent(`## ${pc.getName()}`),
+                (textDisplay) => textDisplay.setContent(`### Level ${pc.lvl} ${className}`))
+                    .setThumbnailAccessory((thumbnail) =>
+                        thumbnail
+                            .setURL(`attachment://${className}.png`)
+                            .setDescription(`alt text ${className}`)))
+            .addSeparatorComponents(separator => separator)
+            .addSectionComponents((section) =>
+                section.addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(":map: *Bearings*"),
+                (textDisplay) => textDisplay
+                    .setContent(`### ${
+                        biome === "beach" ? "At" : "In"
+                    } the ${biome}, heading ${direction}`),
+                (textDisplay) => textDisplay.setContent(encounterDesc))
+                    .setButtonAccessory(button => button
+                        .setCustomId("map")
+                        .setLabel("See Local Map")
+                        .setStyle(ButtonStyle.Secondary)));
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+                .setCustomId("character")
+                .setLabel("See Character")
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId("inventory")
+                .setLabel("View Inventory")
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId("encounter")
+                .setLabel("View Encounter")
+                .setStyle(ButtonStyle.Danger)
+        );
+
+        await interaction.reply({
+            components: [container, buttonRow],
+            files: [file],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+        });
+    }
+
+    private async displayInventory(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ): Promise<void> {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -840,29 +1278,34 @@ export default class QuestLord {
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
 
         const quantities = pc.getCharacter().getInventory().getQuantities();
-        const description = quantities.length
-            ? `${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}`
-            : "Inventory is empty";
-        const fields = quantities.map((q) => ({
-            name: q.item.name,
-            value: q.quantity.toString(),
-            inline: true
-        }));
-        const thumbnail = new AttachmentBuilder("assets/inventory.png");
-        const embed = new EmbedBuilder()
-            .setColor("#0099ff")
-            .setTitle("Your inventory")
-            .setAuthor({ name: description })
-            .setThumbnail("attachment://inventory.png")
-            .addFields(fields);
+        const description = `*${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}*`;
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`# Inventory (${description})`))
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`### :coin: ${pc.getCharacter().getGp()} gold`))
+            .addSeparatorComponents(separator => separator);
+        quantities.forEach((q, idx) => {
+            container.addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`*${q.item.name}* x${q.quantity}`));
+            if (idx < quantities.length - 1) {
+                container.addSeparatorComponents(separator => separator);
+            }
+        });
+        if (quantities.length === 0) {
+            container.addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("*Inventory is empty*"));
+        }
         await interaction.reply({
-            embeds: [embed],
-            ephemeral: true,
-            files: [thumbnail]
+            components: [container],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     }
 
-    private async displayStatus(interaction: CommandInteraction): Promise<void> {
+    private async displayStatus(
+        interaction: CommandInteraction | ButtonPressInteraction
+    ) {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -871,25 +1314,59 @@ export default class QuestLord {
 
         const className = pc.getCharacter().baseId;
         const thumbnail = new AttachmentBuilder(`assets/${className}.png`);
-        const embed = new EmbedBuilder()
-            .setColor("#0099ff")
-            .setTitle(pc.getName())
-            .setDescription(`Level ${pc.lvl} ${className}`)
-            .setThumbnail(`attachment://${className}.png`)
-            .addFields(
-                {
-                    name: "Hitpoints",
-                    value: `${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}`
-                }
+
+        const equipmentTextDisplay = [];
+        const equipment = pc.getEquipment();
+        if (equipment.weapon) {
+            equipmentTextDisplay.push(`Weapon: *${equipment.weapon.name}*`);
+        }
+        if (equipment.offhand) {
+            equipmentTextDisplay.push(`Offhand: *${equipment.offhand.name}*`);
+        }
+        if (equipment.armor) {
+            equipmentTextDisplay.push(`Armor: *${equipment.armor.name}*`);
+        }
+        if (equipment.helm) {
+            equipmentTextDisplay.push(`Helm: *${equipment.helm.name}*`);
+        }
+        if (equipment.boots) {
+            equipmentTextDisplay.push(`Boots: *${equipment.boots.name}*`);
+        }
+        if (equipment.cape) {
+            equipmentTextDisplay.push(`Cape: *${equipment.cape.name}*`);
+        }
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`# ${pc.getName()}`))
+            .addSeparatorComponents(separator => separator)
+            .addSectionComponents((section) =>
+                section.addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(`### :bar_chart: Level ${pc.lvl} ${className}`),
+                (textDisplay) => textDisplay.setContent(
+                    `### :fireworks: *${pc.xp} / 150* xp to level`))
+                    .setThumbnailAccessory((thumbnail) =>
+                        thumbnail
+                            .setURL(`attachment://${className}.png`)
+                            .setDescription(`alt text ${className}`)))
+            .addSeparatorComponents(separator => separator)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(
+                    `### :heart: *${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}*`))
+            .addSeparatorComponents(separator => separator)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("### :crossed_swords: Equipment"),
+            ...equipmentTextDisplay.map(d =>
+                (textDisplay: TextDisplayBuilder) => textDisplay.setContent(d))
             );
         await interaction.reply({
-            embeds: [embed],
-            ephemeral: true,
-            files: [thumbnail]
+            components: [container],
+            files: [thumbnail],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     }
 
-    private async displayLocalMap(interaction: CommandInteraction) {
+    private async displayLocalMap(interaction: CommandInteraction | ButtonPressInteraction) {
         const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
@@ -904,6 +1381,67 @@ export default class QuestLord {
             content: localMap,
             ephemeral: true
         });
+    }
+
+    private async displayEncounter(interaction: CommandInteraction | ButtonPressInteraction) {
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+
+        if (quest.isInEncounter()) {
+            const world = this.worlds[guildId];
+            const biome = world.getBiome(quest.getPartyCoordinates());
+            const encounterDesc = quest.encounter.getDescription() || "Exploring...";
+
+            const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+
+            const components = [];
+            const container = new ContainerBuilder()
+                .setAccentColor(0x0099ff)
+                .addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(`# ${encounterDesc}`))
+                .addSeparatorComponents(separator => separator)
+                .addSectionComponents((section) =>
+                    section.addTextDisplayComponents((textDisplay) =>
+                        textDisplay.setContent(
+                            `### :heart: ${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}`),
+                    (textDisplay) => textDisplay
+                        .setContent(`### :map: ${
+                            biome === "beach" ? "At" : "In"
+                        } the ${biome}`))
+                        .setButtonAccessory(button => button
+                            .setCustomId("map")
+                            .setLabel("See Local Map")
+                            .setStyle(ButtonStyle.Secondary)));
+            const buttons = quest.encounter.buttons;
+            const row0 = new ActionRowBuilder<ButtonBuilder>();
+            const row1 = new ActionRowBuilder<ButtonBuilder>();
+            for (const action in buttons) {
+                const button = buttons[action];
+                if (button.row === 0) {
+                    row0.addComponents(button.getButton());
+                } else {
+                    row1.addComponents(button.getButton());
+                }
+            }
+            components.push(container);
+            if (row0.components.length > 0) {
+                components.push(row0);
+            }
+            if (row1.components.length > 0) {
+                components.push(row1);
+            }
+            await interaction.reply({
+                components,
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+        } else {
+            await interaction.reply({
+                content: "The party is not currently in an encounter.",
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
     }
 
     /* OTHER METHODS */
@@ -928,8 +1466,42 @@ export default class QuestLord {
         const narrator = quest.getNarrator();
         const partyBiome = world.getBiome(quest.getPartyCoordinates());
         await narrator.describeSurroundings(partyBiome);
-        await narrator.ponderAndDescribe("Where would you like to go? Use **/travel** to "
-            + "choose a direction.");
+        const container = new ContainerBuilder()
+            .setAccentColor(0x0099ff)
+            .addTextDisplayComponents((textDisplay) => textDisplay
+                .setContent("# Where would you like to go? :person_walking_facing_right:"))
+            .addSeparatorComponents((separator) => separator)
+            .addActionRowComponents((actionRow) =>
+                actionRow.setComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId("choose-direction")
+                        .setPlaceholder("Choose a direction")
+                        .addOptions(
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("North")
+                                .setValue("north")
+                                .setDescription("Travel north"),
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("South")
+                                .setValue("south")
+                                .setDescription("Travel south"),
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("East")
+                                .setValue("east")
+                                .setDescription("Travel east"),
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel("West")
+                                .setValue("west")
+                                .setDescription("Travel west")
+                        )
+                ),
+            )
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("*Waiting for the party to choose a direction...*"));
+        await narrator.ponderAndDescribe({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+        });
     }
 
     private async awardExperience(channelId: string, xpReward: number) {

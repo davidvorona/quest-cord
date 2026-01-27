@@ -1,6 +1,8 @@
-import { CommandInteraction, SelectMenuInteraction } from "../../types";
+import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../types";
 import Command from "../actions/commands/Command";
 import Selection from "../actions/selections/Selection";
+import { ExecuteFunction } from "../actions/Action";
+import Button from "../actions/buttons/Button";
 import Character from "../creatures/Character";
 import Narrator from "../Narrator";
 
@@ -16,15 +18,25 @@ export default class Encounter {
 
     narrator: Narrator;
 
+    handlers: Record<string, ExecuteFunction> = {};
+
     commands: Record<string, Command> = {};
 
-    menus: Selection[] = [];
+    buttons: Record<string, Button> = {};
+
+    menus: Record<string, Selection> = {};
+
+    // Strings for display purposes
+    type: string = "";
+    description = "In an encounter...";
 
     constructor(characters: Character[], narrator: Narrator, turnBased = false) {
         this.characters = characters;
         this.narrator = narrator;
         this.turnBased = turnBased;
     }
+
+    getDescription = () => this.description;
 
     getCharacters = () => this.characters;
 
@@ -62,7 +74,7 @@ export default class Encounter {
         return command;
     }
 
-    getMenu = (customId: string) => this.menus.find(s => s.customId === customId);
+    getMenu = (customId: string) => this.menus[customId];
 
     assertAndGetMenu(customId: string) {
         const menu = this.getMenu(customId);
@@ -72,12 +84,33 @@ export default class Encounter {
         return menu;
     }
 
+    getButton = (customId: string) => this.buttons[customId];
+
+    assertAndGetButton(customId: string) {
+        const button = this.getButton(customId);
+        if (!button) {
+            throw new Error(`Invalid button for ${this.constructor.name}: ${customId}`);
+        }
+        return button;
+    }
+
     async handleCommand(
         interaction: CommandInteraction,
         command: Command,
         character: Character,
     ) {
         await command.execute(interaction, character);
+    }
+
+    async handleButton(
+        interaction: ButtonPressInteraction,
+        button: Button,
+        character: Character,
+    ) {
+        if (!button.execute) {
+            throw new Error(`Button ${button.customId} has no execute function.`);
+        }
+        await button.execute(interaction, character);
     }
 
     async handleMenuSelect(interaction: SelectMenuInteraction, character: Character) {

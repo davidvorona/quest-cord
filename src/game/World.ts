@@ -139,6 +139,23 @@ class World {
         return [x, y];
     }
 
+    getDirectionFromTwoCoordinates(
+        from: [number, number],
+        to: [number, number]
+    ): Direction | undefined {
+        const [fromX, fromY] = from;
+        const [toX, toY] = to;
+        if (toX === fromX && toY === fromY - 1) {
+            return DIRECTION.NORTH;
+        } else if (toX === fromX && toY === fromY + 1) {
+            return DIRECTION.SOUTH;
+        } else if (toX === fromX + 1 && toY === fromY) {
+            return DIRECTION.EAST;
+        } else if (toX === fromX - 1 && toY === fromY) {
+            return DIRECTION.WEST;
+        }
+    }
+
     /**
      * Takes an [x, y] tuple for adding the party to the map.
      */

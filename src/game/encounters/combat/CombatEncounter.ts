@@ -8,6 +8,7 @@ import TurnBasedEncounter from "../TurnBasedEncounter";
 import Character from "../../creatures/Character";
 import Monster from "../../creatures/Monster";
 import { rand } from "../../../util";
+import { EncounterType } from "../../../constants";
 import Creature from "../../creatures/Creature";
 import Narrator from "../../Narrator";
 import {
@@ -16,16 +17,33 @@ import {
     AttackCommand,
     UseCommand,
     MoveCommand,
+    SkipCommand,
     AttackSelection,
     SpellCastSelection,
     SpellTargetSelection,
-    UseSelection
+    UseSelection,
+    MoveButton,
+    AttackButton,
+    SpellButton,
+    UseButton,
+    SkipButton
 } from "../../actions";
-import { CommandInteraction, SelectMenuInteraction } from "../../../types";
+import Spell, { AttackSpell } from "../../things/Spell";
+import Weapon from "../../things/Weapon";
+import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
 
+interface AttackOption {
+    target: Creature;
+    attack: AttackSpell<Spell> | Weapon;
+    reason?: string;
+}
+
 export default class CombatEncounter extends TurnBasedEncounter {
+    type = EncounterType.Combat;
+    description = "In a fight! :crossed_swords:";
+
     monsters: Monster[] = [];
 
     combatLog: SmartCombatLog;
@@ -35,6 +53,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
      * 'spell:cast' command, temporarily cached until the user chooses
      * a target. There can only ever be one, since a single user can
      * only hold one spell, and combat encounters are turn-based.
+     * TODO: This would change if we ever support preselecting actions for
+     * future turns OR if ever have spells that are held for multiple turns.
      */
     heldSpell?: string;
 
@@ -48,91 +68,49 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     positions: CombatPositionCache;
 
-    commands = {
-        move: new MoveCommand(async (interaction: CommandInteraction) => {
-            this.toggleMovement();
+    handlePlayerMove = async (interaction: CommandInteraction | ButtonPressInteraction) => {
+        this.toggleMovement();
 
-            let movementText;
-            if (this.heldMovement) {
-                movementText = "You will move once you submit your action.";
-            } else {
-                movementText = "You will no longer move before your action.";
-            }
+        let movementText;
+        if (this.heldMovement) {
+            movementText = "You will move once you submit your action.";
+        } else {
+            movementText = "You will no longer move before your action.";
+        }
+
+        await this.narrator.reply(interaction, {
+            ephemeral: true,
+            content: movementText
+        });
+    };
+
+    handlePlayerAttack = async (
+        interaction: CommandInteraction | ButtonPressInteraction,
+        character: Character
+    ) => {
+        if (this.monsters.length === 1) {
+            const target = this.monsters[0];
 
             await this.narrator.reply(interaction, {
                 ephemeral: true,
-                content: movementText
+                content: "You prepare to attack the creature...",
+                components: [],
+                embeds: []
             });
-        }),
-        attack: new AttackCommand(async (interaction: CommandInteraction, character: Character) => {
-            if (this.monsters.length === 1) {
-                const target = this.monsters[0];
 
-                await this.narrator.reply(interaction, {
-                    ephemeral: true,
-                    content: "You prepare to attack the creature...",
-                    components: [],
-                    embeds: []
-                });
-
-                await this.handleAttack(character, target);
-            } else {
-                const embed = new EmbedBuilder()
-                    .setColor(0x0099FF)
-                    .setDescription("Who do you want to attack?");
-                const options = this.getMonsterNames().map((n: string, idx) => ({
-                    label: n,
-                    value: idx.toString()
-                }));
-                const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-                    .addComponents(
-                        new StringSelectMenuBuilder()
-                            .setCustomId("attack")
-                            .setPlaceholder("Nothing selected")
-                            .addOptions(options)
-                    );
-                await this.narrator.reply(interaction, {
-                    ephemeral: true,
-                    embeds: [embed],
-                    components: [row]
-                });
-            }
-        }),
-        spell: new SpellCommand(async (interaction: CommandInteraction, character: Character) => {
-            const spells = character.getSpells();
-            if (spells.length) {
-                const embed = new EmbedBuilder()
-                    .setColor(0x0099FF)
-                    .setDescription("What spell do you want to cast?");
-                const options = spells.map(s => ({
-                    label: s.name,
-                    value: s.id
-                }));
-                const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-                    .addComponents(
-                        new StringSelectMenuBuilder()
-                            .setCustomId("spell:cast")
-                            .setPlaceholder("Nothing selected")
-                            .addOptions(options)
-                    );
-                await this.narrator.reply(interaction, {
-                    ephemeral: true,
-                    embeds: [embed],
-                    components: [row]
-                });
-            } else {
-                throw new Error("You do not have any spells!");
-            }
-        }),
-        use: new UseCommand(async (interaction: CommandInteraction, character: Character) => {
+            await this.handleAttack(character, target);
+        } else {
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
-                .setDescription("Which item are you using?");
-            const options = character.getInventory().getInteractionOptions();
+                .setDescription("Who do you want to attack?");
+            const options = this.getMonsterNames().map((n: string, idx) => ({
+                label: n,
+                value: idx.toString()
+            }));
             const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                 .addComponents(
                     new StringSelectMenuBuilder()
-                        .setCustomId("use")
+                        .setCustomId("attack")
                         .setPlaceholder("Nothing selected")
                         .addOptions(options)
                 );
@@ -141,99 +119,193 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 embeds: [embed],
                 components: [row]
             });
-        })
+        }
     };
 
-    menus = [
-        new AttackSelection(async (
-            interaction: SelectMenuInteraction,
-            character: Character
-        ) => {
-            const targetIdx = Number(interaction.values[0]);
-            const target = this.getMonsterByIndex(targetIdx);
-
-            await this.narrator.update(interaction, {
-                content: "You prepare to attack the creature...",
-                components: [],
-                embeds: []
+    handlePlayerSpell = async (
+        interaction: CommandInteraction | ButtonPressInteraction,
+        character: Character
+    ) => {
+        const spells = character.getSpells();
+        if (spells.length) {
+            const embed = new EmbedBuilder()
+                .setColor(0x0099FF)
+                .setDescription("What spell do you want to cast?");
+            const options = spells.map(s => ({
+                label: s.name,
+                value: s.id
+            }));
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                .addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId("spell:cast")
+                        .setPlaceholder("Nothing selected")
+                        .addOptions(options)
+                );
+            await this.narrator.reply(interaction, {
+                ephemeral: true,
+                embeds: [embed],
+                components: [row]
             });
+        } else {
+            throw new Error("You do not have any spells!");
+        }
+    };
 
-            await this.handleAttack(character, target);
-        }),
-        new SpellCastSelection(async (interaction: SelectMenuInteraction, character: Character) => {
-            const spellId = interaction.values[0];
-            const spell = character.getSpell(spellId);
-            if (!spell) {
-                throw new Error("You do not have this spell, aborting");
-            }
-            this.holdSpell(spellId);
+    handlePlayerUse = async (
+        interaction: CommandInteraction | ButtonPressInteraction,
+        character: Character
+    ) => {
+        const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setDescription("Which item are you using?");
+        const options = character.getInventory().getInteractionOptions();
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId("use")
+                    .setPlaceholder("Nothing selected")
+                    .addOptions(options)
+            );
+        await this.narrator.reply(interaction, {
+            ephemeral: true,
+            embeds: [embed],
+            components: [row]
+        });
+    };
 
-            if (this.monsters.length === 1) {
-                await this.narrator.ponderAndUpdate(interaction, {
-                    content: "You prepare to cast the spell...",
-                    embeds: [],
-                    components: []
-                });
+    handlePlayerSkip = async (
+        interaction: CommandInteraction | ButtonPressInteraction,
+        character: Character
+    ) => {
+        if (this.heldMovement) {
+            await this.handleMove(character);
+        }
 
-                await this.handleSpell(character, this.monsters[0], spellId);
-            } else {
-                const embed = new EmbedBuilder()
-                    .setColor(0x0099FF)
-                    .setDescription(`You choose to cast **${spell.name}**. `
-                        + "Who do you want to target?");
-                const options = this.getMonsterNames().map((n: string, idx) => ({
-                    label: n,
-                    value: idx.toString()
-                }));
-                const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-                    .addComponents(
-                        new StringSelectMenuBuilder()
-                            .setCustomId("spell:target")
-                            .setPlaceholder("Nothing selected")
-                            .addOptions(options)
-                    );
-                await this.narrator.ponderAndUpdate(interaction, {
-                    components: [row],
-                    embeds: [embed]
-                });
-            }
-        }),
-        new SpellTargetSelection(async (
-            interaction: SelectMenuInteraction,
-            character: Character
-        ) => {
-            if (!this.heldSpell) {
-                throw new Error("You are not holding any spell!");
-            }
+        await this.narrator.ponderAndReply(interaction, {
+            content: `${character.getName()} skips their turn.`,
+            components: [],
+            embeds: []
+        });
+    };
 
+    handlePlayerAttackSelection = async (
+        interaction: SelectMenuInteraction,
+        character: Character
+    ) => {
+        const targetIdx = Number(interaction.values[0]);
+        const target = this.getMonsterByIndex(targetIdx);
+
+        await this.narrator.update(interaction, {
+            content: "You prepare to attack the creature...",
+            components: [],
+            embeds: []
+        });
+
+        await this.handleAttack(character, target);
+    };
+
+    handlePlayerSpellSelection = async (
+        interaction: SelectMenuInteraction,
+        character: Character
+    ) => {
+        const spellId = interaction.values[0];
+        const spell = character.getSpell(spellId);
+        if (!spell) {
+            throw new Error("You do not have this spell, aborting");
+        }
+        this.holdSpell(spellId);
+
+        if (this.monsters.length === 1) {
             await this.narrator.ponderAndUpdate(interaction, {
                 content: "You prepare to cast the spell...",
                 embeds: [],
                 components: []
             });
 
-            const targetIdx = Number(interaction.values[0]);
-            const target = this.getMonsterByIndex(targetIdx);
+            await this.handleSpell(character, this.monsters[0], spellId);
+        } else {
+            const embed = new EmbedBuilder()
+                .setColor(0x0099FF)
+                .setDescription(`You choose to cast **${spell.name}**. `
+                    + "Who do you want to target?");
+            const options = this.getMonsterNames().map((n: string, idx) => ({
+                label: n,
+                value: idx.toString()
+            }));
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                .addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId("spell:target")
+                        .setPlaceholder("Nothing selected")
+                        .addOptions(options)
+                );
+            await this.narrator.ponderAndUpdate(interaction, {
+                components: [row],
+                embeds: [embed]
+            });
+        }
+    };
 
-            await this.handleSpell(character, target, this.heldSpell);
-        }),
-        new UseSelection(async (interaction: SelectMenuInteraction, character: Character) => {
-            try {
-                const itemId = interaction.values[0];
-                this.handleUseItem(character, itemId);
-                await this.narrator.ponderAndUpdate(interaction, {
-                    content: `You use the ${itemId}.`,
-                    components: [],
-                    embeds: []
-                });
-            } catch (err) {
-                await this.narrator.reply(interaction, {
-                    content: "You do not have this item!",
-                    ephemeral: true
-                });
-            }
-        })
-    ];
+    handlePlayerSpellTarget = async (
+        interaction: SelectMenuInteraction,
+        character: Character
+    ) => {
+        if (!this.heldSpell) {
+            throw new Error("You are not holding any spell!");
+        }
+
+        await this.narrator.ponderAndUpdate(interaction, {
+            content: "You prepare to cast the spell...",
+            embeds: [],
+            components: []
+        });
+
+        const targetIdx = Number(interaction.values[0]);
+        const target = this.getMonsterByIndex(targetIdx);
+
+        await this.handleSpell(character, target, this.heldSpell);
+    };
+
+    handlePlayerUseSelection = async (interaction: SelectMenuInteraction, character: Character) => {
+        try {
+            const itemId = interaction.values[0];
+            this.handleUseItem(character, itemId);
+            await this.narrator.ponderAndUpdate(interaction, {
+                content: `You use the ${itemId}.`,
+                components: [],
+                embeds: []
+            });
+        } catch (err) {
+            await this.narrator.reply(interaction, {
+                content: "You do not have this item!",
+                ephemeral: true
+            });
+        }
+    };
+
+    buttons = {
+        move: new MoveButton(this.handlePlayerMove),
+        attack: new AttackButton(this.handlePlayerAttack),
+        spell: new SpellButton(this.handlePlayerSpell),
+        use: new UseButton(this.handlePlayerUse),
+        skip: new SkipButton(this.handlePlayerSkip)
+    };
+
+    commands = {
+        move: new MoveCommand(this.handlePlayerMove),
+        attack: new AttackCommand(this.handlePlayerAttack),
+        spell: new SpellCommand(this.handlePlayerSpell),
+        use: new UseCommand(this.handlePlayerUse),
+        skip: new SkipCommand(this.handlePlayerSkip)
+    };
+
+    menus = {
+        attack: new AttackSelection(this.handlePlayerAttackSelection),
+        "spell:cast": new SpellCastSelection(this.handlePlayerSpellSelection),
+        "spell:target": new SpellTargetSelection(this.handlePlayerSpellTarget),
+        use: new UseSelection(this.handlePlayerUseSelection)
+    };
 
     constructor(characters: Character[], narrator: Narrator, monsters: Monster[]) {
         super(characters, narrator);
@@ -352,7 +424,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         await this.narrator.describeMovement(creature, newPosition);
     }
 
-    private mustMoveBeforeAttack(attacker: Creature, target: Creature, isRanged: boolean) {
+    private mustMoveBeforeAttack(attacker: Creature, target: Creature, isRangedAttack: boolean) {
         const withinMeleeRange = this.positions.compareEnemyPositions(attacker.id, target.id);
         // If enemy is at range, assume attacker has ranged weapon and move into melee range;
         // enemies at range can only be attacked by ranged weapons from melee range.
@@ -360,14 +432,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
             return !withinMeleeRange;
         }
         // AKA, must run to the proper range to use weapon on the enemy
-        return isRanged === withinMeleeRange;
+        return isRangedAttack === withinMeleeRange;
     }
 
-    private validateAttackRange(attacker: Creature, target: Creature, isRanged: boolean) {
-        if (this.positions.isInRangePosition(target.id) && !isRanged) {
+    private validateAttackRange(attacker: Creature, target: Creature, isRangedAttack: boolean) {
+        if (this.positions.isInRangePosition(target.id) && !isRangedAttack) {
             throw new Error("This enemy is at range, you must use a ranged attack.");
         }
-        const mustMove = this.mustMoveBeforeAttack(attacker, target, isRanged);
+        const mustMove = this.mustMoveBeforeAttack(attacker, target, isRangedAttack);
         // Monsters are always willing to move if it means attacking their target
         const willMove = attacker instanceof Monster ? true : this.heldMovement;
         if (mustMove && !willMove) {
@@ -463,22 +535,34 @@ export default class CombatEncounter extends TurnBasedEncounter {
             if (!(monster instanceof Monster)) {
                 throw new Error("Invalid creature for monster turn, aborting");
             }
-            // TODO: Enemies should also be able to choose their action, e.g. attack,
-            // spell, item, etc., and this would inform their target (or lack thereof).
-            const target = this.chooseTarget(monster);
 
-            // Send a special message if they're unable to get into range
-            let rangeValidated = false;
-            try {
-                this.validateAttackRange(monster, target, monster.hasRangedWeapon());
-                rangeValidated = true;
-            } catch (err) {
-                await this.narrator.ponderAndDescribe(`The ${monster.getName()} could `
-                    + "not get into range.");
+            const attacks = this.listMonsterAttacks(monster);
+            if (attacks.length == 0) {
+                throw new Error("Monster has no attacks available, aborting");
             }
-            if (rangeValidated) {
-                await this.handleAttack(monster, target);
+
+            // Ordered by target priority
+            const attackOptions = this.getValidSortedAttackOptions(monster, attacks);
+            if (attackOptions.length === 0) {
+                throw new Error("Monster has no valid attack options!");
             }
+
+            // Extremely simple AI: choose highest priority target, and then find highest damage
+            // attack option against that target
+            // TODO: Prefer staying at range over going into melee
+            // TODO: Can very easily improve AI by re-sorting options based on score that
+            // weighs priority, damage, status effects, resistances, etc
+            const chosenTarget = attackOptions[0].target;
+            const chosenAttackOption = attackOptions
+                .filter((ao) => ao.target === chosenTarget)
+                .sort((a, b) => b.attack.damage - a.attack.damage)[0];
+
+            console.info(attackOptions.length, "attack options for", monster.getName(), ", chose", {
+                target: chosenTarget.getName(),
+                attack: chosenAttackOption.attack.name,
+                reason: chosenAttackOption.reason
+            });
+            await this.handleMonsterAttack(monster, chosenAttackOption);
         } catch (err) {
             const monsterName = monster?.getName() || "Nameless";
             await this.narrator.ponderAndDescribe(`The ${monsterName} becomes confused...`);
@@ -488,34 +572,78 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
     }
 
-    private canKillWhichCharacters(monster: Monster) {
-        const damage = monster.getDamage();
-        const deathList = this.characters.filter(pc => pc.hp <= damage);
-        return deathList;
+    private async handleMonsterAttack(monster: Monster, attackOption: AttackOption) {
+        const { target, attack } = attackOption;
+        if (attack instanceof Spell) {
+            await this.handleSpell(monster, target, attack.id);
+        } else {
+            await this.handleAttack(monster, target);
+        }
     }
 
-    // Enemy AI for choosing a target
-    private chooseTarget(monster: Monster) {
-        const chars = this.getCharacters();
-        const charIds = chars.map(c => c.id);
+    private listMonsterAttacks(monster: Monster) {
+        const weapon = monster.getWeapon();
+        const attacks = [...monster.getMeleeAttackSpells(), ...monster.getRangedAttackSpells()];
+        if (weapon) {
+            attacks.push(weapon);
+        }
+        return attacks;
+    }
+
+    /**
+     * Takes a target and a list of attacks, and returns a list of attack
+     * option objects that are valid against the target at their respective
+     * ranges. Other conditions can be added later as needed.
+     */
+    getValidAttackOptionsForTarget(
+        attacks: (AttackSpell<Spell> | Weapon)[],
+        target: Creature,
+        reason?: string
+    ): AttackOption[] {
+        const inRangePosition = this.positions.isInRangePosition(target.id);
+        return attacks
+            .filter(a => inRangePosition ? a.isRanged() : true)
+            .map(attack => ({ target, attack, reason }));
+    }
+
+    /**
+     * Compiles a sorted list of attack options ordered by target priority, and only
+     * listing attacks that are valid against each target. This method treats attack
+     * options with the same attack and target as distinct if they have different reasons.
+     */
+    private getValidSortedAttackOptions(
+        monster: Monster,
+        attacks: (AttackSpell<Spell> | Weapon)[]
+    ) {
+        const attackOptions: AttackOption[] = [];
         // 1. Is anyone currently attacking it?
         const targetedTurn = this.combatLog.getLastTurnCreatureTargeted(monster.id);
         if (targetedTurn) {
             const attackerIdx = SmartCombatLog.getEntryActor(targetedTurn);
-            return this.getCreatureById(this.turnOrder.getTurn(attackerIdx));
+            const lastAttacker = this.getCreatureById(this.turnOrder.getTurn(attackerIdx));
+            attackOptions.push(
+                ...this.getValidAttackOptionsForTarget(attacks, lastAttacker, "revenge"));
         }
+        const chars = this.getCharacters();
         // 2. Is anyone at very low health?
-        const deathList = this.canKillWhichCharacters(monster);
-        if (deathList.length) {
-            return deathList[rand(deathList.length)];
-        }
+        chars.forEach((pc) => {
+            const koAttacks = this.getValidAttackOptionsForTarget(attacks, pc, "execute")
+                .filter((attackOption) => {
+                    const attack = attackOption.attack;
+                    return pc.hp <= attack.damage;
+                });
+            attackOptions.push(...koAttacks);
+        });
         // 3. Is anyone casting spells?
+        const charIds = chars.map(c => c.id);
         const casterIds = this.combatLog.getCreaturesCastingSpells(charIds);
-        if (casterIds.length) {
-            return this.getCreatureById(casterIds[rand(casterIds.length)]);
-        }
+        casterIds.forEach((casterId) => {
+            const caster = this.getCreatureById(casterId);
+            attackOptions.push(...this.getValidAttackOptionsForTarget(attacks, caster, "caster"));
+        });
         // 4. Just pick somebody random!
-        const target = chars[rand(chars.length)];
-        return target;
+        const randomTarget = chars[rand(chars.length)];
+        attackOptions.push(...this.getValidAttackOptionsForTarget(attacks, randomTarget, "random"));
+        return attackOptions;
     }
 }

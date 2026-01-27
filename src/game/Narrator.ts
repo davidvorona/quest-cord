@@ -1,11 +1,16 @@
 import {
-    BaseMessageOptions,
     ChatInputCommandInteraction,
     InteractionReplyOptions,
     EmbedBuilder,
     StringSelectMenuInteraction,
     InteractionUpdateOptions,
-    TextChannel
+    TextChannel,
+    InteractionEditReplyOptions,
+    MessageFlags,
+    MessagePayload,
+    MessageCreateOptions,
+    ButtonStyle,
+    SectionBuilder
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
@@ -23,6 +28,7 @@ import RestEncounter from "./encounters/rest/RestEncounter";
 import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
+import { ButtonPressInteraction } from "../types";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -42,29 +48,31 @@ class Narrator {
         this.channel = channel;
     }
 
-    async describe(payload: string | BaseMessageOptions) {
+    async describe(payload: string | MessagePayload | MessageCreateOptions) {
         await this.channel.send(payload);
     }
 
-    async ponderAndDescribe(payload: string | BaseMessageOptions) {
+    async ponderAndDescribe(payload: string | MessagePayload | MessageCreateOptions) {
         await sendTypingAndWaitRandom(this.channel, Narrator.TIME_TO_PONDER);
         await this.channel.send(payload);
     }
 
     async reply(
-        interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
+        interaction: ChatInputCommandInteraction
+            | StringSelectMenuInteraction | ButtonPressInteraction,
         payload: string | InteractionReplyOptions
     ) {
         await interaction.reply(payload);
     }
 
     async ponderAndReply(
-        interaction: ChatInputCommandInteraction | StringSelectMenuInteraction,
-        payload: string | InteractionReplyOptions
+        interaction: ChatInputCommandInteraction
+            | StringSelectMenuInteraction | ButtonPressInteraction,
+        payload: string | InteractionEditReplyOptions,
+        ephemeral = false
     ) {
-        const ephemeral = typeof payload !== "string" ? payload.ephemeral : false;
         if (!interaction.deferred) {
-            await interaction.deferReply({ ephemeral });
+            await interaction.deferReply({ flags: ephemeral ? MessageFlags.Ephemeral : undefined });
         }
         await delay(rand(Narrator.TIME_TO_PONDER));
         await interaction.editReply(payload);
@@ -106,7 +114,6 @@ class Narrator {
             });
             await this.ponderAndDescribe(text3);
         }
-        await this.ponderAndDescribe("Welcome to *Discordia*!");
     }
 
     async describeMovement(creature: Creature, position: CombatPosition) {
@@ -152,11 +159,19 @@ class Narrator {
         } else if (encounter instanceof RestEncounter) {
             await this.ponderAndDescribe("The days is yours! Rest, relax, and feel free to "
                 + "check your character status with **/status**.");
-        } else {
-            await this.ponderAndDescribe("You can travel with the **/travel** command.");
         }
         if (encounter instanceof FreeEncounter) {
-            await this.ponderAndDescribe("Whenever you're ready, use **/travel** to move on.");
+            const section = new SectionBuilder()
+                .addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent("Whenever you're ready, you can travel to move on."))
+                .setButtonAccessory(button => button
+                    .setCustomId("travel")
+                    .setLabel("Travel")
+                    .setStyle(ButtonStyle.Success));
+            await this.ponderAndDescribe({
+                components: [section],
+                flags: MessageFlags.IsComponentsV2
+            });
         }
     }
 

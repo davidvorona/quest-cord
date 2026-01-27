@@ -9,10 +9,13 @@ export default class Item {
 
     value: number;
 
+    description?: string;
+
     constructor(data: BaseItem) {
         this.id = data.id;
         this.name = data.name;
         this.type = data.type;
         this.value = data.value;
+        this.description = data.description;
     }
 }

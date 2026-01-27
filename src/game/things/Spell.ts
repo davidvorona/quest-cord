@@ -29,3 +29,11 @@ class Spell {
 }
 
 export default Spell;
+
+export type AttackSpell<S extends Spell> = S & {
+    damage: number;
+};
+
+export type HealingSpell<S extends Spell> = S & {
+    effects: Effects & { hp: number };
+};

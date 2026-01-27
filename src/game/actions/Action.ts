@@ -1,4 +1,4 @@
-import { SelectMenuInteraction, CommandInteraction } from "../../types";
+import { SelectMenuInteraction, CommandInteraction, ButtonPressInteraction } from "../../types";
 import Character from "../creatures/Character";
 
 export interface CommandExecuteFunction {
@@ -9,7 +9,12 @@ export interface SelectionExecuteFunction {
     (interaction: SelectMenuInteraction, character: Character): Promise<void>;
 }
 
-type ExecuteFunction = CommandExecuteFunction | SelectionExecuteFunction;
+export interface ButtonExecuteFunction {
+    (interaction: ButtonPressInteraction, character: Character): Promise<void>;
+}
+
+export type ExecuteFunction = CommandExecuteFunction
+    | SelectionExecuteFunction | ButtonExecuteFunction;
 
 export default abstract class Action {
     /* Name of the action, corresponding to a Discord command. */
