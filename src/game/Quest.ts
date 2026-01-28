@@ -15,6 +15,7 @@ import {
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
+import Profession from "./things/Profession";
 
 export default class Quest {
     readonly id: string;
@@ -96,8 +97,13 @@ export default class Quest {
         return pcs;
     }
 
-    createPlayerCharacter(userId: string, character: Character, lvlGains: LevelGain[]) {
-        const playerCharacter = new PlayerCharacter(userId, character, lvlGains);
+    createPlayerCharacter(
+        userId: string,
+        character: Character,
+        lvlGains: LevelGain[],
+        profession: Profession
+    ) {
+        const playerCharacter = new PlayerCharacter(userId, character, lvlGains, profession);
         this.pcs[userId] = playerCharacter;
         return playerCharacter;
     }

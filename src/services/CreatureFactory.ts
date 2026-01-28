@@ -7,7 +7,8 @@ import {
     CharacterClass,
     BaseMonster,
     BaseEquipment,
-    BaseNonPlayerCharacter
+    BaseNonPlayerCharacter,
+    BaseProfession
 } from "../types";
 import { randKey } from "../util";
 import CompendiumReader from "./CompendiumReader";
@@ -15,6 +16,7 @@ import ItemFactory from "./ItemFactory";
 import Weapon from "../game/things/Weapon";
 import Item from "../game/things/Item";
 import SpellFactory from "./SpellFactory";
+import Profession from "../game/things/Profession";
 
 interface CharacterClassData {
     [classId: string]: CharacterClass;
@@ -28,10 +30,15 @@ interface NonPlayerCharacterData {
     [npcId: string]: BaseNonPlayerCharacter;
 }
 
+interface ProfessionData {
+    [professionId: string]: BaseProfession;
+}
+
 interface CreatureData {
     monsters: MonsterData;
     npcs: NonPlayerCharacterData;
     classes: CharacterClassData;
+    professions: ProfessionData;
 }
 
 class CreatureFactory {
@@ -54,7 +61,8 @@ class CreatureFactory {
         const classes = this.compendium.read(COMPENDIUM_SECTION.CLASSES);
         const monsters = this.compendium.read(COMPENDIUM_SECTION.MONSTERS);
         const npcs = this.compendium.read(COMPENDIUM_SECTION.NPCS);
-        this.data = { classes, monsters, npcs };
+        const professions = this.compendium.read(COMPENDIUM_SECTION.PROFESSIONS);
+        this.data = { classes, monsters, npcs, professions };
     }
 
     createCharacter(data: CharacterClass | BaseNonPlayerCharacter) {
@@ -71,6 +79,14 @@ class CreatureFactory {
             throw new Error(`Invalid class ID: ${classId}`);
         }
         return data;
+    }
+
+    createProfession(professionId: string) {
+        const data = this.data.professions[professionId];
+        if (!data) {
+            throw new Error(`Invalid profession ID: ${professionId}`);
+        }
+        return new Profession(data);
     }
 
     createClassCharacter(classId: string) {

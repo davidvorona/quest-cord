@@ -49,6 +49,7 @@ import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
+import { defaultXpService } from "../services/XpService";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -362,6 +363,7 @@ export default class QuestLord {
             }
 
             if (interaction.customId === "travel") {
+                await interaction.reply({ content: "Onward...", flags: MessageFlags.Ephemeral });
                 await this.promptTravel(interaction.guildId, interaction.channelId);
             }
 
@@ -606,7 +608,9 @@ export default class QuestLord {
                 .createClassCharacter(characterCreator.getClassId());
             const { lvlGains } = this.creatureFactory
                 .getCharacterClass(characterCreator.getClassId());
-            const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+            const profession = this.creatureFactory
+                .createProfession(characterCreator.getProfessionId());
+            const pc = quest.createPlayerCharacter(userId, character, lvlGains, profession);
 
             // The name of the base character is the class name, the character name
             // is attached to the PlayerCharacter object
@@ -1314,6 +1318,7 @@ export default class QuestLord {
 
         const className = pc.getCharacter().baseId;
         const thumbnail = new AttachmentBuilder(`assets/${className}.png`);
+        const xpToLvl = defaultXpService.getExperienceForNextLevel(pc.lvl);
 
         const equipmentTextDisplay = [];
         const equipment = pc.getEquipment();
@@ -1344,7 +1349,8 @@ export default class QuestLord {
                 section.addTextDisplayComponents((textDisplay) =>
                     textDisplay.setContent(`### :bar_chart: Level ${pc.lvl} ${className}`),
                 (textDisplay) => textDisplay.setContent(
-                    `### :fireworks: *${pc.xp} / 150* xp to level`))
+                    `### :fireworks: *${pc.xp} / ${xpToLvl}* xp to level`),
+                (textDisplay) => textDisplay.setContent(`### :hammer_pick: ${pc.profession.name}`))
                     .setThumbnailAccessory((thumbnail) =>
                         thumbnail
                             .setURL(`attachment://${className}.png`)
@@ -1456,6 +1462,10 @@ export default class QuestLord {
         delete this.forceEncounters[channelId];
     }
 
+    // TODO: This should be handled better. Currently, it sends a message to the
+    // channel with the travel prompt. In some cases (after a FreeEncounter, for
+    // example), it's preferable for the response to be ephemeral so users aren't
+    // spamming the channel OR rushing their party members.
     private async promptTravel(guildId: string, channelId: string) {
         this.assertQuestStarted(channelId);
 

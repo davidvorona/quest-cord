@@ -2,6 +2,7 @@ import { rand, loadNames } from "../util";
 import Character from "./creatures/Character";
 import { defaultXpService } from "../services/XpService";
 import { LevelGain } from "../types";
+import Profession from "./things/Profession";
 
 const { firstNames, lastNames } = loadNames();
 
@@ -15,6 +16,8 @@ export default class PlayerCharacter {
 
     readonly lastName: string;
 
+    readonly profession: Profession;
+
     heldSpell?: string;
 
     xp: number;
@@ -23,9 +26,15 @@ export default class PlayerCharacter {
 
     lvlGains: LevelGain[];
 
-    constructor(userId: string, character: Character, lvlGains: LevelGain[]) {
+    constructor(
+        userId: string,
+        character: Character,
+        lvlGains: LevelGain[],
+        profession: Profession
+    ) {
         this.userId = userId;
         this.character = character;
+        this.profession = profession;
 
         this.firstName = firstNames[rand(firstNames.length)];
         this.lastName = lastNames[rand(lastNames.length)];

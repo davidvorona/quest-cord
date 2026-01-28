@@ -8,7 +8,8 @@ export const COMPENDIUM_SECTION = {
     CLASSES: "classes",
     ITEMS: "items",
     SPELLS: "spells",
-    NPCS: "npcs"
+    NPCS: "npcs",
+    PROFESSIONS: "professions"
 } as const;
 
 export const ITEM_TYPE = {
