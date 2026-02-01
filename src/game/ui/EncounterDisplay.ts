@@ -27,7 +27,9 @@ export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?
                     .setLabel("See Local Map")
                     .setStyle(ButtonStyle.Secondary)));
     components.push(container);
-    const buttonRows = EncounterButtonRows(encounter.buttons);
-    components.push(...buttonRows);
+    if (Object.keys(encounter.buttons).length > 0) {
+        const buttonRows = EncounterButtonRows(encounter.buttons);
+        components.push(...buttonRows);
+    }
     return components;
 }
