@@ -15,6 +15,8 @@ import {
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
+import Profession from "./things/Profession";
+import EncounterButtonRows from "./ui/EncounterButtonRows";
 
 export default class Quest {
     readonly id: string;
@@ -96,8 +98,13 @@ export default class Quest {
         return pcs;
     }
 
-    createPlayerCharacter(userId: string, character: Character, lvlGains: LevelGain[]) {
-        const playerCharacter = new PlayerCharacter(userId, character, lvlGains);
+    createPlayerCharacter(
+        userId: string,
+        character: Character,
+        lvlGains: LevelGain[],
+        profession: Profession
+    ) {
+        const playerCharacter = new PlayerCharacter(userId, character, lvlGains, profession);
         this.pcs[userId] = playerCharacter;
         return playerCharacter;
     }
@@ -276,6 +283,9 @@ export default class Quest {
             if (this.encounter.isOver()) {
                 const results = this.encounter.getResults();
                 return results;
+            } else {
+                const buttons = EncounterButtonRows(this.encounter.buttons);
+                await this.narrator.describe({ components: buttons });
             }
         }
     }
@@ -309,6 +319,9 @@ export default class Quest {
             if (this.encounter.isOver()) {
                 const results = this.encounter.getResults();
                 return results;
+            } else {
+                const buttons = EncounterButtonRows(this.encounter.buttons);
+                await this.narrator.describe({ components: buttons });
             }
         }
     }

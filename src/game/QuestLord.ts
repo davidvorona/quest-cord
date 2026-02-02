@@ -30,7 +30,7 @@ import {
     QuestLordInteraction,
     CommandInteraction,
     SelectMenuInteraction,
-    ButtonPressInteraction,
+    ButtonPressInteraction
 } from "../types";
 import {
     getEncounterInteractionName,
@@ -49,6 +49,8 @@ import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
+import { defaultXpService } from "../services/XpService";
+import EncounterDisplay from "./ui/EncounterDisplay";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -361,7 +363,9 @@ export default class QuestLord {
                 await this.displayEncounter(interaction);
             }
 
+            // TODO: Can probably clean this up...
             if (interaction.customId === "travel") {
+                await interaction.reply({ content: "Onward...", flags: MessageFlags.Ephemeral });
                 await this.promptTravel(interaction.guildId, interaction.channelId);
             }
 
@@ -606,7 +610,9 @@ export default class QuestLord {
                 .createClassCharacter(characterCreator.getClassId());
             const { lvlGains } = this.creatureFactory
                 .getCharacterClass(characterCreator.getClassId());
-            const pc = quest.createPlayerCharacter(userId, character, lvlGains);
+            const profession = this.creatureFactory
+                .createProfession(characterCreator.getProfessionId());
+            const pc = quest.createPlayerCharacter(userId, character, lvlGains, profession);
 
             // The name of the base character is the class name, the character name
             // is attached to the PlayerCharacter object
@@ -639,6 +645,12 @@ export default class QuestLord {
                 const encounter = this.encounterBuilder
                     .build(partyBiome, quest.getCharacters(), narrator, forceType);
                 await quest.startEncounter(encounter);
+
+                const encounterDisplay = EncounterDisplay(encounter, partyBiome);
+                await narrator.describe({
+                    components: encounterDisplay,
+                    flags: MessageFlags.IsComponentsV2
+                });
             }
         }
     }
@@ -851,6 +863,12 @@ export default class QuestLord {
                     const encounter = this.encounterBuilder
                         .build(newBiome, quest.getCharacters(), narrator, forceType);
                     await quest.startEncounter(encounter);
+
+                    const encounterDisplay = EncounterDisplay(encounter, newBiome);
+                    await narrator.describe({
+                        components: encounterDisplay,
+                        flags: MessageFlags.IsComponentsV2
+                    });
                 }
             );
         }
@@ -925,7 +943,15 @@ export default class QuestLord {
                 // End the stealth encounter
                 await quest.endEncounter();
                 // Start the combat encounter
+                const world = this.worlds[quest.guildId];
+                const biome = world.getBiome(quest.getPartyCoordinates());
                 await quest.startEncounter(cmbEncounter);
+
+                const encounterDisplay = EncounterDisplay(cmbEncounter, biome);
+                await narrator.describe({
+                    components: encounterDisplay,
+                    flags: MessageFlags.IsComponentsV2
+                });
             }
         );
     }
@@ -1314,6 +1340,7 @@ export default class QuestLord {
 
         const className = pc.getCharacter().baseId;
         const thumbnail = new AttachmentBuilder(`assets/${className}.png`);
+        const xpToLvl = defaultXpService.getExperienceForNextLevel(pc.lvl);
 
         const equipmentTextDisplay = [];
         const equipment = pc.getEquipment();
@@ -1344,7 +1371,8 @@ export default class QuestLord {
                 section.addTextDisplayComponents((textDisplay) =>
                     textDisplay.setContent(`### :bar_chart: Level ${pc.lvl} ${className}`),
                 (textDisplay) => textDisplay.setContent(
-                    `### :fireworks: *${pc.xp} / 150* xp to level`))
+                    `### :fireworks: *${pc.xp} / ${xpToLvl}* xp to level`),
+                (textDisplay) => textDisplay.setContent(`### :hammer_pick: ${pc.profession.name}`))
                     .setThumbnailAccessory((thumbnail) =>
                         thumbnail
                             .setURL(`attachment://${className}.png`)
@@ -1392,48 +1420,11 @@ export default class QuestLord {
         if (quest.isInEncounter()) {
             const world = this.worlds[guildId];
             const biome = world.getBiome(quest.getPartyCoordinates());
-            const encounterDesc = quest.encounter.getDescription() || "Exploring...";
-
             const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
 
-            const components = [];
-            const container = new ContainerBuilder()
-                .setAccentColor(0x0099ff)
-                .addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent(`# ${encounterDesc}`))
-                .addSeparatorComponents(separator => separator)
-                .addSectionComponents((section) =>
-                    section.addTextDisplayComponents((textDisplay) =>
-                        textDisplay.setContent(
-                            `### :heart: ${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}`),
-                    (textDisplay) => textDisplay
-                        .setContent(`### :map: ${
-                            biome === "beach" ? "At" : "In"
-                        } the ${biome}`))
-                        .setButtonAccessory(button => button
-                            .setCustomId("map")
-                            .setLabel("See Local Map")
-                            .setStyle(ButtonStyle.Secondary)));
-            const buttons = quest.encounter.buttons;
-            const row0 = new ActionRowBuilder<ButtonBuilder>();
-            const row1 = new ActionRowBuilder<ButtonBuilder>();
-            for (const action in buttons) {
-                const button = buttons[action];
-                if (button.row === 0) {
-                    row0.addComponents(button.getButton());
-                } else {
-                    row1.addComponents(button.getButton());
-                }
-            }
-            components.push(container);
-            if (row0.components.length > 0) {
-                components.push(row0);
-            }
-            if (row1.components.length > 0) {
-                components.push(row1);
-            }
+            const encounterDisplay = EncounterDisplay(quest.encounter, biome, pc);
             await interaction.reply({
-                components,
+                components: encounterDisplay,
                 flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
             });
         } else {
@@ -1456,6 +1447,10 @@ export default class QuestLord {
         delete this.forceEncounters[channelId];
     }
 
+    // TODO: This should be handled better. Currently, it sends a message to the
+    // channel with the travel prompt. In some cases (after a FreeEncounter, for
+    // example), it's preferable for the response to be ephemeral so users aren't
+    // spamming the channel OR rushing their party members.
     private async promptTravel(guildId: string, channelId: string) {
         this.assertQuestStarted(channelId);
 

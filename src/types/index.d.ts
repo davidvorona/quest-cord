@@ -102,6 +102,12 @@ export interface LevelGain {
     spells?: string[];
 }
 
+export interface BaseProfession {
+    id: string;
+    name: string;
+    description: string;
+}
+
 export interface CharacterClass extends BaseCreature {
     items?: string[];
     lvlGains: LevelGain[];
