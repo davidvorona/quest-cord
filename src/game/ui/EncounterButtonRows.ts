@@ -12,5 +12,12 @@ export default function EncounterButtonRows(buttons: Record<string, Button>) {
             row1.addComponents(button.getButton());
         }
     }
-    return [row0, row1];
+    const components = [];
+    if (row0.components.length > 0) {
+        components.push(row0);
+    }
+    if (row1.components.length > 0) {
+        components.push(row1);
+    }
+    return components;
 }
