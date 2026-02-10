@@ -1404,7 +1404,7 @@ export default class QuestLord {
         const map = world.stringify(quest.getPartyCoordinates());
         console.info(map);
 
-        const localMap = world.stringifyLocal(quest.getPartyCoordinates());
+        const localMap = world.stringifyLocal(quest.getRoute());
         await interaction.reply({
             content: localMap,
             ephemeral: true
