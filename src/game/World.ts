@@ -194,21 +194,25 @@ class World {
         };
     }
 
-    stringifyLocal([partyX, partyY]: [number, number] = [-1, -1]) {
+    stringifyLocal(route: [number, number][] = []) {
         let worldStr = "";
+        const [partyX, partyY] = route[route.length - 1] || [-1, -1];
         const c = this.getLocalFramingCoordinates([partyX, partyY]);
         for (let cy = c.startingY; cy <= c.endingY; cy++) {
             for (let cx = c.startingX; cx <= c.endingX; cx++) {
                 const biome = this.matrix[cy][cx];
                 if (cx === partyX && cy === partyY) {
                     worldStr += "🧑";
-                } else {
+                // Only show biome for coordinates party has explored
+                } else if (route.findIndex(r => r[0] === cx && r[1] === cy) !== -1) {
                     let emoji = biomesData[biome].emoji;
                     // Normalizes emoji length on Discord
                     if (biome === BIOME.FOREST || biome === BIOME.JUNGLE) {
                         emoji += " ";
                     }
                     worldStr += emoji;
+                } else {
+                    worldStr += ":question:";
                 }
             }
             if (cy !== c.endingY) {
