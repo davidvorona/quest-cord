@@ -5,10 +5,12 @@ import { ExecuteFunction } from "../actions/Action";
 import Button from "../actions/buttons/Button";
 import Character from "../creatures/Character";
 import Narrator from "../Narrator";
+import Item from "../things/Item";
 
 export interface EncounterResults {
     success: boolean;
     xp: number;
+    loot?: Item[];
 }
 
 export default class Encounter {

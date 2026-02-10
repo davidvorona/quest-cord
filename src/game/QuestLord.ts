@@ -51,6 +51,7 @@ import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/XpService";
 import EncounterDisplay from "./ui/EncounterDisplay";
+import Item from "./things/Item";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -1516,6 +1517,28 @@ export default class QuestLord {
         }
     }
 
+    private async distributeLoot(channelId: string, loot: Item[]) {
+        this.assertQuestStarted(channelId);
+        const quest = this.quests[channelId];
+        const narrator = quest.getNarrator();
+
+        if (loot.length === 0) {
+            await narrator.ponderAndDescribe("The party found no loot.");
+            return;
+        }
+
+        const lootText = loot.map(i => `*${i.name}*`).join(", ");
+        await narrator.ponderAndDescribe(
+            `[In Development] The party found the following loot: ${lootText}.`);
+        // TODO: How does loot work?
+        // Monsters have loot that is hardcoded (for now). After a combat encounter ends, players
+        // will get a chance at this loot and some gold. The gold is simply split up evenly among
+        // the party members. For items though, players simply get a chance to "roll" for their own
+        // loot after the encounter, and loot will be generated based on the monsters' loot tables.
+        // For example, after an encounter ends and loot is found, there is a button that players
+        // can click to "roll for loot".
+    }
+
     private async handleEncounterResults(
         guildId: string,
         channelId: string,
@@ -1533,6 +1556,9 @@ export default class QuestLord {
         if (results.success) {
             // Award XP from encounter results to party
             await this.awardExperience(channelId, results.xp);
+            if (results.loot) {
+                await this.distributeLoot(channelId, results.loot);
+            }
             await this.promptTravel(guildId, channelId);
         // If not success, quest ends
         } else {

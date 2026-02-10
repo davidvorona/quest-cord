@@ -33,6 +33,7 @@ import Weapon from "../../things/Weapon";
 import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
+import Item from "../../things/Item";
 
 interface AttackOption {
     target: Creature;
@@ -319,6 +320,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
             this.getCharacterNames(), "vs", this.getMonsterNames()
         );
     }
+
+    getResults = () => ({
+        success: this.isSuccess(),
+        xp: this.getXpReward(),
+        loot: this.monsters.reduce((acc: Item[], monster) => [...acc, ...monster.getLoot()], [])
+    });
 
     getMonsterByIndex = (index: number) => this.monsters[index];
 
