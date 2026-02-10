@@ -33,8 +33,6 @@ export default class Quest {
 
     pcs: Record<string, PlayerCharacter | null> = {};
 
-    // lastCoordinates: [number, number] = [0, 0];
-    // coordinates: [number, number] = [0, 0];
     route: [number, number][] = [];
 
     encounter?: Encounter;
@@ -158,11 +156,11 @@ export default class Quest {
     }
 
     getPartyCoordinates() {
-        return this.route[this.route.length - 1];
+        return this.route[this.route.length - 1] || [0, 0];
     }
 
     getPartyLastCoordinates() {
-        return this.route[this.route.length - 2];
+        return this.route[this.route.length - 2] || [0, 0];
     }
 
     getEncounter() {
