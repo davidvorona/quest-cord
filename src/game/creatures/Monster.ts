@@ -21,4 +21,8 @@ export default class Monster extends Creature {
     getWeaponId() {
         return super.getWeaponId() || "claws";
     }
+
+    getLoot() {
+        return this.loot;
+    }
 }

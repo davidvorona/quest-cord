@@ -7,7 +7,7 @@ import SmartCombatLog from "./SmartCombatLog";
 import TurnBasedEncounter from "../TurnBasedEncounter";
 import Character from "../../creatures/Character";
 import Monster from "../../creatures/Monster";
-import { rand } from "../../../util";
+import { rand, randInList } from "../../../util";
 import { EncounterType } from "../../../constants";
 import Creature from "../../creatures/Creature";
 import Narrator from "../../Narrator";
@@ -33,6 +33,7 @@ import Weapon from "../../things/Weapon";
 import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
+import Item from "../../things/Item";
 
 interface AttackOption {
     target: Creature;
@@ -67,6 +68,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
     heldMovement?: boolean;
 
     positions: CombatPositionCache;
+
+    lootCache: Record<string, Item[]> = {};
 
     handlePlayerMove = async (interaction: CommandInteraction | ButtonPressInteraction) => {
         this.toggleMovement();
@@ -320,6 +323,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
         );
     }
 
+    getResults = () => ({
+        success: this.isSuccess(),
+        xp: this.getXpReward(),
+        loot: this.monsters.reduce((acc: Item[], monster) => [...acc, ...monster.getLoot()], [])
+    });
+
     getMonsterByIndex = (index: number) => this.monsters[index];
 
     getMonsterNames = () => this.monsters.map(m => m.getName());
@@ -511,7 +520,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.releaseSpell();
     }
 
-    private async handleUseItem(character: Character, itemId: string) {
+    public async handleUseItem(character: Character, itemId: string) {
         character.useItem(itemId);
 
         if (this.heldMovement) {
@@ -524,6 +533,17 @@ export default class CombatEncounter extends TurnBasedEncounter {
             itemValue,
             [this.turnOrder.getIdx(character.id)]
         );
+    }
+
+    public handlePlayerLoot(character: Character) {
+        if (this.lootCache[character.id]) {
+            throw new Error("You have already looted!");
+        }
+        const loot = this.getResults().loot;
+        const lootRoll = randInList(loot);
+        character.addToInventory([lootRoll]);
+        this.lootCache[character.id] = [lootRoll];
+        return lootRoll;
     }
 
     /* ENEMY AI METHODS */
@@ -595,7 +615,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
      * option objects that are valid against the target at their respective
      * ranges. Other conditions can be added later as needed.
      */
-    getValidAttackOptionsForTarget(
+    private getValidAttackOptionsForTarget(
         attacks: (AttackSpell<Spell> | Weapon)[],
         target: Creature,
         reason?: string

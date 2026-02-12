@@ -44,13 +44,15 @@ import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
 import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
-import { EncounterResults } from "./encounters/Encounter";
+import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/XpService";
 import EncounterDisplay from "./ui/EncounterDisplay";
+import EncounterResults from "./ui/EncounterResults";
+import LootDisplay from "./ui/LootDisplay";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -415,6 +417,10 @@ export default class QuestLord {
 
             if (interaction.customId === "surprise") {
                 await this.handleSurprise(interaction);
+            }
+
+            if (interaction.customId === "loot") {
+                await this.rollForLoot(interaction);
             }
         } catch (err) {
             const errMessage = err instanceof Error
@@ -1435,6 +1441,41 @@ export default class QuestLord {
         }
     }
 
+    private async rollForLoot(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+
+        const lastEncounter = quest.getLastEncounter();
+        if (!lastEncounter || !(lastEncounter instanceof CombatEncounter)) {
+            await interaction.reply({
+                content: "There is no loot to roll for!",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        const results = lastEncounter.getResults();
+        if (results.loot.length === 0) {
+            await interaction.reply({
+                content: "The party found no loot.",
+                flags: [MessageFlags.Ephemeral]
+            });
+            return;
+        }
+
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+        const loot = lastEncounter.handlePlayerLoot(pc.getCharacter());
+
+        const attachment = new AttachmentBuilder("assets/inventory.png");
+        await interaction.reply({
+            components: LootDisplay(loot, pc),
+            files: [attachment],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+        });
+    }
+
     /* OTHER METHODS */
 
     private async failQuest(channelId: string): Promise<void> {
@@ -1519,7 +1560,7 @@ export default class QuestLord {
     private async handleEncounterResults(
         guildId: string,
         channelId: string,
-        results?: EncounterResults
+        results?: EncounterResultsType
     ) {
         // If results are undefined, it means encounter did not end
         if (results === undefined) {
@@ -1528,11 +1569,25 @@ export default class QuestLord {
         // If there are results, encounter is over
         this.assertQuestStarted(channelId);
         const quest = this.quests[channelId];
+
+        const encounter = quest.assertAndGetEncounter();
+        const encounterResults = EncounterResults(encounter.type, results);
+
         await quest.endEncounter();
+
+        // Award XP from encounter results to party
+        if (results.success && results.xp) {
+            await this.awardExperience(channelId, results.xp);
+        }
+
+        const narrator = quest.getNarrator();
+        await narrator.describe({
+            components: encounterResults,
+            flags: MessageFlags.IsComponentsV2
+        });
+
         // If success, continue quest
         if (results.success) {
-            // Award XP from encounter results to party
-            await this.awardExperience(channelId, results.xp);
             await this.promptTravel(guildId, channelId);
         // If not success, quest ends
         } else {

@@ -5,10 +5,13 @@ import { ExecuteFunction } from "../actions/Action";
 import Button from "../actions/buttons/Button";
 import Character from "../creatures/Character";
 import Narrator from "../Narrator";
+import Item from "../things/Item";
+import { EncounterType } from "../../constants";
 
 export interface EncounterResults {
     success: boolean;
     xp: number;
+    loot?: Item[];
 }
 
 export default class Encounter {
@@ -27,7 +30,7 @@ export default class Encounter {
     menus: Record<string, Selection> = {};
 
     // Strings for display purposes
-    type: string = "";
+    type: EncounterType = EncounterType.Unspecified;
     description = "In an encounter...";
 
     constructor(characters: Character[], narrator: Narrator, turnBased = false) {

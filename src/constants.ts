@@ -45,6 +45,7 @@ export const WORLD_DIMENSION = 40 as const;
 export const REGION_DIMENSION = 4 as const;
 
 export enum EncounterType {
+    Unspecified = "Unspecified",
     Combat = "Combat",      // Typical combat encounter
     Stealth = "Stealth",    // WIP: Choose between avoiding or surprising monsters
     Social = "Social",      // WIP: An encounter that involves a social interaction
