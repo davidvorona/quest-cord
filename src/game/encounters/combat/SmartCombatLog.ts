@@ -22,6 +22,7 @@ interface CombatLogEntry {
  * taken, the method of action, the associated number value, and the
  * index of the actor and the target in a tuple: [actorIdx, targetIdx?].
  * The actual creature ID can be derived from these values and the turn order.
+ * Instances of this class are primarily used for monster AI.
  */
 export default class SmartCombatLog {
     turnOrder: string[];

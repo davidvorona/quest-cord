@@ -36,6 +36,7 @@ export default class Quest {
     route: [number, number][] = [];
 
     encounter?: Encounter;
+    lastEncounter?: Encounter;
 
     constructor(guildId: string, channelId: string, userIds: string[], narrator: Narrator) {
         console.info("Accepting new quest...");
@@ -167,6 +168,10 @@ export default class Quest {
         return this.encounter;
     }
 
+    getLastEncounter() {
+        return this.lastEncounter;
+    }
+
     isInEncounter(): this is { encounter: Encounter } {
         return this.encounter !== undefined;
     }
@@ -201,6 +206,7 @@ export default class Quest {
         const encounter = this.assertAndGetEncounter();
         await this.narrator.describeEncounterOver(encounter);
 
+        this.lastEncounter = encounter;
         this.encounter = undefined;
     }
 
