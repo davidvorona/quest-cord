@@ -1,0 +1,7 @@
+{
+    "id": "antidote",
+    "name": "Antidote",
+    "type": "consumable",
+    "description": "Cures poison.",
+    "value": 12
+}

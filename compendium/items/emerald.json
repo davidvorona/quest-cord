@@ -1,0 +1,7 @@
+{
+    "id": "emerald",
+    "name": "Emerald",
+    "type": "treasure",
+    "description": "Bright green gem.",
+    "value": 45
+}

@@ -1,0 +1,18 @@
+{
+    "id": "ancient_dryad",
+    "name": "Ancient Dryad",
+    "lvl": 7,
+    "hp": 63,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "cursed_branch"
+    ],
+    "zones": [
+        "beach",
+        "ocean",
+        "jungle"
+    ]
+}

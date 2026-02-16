@@ -1,0 +1,16 @@
+{
+    "id": "feral_ghoul",
+    "name": "Feral Ghoul",
+    "lvl": 6,
+    "hp": 53,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "filthy_cloth"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "id": "crystal_wyvern",
+    "name": "Crystal Wyvern",
+    "lvl": 8,
+    "hp": 72,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "crystal_shard",
+        "wyvern_scale"
+    ],
+    "zones": [
+        "jungle",
+        "ocean"
+    ]
+}

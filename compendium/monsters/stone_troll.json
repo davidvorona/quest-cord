@@ -1,0 +1,18 @@
+{
+    "id": "stone_troll",
+    "name": "Stone Troll",
+    "lvl": 4,
+    "hp": 41,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert",
+        "forest",
+        "ocean"
+    ]
+}

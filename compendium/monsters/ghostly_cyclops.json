@@ -1,0 +1,17 @@
+{
+    "id": "ghostly_cyclops",
+    "name": "Ghostly Cyclops",
+    "lvl": 3,
+    "hp": 34,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "cyclops_eyelash"
+    ],
+    "zones": [
+        "jungle",
+        "mountains"
+    ]
+}

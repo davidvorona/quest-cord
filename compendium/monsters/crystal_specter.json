@@ -1,0 +1,18 @@
+{
+    "id": "crystal_specter",
+    "name": "Crystal Specter",
+    "lvl": 4,
+    "hp": 38,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest",
+        "mountains",
+        "desert"
+    ]
+}

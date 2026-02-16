@@ -1,0 +1,16 @@
+{
+    "id": "iron_basilisk",
+    "name": "Iron Basilisk",
+    "lvl": 2,
+    "hp": 23,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "gilded_eye"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

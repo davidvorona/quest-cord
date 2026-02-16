@@ -1,0 +1,18 @@
+{
+    "id": "thunder_ogre",
+    "name": "Thunder Ogre",
+    "lvl": 5,
+    "hp": 46,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "ogre_tooth"
+    ],
+    "zones": [
+        "ocean",
+        "forest",
+        "mountains"
+    ]
+}

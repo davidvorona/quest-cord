@@ -1,0 +1,18 @@
+{
+    "id": "blazing_shark",
+    "name": "Blazing Shark",
+    "lvl": 5,
+    "hp": 40,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "shark_tooth"
+    ],
+    "zones": [
+        "forest",
+        "desert",
+        "mountains"
+    ]
+}

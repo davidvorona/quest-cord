@@ -2,5 +2,6 @@
     "id": "ear",
     "name": "Ear",
     "type": "treasure",
+    "description": "Someone's feeling holy.",
     "value": 1
 }

@@ -1,0 +1,7 @@
+{
+    "id": "salted_fish",
+    "name": "Salted Fish",
+    "type": "food",
+    "description": "Preserved sea catch.",
+    "value": 4
+}

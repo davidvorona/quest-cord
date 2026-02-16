@@ -1,0 +1,17 @@
+{
+    "id": "ghostly_troll",
+    "name": "Ghostly Troll",
+    "lvl": 1,
+    "hp": 18,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains",
+        "beach"
+    ]
+}

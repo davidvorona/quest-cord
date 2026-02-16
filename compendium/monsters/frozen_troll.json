@@ -1,0 +1,17 @@
+{
+    "id": "frozen_troll",
+    "name": "Frozen Troll",
+    "lvl": 3,
+    "hp": 30,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "mountains"
+    ]
+}

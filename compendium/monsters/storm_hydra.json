@@ -1,0 +1,18 @@
+{
+    "id": "storm_hydra",
+    "name": "Storm Hydra",
+    "lvl": 8,
+    "hp": 66,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "desert",
+        "beach",
+        "jungle"
+    ]
+}

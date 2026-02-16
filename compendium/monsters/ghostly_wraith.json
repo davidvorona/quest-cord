@@ -1,0 +1,18 @@
+{
+    "id": "ghostly_wraith",
+    "name": "Ghostly Wraith",
+    "lvl": 2,
+    "hp": 16,
+    "damage": 2,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "simple_ring"
+    ],
+    "zones": [
+        "desert",
+        "forest",
+        "ocean"
+    ]
+}

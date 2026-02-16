@@ -1,0 +1,7 @@
+{
+    "id": "magic_scroll",
+    "name": "Magic Scroll",
+    "type": "consumable",
+    "description": "Contains a single spell.",
+    "value": 35
+}

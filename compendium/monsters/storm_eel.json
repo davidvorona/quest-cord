@@ -1,0 +1,16 @@
+{
+    "id": "storm_eel",
+    "name": "Storm Eel",
+    "lvl": 6,
+    "hp": 51,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "eel_skin"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

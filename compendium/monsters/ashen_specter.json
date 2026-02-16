@@ -1,0 +1,17 @@
+{
+    "id": "ashen_specter",
+    "name": "Ashen Specter",
+    "lvl": 8,
+    "hp": 68,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "mountains"
+    ]
+}

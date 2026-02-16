@@ -1,0 +1,7 @@
+{
+    "id": "cheese_wheel",
+    "name": "Cheese Wheel",
+    "type": "food",
+    "description": "Smells strong.",
+    "value": 5
+}

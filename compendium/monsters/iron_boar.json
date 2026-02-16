@@ -1,0 +1,16 @@
+{
+    "id": "iron_boar",
+    "name": "Iron Boar",
+    "lvl": 4,
+    "hp": 38,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "iron_bar"
+    ],
+    "zones": [
+        "jungle"
+    ]
+}

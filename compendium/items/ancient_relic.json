@@ -1,0 +1,7 @@
+{
+    "id": "ancient_relic",
+    "name": "Ancient Relic",
+    "type": "treasure",
+    "description": "Its purpose is unknown.",
+    "value": 80
+}

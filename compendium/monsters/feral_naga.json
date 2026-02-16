@@ -1,0 +1,16 @@
+{
+    "id": "feral_naga",
+    "name": "Feral Naga",
+    "lvl": 8,
+    "hp": 65,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "naga_heart"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "id": "blazing_drake",
+    "name": "Blazing Drake",
+    "lvl": 3,
+    "hp": 27,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean",
+        "mountains",
+        "forest"
+    ]
+}

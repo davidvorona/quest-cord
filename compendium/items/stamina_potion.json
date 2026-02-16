@@ -1,0 +1,7 @@
+{
+    "id": "stamina_potion",
+    "name": "Stamina Potion",
+    "type": "consumable",
+    "description": "Restores energy.",
+    "value": 15
+}

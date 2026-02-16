@@ -1,0 +1,17 @@
+{
+    "id": "dusky_hydra",
+    "name": "Dusky Hydra",
+    "lvl": 7,
+    "hp": 65,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "mountains",
+        "ocean"
+    ]
+}

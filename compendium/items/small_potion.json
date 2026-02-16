@@ -1,0 +1,7 @@
+{
+    "id": "small_potion",
+    "name": "Small Healing Potion",
+    "type": "consumable",
+    "description": "A weak healing brew.",
+    "value": 10
+}

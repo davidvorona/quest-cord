@@ -1,0 +1,7 @@
+{
+    "id": "ashes",
+    "name": "Ashes",
+    "description": "Don't sneeze!",
+    "type": "treasure",
+    "value": 1
+}

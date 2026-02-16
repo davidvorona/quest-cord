@@ -1,0 +1,17 @@
+{
+    "id": "golden_chimera",
+    "name": "Golden Chimera",
+    "lvl": 1,
+    "hp": 11,
+    "damage": 2,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "mountains"
+    ]
+}

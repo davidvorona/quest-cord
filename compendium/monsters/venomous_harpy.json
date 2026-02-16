@@ -1,0 +1,17 @@
+{
+    "id": "venomous_harpy",
+    "name": "Venomous Harpy",
+    "lvl": 1,
+    "hp": 13,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "harypy_feather"
+    ],
+    "zones": [
+        "jungle",
+        "desert"
+    ]
+}

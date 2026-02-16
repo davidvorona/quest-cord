@@ -1,0 +1,16 @@
+{
+    "id": "dire_troll",
+    "name": "Dire Troll",
+    "lvl": 9,
+    "hp": 74,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

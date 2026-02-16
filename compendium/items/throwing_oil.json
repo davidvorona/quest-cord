@@ -1,0 +1,7 @@
+{
+    "id": "throwing_oil",
+    "name": "Flask of Oil",
+    "type": "consumable",
+    "description": "Useful for fire traps.",
+    "value": 9
+}

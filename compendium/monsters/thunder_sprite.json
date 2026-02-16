@@ -1,0 +1,16 @@
+{
+    "id": "thunder_sprite",
+    "name": "Thunder Sprite",
+    "lvl": 9,
+    "hp": 78,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

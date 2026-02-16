@@ -1,0 +1,16 @@
+{
+    "id": "iron_scorpion",
+    "name": "Iron Scorpion",
+    "lvl": 2,
+    "hp": 21,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "iron_bar"
+    ],
+    "zones": [
+        "desert"
+    ]
+}

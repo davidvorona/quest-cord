@@ -1,0 +1,7 @@
+{
+    "id": "healing_herb",
+    "name": "Healing Herb",
+    "type": "consumable",
+    "description": "Restores a little health.",
+    "value": 4
+}

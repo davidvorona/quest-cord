@@ -1,0 +1,7 @@
+{
+    "id": "silver_coin",
+    "name": "Silver Coin",
+    "type": "treasure",
+    "description": "Worth more than copper.",
+    "value": 5
+}

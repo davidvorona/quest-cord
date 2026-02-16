@@ -1,0 +1,17 @@
+{
+    "id": "cursed_wyvern",
+    "name": "Cursed Wyvern",
+    "lvl": 9,
+    "hp": 81,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "wyvern_scale"
+    ],
+    "zones": [
+        "forest",
+        "desert"
+    ]
+}

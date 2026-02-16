@@ -1,0 +1,7 @@
+{
+    "id": "snake_skin",
+    "name": "Snake Skin",
+    "type": "material",
+    "description": "A shed skin from a large serpent.",
+    "value": 3
+}

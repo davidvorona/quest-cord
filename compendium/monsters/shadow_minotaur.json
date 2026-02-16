@@ -1,0 +1,16 @@
+{
+    "id": "shadow_minotaur",
+    "name": "Shadow Minotaur",
+    "lvl": 9,
+    "hp": 76,
+    "damage": 12,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

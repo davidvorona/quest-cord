@@ -1,0 +1,18 @@
+{
+    "id": "wild_specter",
+    "name": "Wild Specter",
+    "lvl": 1,
+    "hp": 12,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest",
+        "ocean",
+        "mountains"
+    ]
+}

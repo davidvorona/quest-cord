@@ -1,0 +1,17 @@
+{
+    "id": "feral_shark",
+    "name": "Feral Shark",
+    "lvl": 4,
+    "hp": 33,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "shark_tooth"
+    ],
+    "zones": [
+        "beach",
+        "desert"
+    ]
+}

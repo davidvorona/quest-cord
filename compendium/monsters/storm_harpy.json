@@ -1,0 +1,17 @@
+{
+    "id": "storm_harpy",
+    "name": "Storm Harpy",
+    "lvl": 8,
+    "hp": 72,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest",
+        "jungle"
+    ]
+}

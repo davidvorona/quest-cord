@@ -1,0 +1,17 @@
+{
+    "id": "golden_ogre",
+    "name": "Golden Ogre",
+    "lvl": 4,
+    "hp": 41,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "gilded_snot"
+    ],
+    "zones": [
+        "mountains",
+        "ocean"
+    ]
+}

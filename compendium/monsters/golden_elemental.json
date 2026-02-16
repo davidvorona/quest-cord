@@ -1,0 +1,17 @@
+{
+    "id": "golden_elemental",
+    "name": "Golden Elemental",
+    "lvl": 8,
+    "hp": 71,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "elemental_core"
+    ],
+    "zones": [
+        "jungle",
+        "desert"
+    ]
+}

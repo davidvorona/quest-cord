@@ -1,0 +1,7 @@
+{
+    "id": "ancient_coin",
+    "name": "Ancient Coin",
+    "type": "treasure",
+    "description": "From a forgotten empire.",
+    "value": 30
+}

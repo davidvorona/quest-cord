@@ -1,0 +1,16 @@
+{
+    "id": "stone_wyvern",
+    "name": "Stone Wyvern",
+    "lvl": 10,
+    "hp": 85,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "dragon_scale"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

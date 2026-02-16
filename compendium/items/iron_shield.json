@@ -1,0 +1,7 @@
+{
+    "id": "iron_shield",
+    "name": "Iron Shield",
+    "type": "armor",
+    "description": "Solid defensive gear.",
+    "value": 20
+}

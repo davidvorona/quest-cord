@@ -1,0 +1,7 @@
+{
+    "id": "crystal_shard",
+    "name": "Crystal Shard",
+    "type": "material",
+    "description": "Glowing fragment.",
+    "value": 18
+}

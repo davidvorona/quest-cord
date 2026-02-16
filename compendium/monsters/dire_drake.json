@@ -1,0 +1,16 @@
+{
+    "id": "dire_drake",
+    "name": "Dire Drake",
+    "lvl": 1,
+    "hp": 10,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

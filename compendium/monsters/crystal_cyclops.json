@@ -1,0 +1,16 @@
+{
+    "id": "crystal_cyclops",
+    "name": "Crystal Cyclops",
+    "lvl": 9,
+    "hp": 76,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "cyclops_eyelash"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

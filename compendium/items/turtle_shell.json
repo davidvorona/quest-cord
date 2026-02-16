@@ -1,0 +1,7 @@
+{
+    "id": "turtle_shell",
+    "name": "Turtle Shell",
+    "type": "material",
+    "description": "A sturdy natural shield.",
+    "value": 7
+}

@@ -1,0 +1,7 @@
+{
+    "id": "jeweled_ring",
+    "name": "Jeweled Ring",
+    "type": "treasure",
+    "description": "Set with tiny gems.",
+    "value": 35
+}

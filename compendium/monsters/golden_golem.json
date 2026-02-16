@@ -1,0 +1,18 @@
+{
+    "id": "golden_golem",
+    "name": "Golden Golem",
+    "lvl": 6,
+    "hp": 54,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert",
+        "mountains",
+        "forest"
+    ]
+}

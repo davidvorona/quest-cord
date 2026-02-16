@@ -1,0 +1,7 @@
+{
+    "id": "large_potion",
+    "name": "Large Healing Potion",
+    "type": "consumable",
+    "description": "Strong healing brew.",
+    "value": 40
+}

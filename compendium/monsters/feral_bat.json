@@ -1,0 +1,16 @@
+{
+    "id": "feral_bat",
+    "name": "Feral Bat",
+    "lvl": 3,
+    "hp": 32,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "bat_wing"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

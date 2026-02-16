@@ -1,0 +1,18 @@
+{
+    "id": "golden_dryad",
+    "name": "Golden Dryad",
+    "lvl": 4,
+    "hp": 41,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "cursed_branch"
+    ],
+    "zones": [
+        "ocean",
+        "mountains",
+        "desert"
+    ]
+}

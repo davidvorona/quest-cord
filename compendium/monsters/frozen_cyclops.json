@@ -1,0 +1,17 @@
+{
+    "id": "frozen_cyclops",
+    "name": "Frozen Cyclops",
+    "lvl": 8,
+    "hp": 67,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "cyclops_eyelash"
+    ],
+    "zones": [
+        "beach",
+        "ocean"
+    ]
+}

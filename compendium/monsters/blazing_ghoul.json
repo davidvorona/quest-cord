@@ -1,0 +1,16 @@
+{
+    "id": "blazing_ghoul",
+    "name": "Blazing Ghoul",
+    "lvl": 9,
+    "hp": 79,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

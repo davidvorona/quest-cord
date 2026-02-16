@@ -1,0 +1,7 @@
+{
+    "id": "minotaur_horn",
+    "name": "Minotaur Horn",
+    "type": "treasure",
+    "description": "A large, curved horn from a minotaur.",
+    "value": 8
+}

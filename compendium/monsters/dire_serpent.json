@@ -1,0 +1,17 @@
+{
+    "id": "dire_serpent",
+    "name": "Dire Serpent",
+    "lvl": 4,
+    "hp": 32,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "beach",
+        "mountains"
+    ]
+}
