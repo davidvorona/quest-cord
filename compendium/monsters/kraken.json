@@ -1,0 +1,16 @@
+{
+    "id": "kraken",
+    "name": "Kraken",
+    "lvl": 3,
+    "hp": 32,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

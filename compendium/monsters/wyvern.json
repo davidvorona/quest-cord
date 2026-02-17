@@ -1,0 +1,16 @@
+{
+    "id": "wyvern",
+    "name": "Wyvern",
+    "lvl": 5,
+    "hp": 50,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "dragon_scale"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

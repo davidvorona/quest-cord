@@ -1,0 +1,17 @@
+{
+    "id": "crab",
+    "name": "Crab",
+    "lvl": 7,
+    "hp": 64,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "crab_shell"
+    ],
+    "zones": [
+        "beach",
+        "ocean"
+    ]
+}

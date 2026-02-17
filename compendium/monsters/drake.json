@@ -1,0 +1,17 @@
+{
+    "id": "drake",
+    "name": "Drake",
+    "lvl": 10,
+    "hp": 84,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "dragon_scale"
+    ],
+    "zones": [
+        "beach",
+        "jungle"
+    ]
+}

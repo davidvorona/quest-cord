@@ -1,0 +1,17 @@
+{
+    "id": "ogre",
+    "name": "Ogre",
+    "lvl": 8,
+    "hp": 74,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "ogre_tooth"
+    ],
+    "zones": [
+        "desert",
+        "jungle"
+    ]
+}

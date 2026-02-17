@@ -1,0 +1,16 @@
+{
+    "id": "vampire",
+    "name": "Vampire",
+    "lvl": 8,
+    "hp": 64,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

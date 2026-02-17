@@ -1,7 +1,7 @@
 {
     "id": "developer",
     "name": "Developer",
-    "hp": 100,
+    "hp": 1000,
     "damage": 5,
     "equipment": {
         "weapon": "sword",

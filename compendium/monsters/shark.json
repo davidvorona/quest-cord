@@ -1,0 +1,17 @@
+{
+    "id": "shark",
+    "name": "Shark",
+    "lvl": 1,
+    "hp": 17,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "shark_tooth"
+    ],
+    "zones": [
+        "ocean",
+        "desert"
+    ]
+}

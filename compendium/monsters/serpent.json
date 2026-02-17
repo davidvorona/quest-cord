@@ -1,0 +1,18 @@
+{
+    "id": "serpent",
+    "name": "Serpent",
+    "lvl": 3,
+    "hp": 25,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "forest",
+        "jungle",
+        "beach"
+    ]
+}

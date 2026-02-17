@@ -1,0 +1,16 @@
+{
+    "id": "treant",
+    "name": "Treant",
+    "lvl": 7,
+    "hp": 61,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "ancient_bark"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

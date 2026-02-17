@@ -104,4 +104,8 @@ export default class Creature {
     getDamage(): number {
         return this.damage + this.getWeaponDamage();
     }
+
+    isDead() {
+        return this.hp <= 0;
+    }
 }

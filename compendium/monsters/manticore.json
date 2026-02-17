@@ -1,0 +1,16 @@
+{
+    "id": "manticore",
+    "name": "Manticore",
+    "lvl": 10,
+    "hp": 80,
+    "damage": 12,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "jungle"
+    ]
+}

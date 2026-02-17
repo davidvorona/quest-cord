@@ -8,5 +8,10 @@
         "weapon": "scimitar"
     },
     "loot": ["scimitar"],
-    "zones": ["forest", "cave", "mountains", "desert", "jungle"]
+    "zones": [
+        "forest",
+        "mountains",
+        "desert",
+        "jungle"
+    ]
 }

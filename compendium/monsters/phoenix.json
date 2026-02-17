@@ -1,0 +1,16 @@
+{
+    "id": "phoenix",
+    "name": "Phoenix",
+    "lvl": 9,
+    "hp": 76,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

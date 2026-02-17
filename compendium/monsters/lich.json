@@ -1,0 +1,17 @@
+{
+    "id": "lich",
+    "name": "Lich",
+    "lvl": 7,
+    "hp": 66,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains",
+        "beach"
+    ]
+}

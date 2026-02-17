@@ -1,0 +1,7 @@
+{
+    "id": "holy_fabric",
+    "name": "Holy Fabric",
+    "type": "material",
+    "description": "The fabric is stringing.",
+    "value": 2
+}

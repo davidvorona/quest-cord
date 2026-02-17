@@ -1,0 +1,17 @@
+{
+    "id": "leviathan",
+    "name": "Leviathan",
+    "lvl": 4,
+    "hp": 33,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "desert"
+    ]
+}

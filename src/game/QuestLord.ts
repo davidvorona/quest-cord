@@ -240,6 +240,9 @@ export default class QuestLord {
             if (interaction.commandName === "forceencounter") {
                 await this.forceEncounterType(interaction);
             }
+            if (interaction.commandName === "enablefastxp") {
+                await this.enableFastXp(interaction);
+            }
         } catch (err) {
             const errMessage = err instanceof Error
                 ? err.message : "Unable to handle command, try again.";
@@ -1606,7 +1609,7 @@ export default class QuestLord {
 
         await interaction.reply({
             content: "Killing the heroes and ending the quest...",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         await this.failQuest(channelId);
@@ -1630,6 +1633,22 @@ export default class QuestLord {
             this.forceEncounters[channelId] = encounterType;
         }
 
-        await interaction.reply({ content, ephemeral: true });
+        await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+    }
+
+    private async enableFastXp(interaction: CommandInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        let content;
+        if (defaultXpService.multiplier !== 1) {
+            content = "Setting XP multiplier back to normal.";
+            defaultXpService.setMultiplier(1);
+        } else {
+            content = "Setting XP multiplier to 5x.";
+            defaultXpService.setMultiplier(5);
+        }
+
+        await interaction.reply({ content, flags: MessageFlags.Ephemeral });
     }
 }

@@ -1,0 +1,16 @@
+{
+    "id": "wraith",
+    "name": "Wraith",
+    "lvl": 7,
+    "hp": 61,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

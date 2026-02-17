@@ -1,0 +1,16 @@
+{
+    "id": "boar",
+    "name": "Boar",
+    "lvl": 3,
+    "hp": 34,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "boar_tusk"
+    ],
+    "zones": [
+        "jungle"
+    ]
+}

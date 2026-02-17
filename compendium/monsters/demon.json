@@ -1,0 +1,16 @@
+{
+    "id": "demon",
+    "name": "Demon",
+    "lvl": 10,
+    "hp": 87,
+    "damage": 12,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

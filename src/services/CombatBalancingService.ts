@@ -1,5 +1,5 @@
 import Character from "../game/creatures/Character";
-import { BaseMonster } from "../types";
+import { BaseMonster, MonsterData } from "../types";
 import { rand, randInList } from "../util";
 
 enum BalancingStrategy {
@@ -7,10 +7,6 @@ enum BalancingStrategy {
     Hitpoints = "Hitpoints",
     Damage = "Damage",
     Level = "Level"
-}
-
-interface MonsterData {
-    [monsterId: string]: BaseMonster;
 }
 
 export default class CombatBalancingService {
@@ -31,8 +27,13 @@ export default class CombatBalancingService {
         this.totalLvl = totalLvl;
     }
 
-    pickRandomStrategy() {
+    pickStrategy() {
         const strategies = Object.values(BalancingStrategy);
+        if (this.totalLvl / this.characters.length < 3) {
+            // No bosses allowed for low level parties
+            const index = strategies.indexOf(BalancingStrategy.BossAndMinions);
+            strategies.splice(index, 1);
+        }
         this.strategy = randInList(strategies);
         return this.strategy;
     }

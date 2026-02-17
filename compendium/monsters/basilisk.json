@@ -1,0 +1,16 @@
+{
+    "id": "basilisk",
+    "name": "Basilisk",
+    "lvl": 2,
+    "hp": 26,
+    "damage": 2,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

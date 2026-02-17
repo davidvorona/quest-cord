@@ -1,0 +1,16 @@
+{
+    "id": "zombie",
+    "name": "Zombie",
+    "lvl": 3,
+    "hp": 33,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

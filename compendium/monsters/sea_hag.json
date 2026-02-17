@@ -4,7 +4,14 @@
     "lvl": 2,
     "hp": 11,
     "damage": 1,
-    "spells": ["death_glare"],
-    "loot": ["seaweed"],
-    "zones": ["beach", "ocean"]
+    "spells": [
+        "death_glare"
+    ],
+    "loot": [
+        "seaweed"
+    ],
+    "zones": [
+        "beach",
+        "ocean"
+    ]
 }

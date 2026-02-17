@@ -1,0 +1,16 @@
+{
+    "id": "imp",
+    "name": "Imp",
+    "lvl": 8,
+    "hp": 68,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert"
+    ]
+}

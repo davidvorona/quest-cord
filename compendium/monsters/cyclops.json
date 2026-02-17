@@ -1,0 +1,16 @@
+{
+    "id": "cyclops",
+    "name": "Cyclops",
+    "lvl": 8,
+    "hp": 64,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "jungle"
+    ]
+}

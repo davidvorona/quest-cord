@@ -1,0 +1,18 @@
+{
+    "id": "elemental",
+    "name": "Elemental",
+    "lvl": 3,
+    "hp": 34,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "elemental_core"
+    ],
+    "zones": [
+        "mountains",
+        "forest",
+        "ocean"
+    ]
+}
