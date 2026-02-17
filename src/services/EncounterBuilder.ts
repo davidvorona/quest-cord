@@ -21,19 +21,19 @@ class EncounterBuilder {
 
     build(biome: string, pcs: PlayerCharacter[], narrator: Narrator, forceType?: string) {
         const characters = pcs.map(pc => pc.getCharacter());
+        const totalLvl = pcs.reduce((prev, curr) => prev + curr.lvl, 0);
         // Quest-specific forced type > instance-specific forced type > random type
         const encounterType = forceType || config.forceEncounterType
             || randInList(Object.keys(EncounterType));
         switch (encounterType) {
         case (EncounterType.Combat): {
-            const totalLvl = pcs.reduce((prev, curr) => prev + curr.lvl, 0);
             const monsters = this.creatureFactory
                 .createLeveledBiomeTypeMonsterList(characters, biome, totalLvl);
             return new CombatEncounter(characters, narrator, monsters);
         }
         case (EncounterType.Stealth): {
             const monsters = this.creatureFactory
-                .createRandomBiomeTypeMonsterList(characters.length, biome);
+                .createLeveledBiomeTypeMonsterList(characters, biome, totalLvl);
             return new StealthEncounter(characters, narrator, monsters);
         }
         case (EncounterType.Social): {

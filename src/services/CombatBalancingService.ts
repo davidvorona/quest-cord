@@ -24,9 +24,9 @@ export default class CombatBalancingService {
 
     strategy?: BalancingStrategy;
 
-    constructor(characters: Character[], monsters: MonsterData, totalLvl: number) {
-        this.monsterData = monsters;
-        this.monsters = Object.values(monsters);
+    constructor(characters: Character[], monsterData: MonsterData, totalLvl: number) {
+        this.monsterData = monsterData;
+        this.monsters = Object.values(monsterData);
         this.characters = characters;
         this.totalLvl = totalLvl;
     }
@@ -67,7 +67,7 @@ export default class CombatBalancingService {
         return result;
     }
 
-    pickBossAndMinions() {
+    private pickBossAndMinions() {
         const bossV = 2;
         const avgLvl = this.totalLvl / this.characters.length;
         const bossLvl = avgLvl + bossV;
@@ -77,10 +77,11 @@ export default class CombatBalancingService {
         const minionLvl = avgLvl - bossV < 1 ? 1 : avgLvl - bossV;
         const minions = this.monsters.filter((m) => m.lvl === minionLvl);
         const minion = randInList(minions);
+        // Boss + minion count equals player count
         return [boss, ...new Array(this.characters.length - 1).fill(minion)];
     }
 
-    pickByTotalHitpoints() {
+    private pickByTotalHitpoints() {
         // Variance for monster count is only +/- 1
         const count = this.characters.length + 1 + this.createVariance(1);
         const totalPartyHp = this.characters.reduce((prev, curr) => prev + curr.maxHp, 0);
@@ -97,7 +98,7 @@ export default class CombatBalancingService {
         return new Array(count).fill(monster);
     }
 
-    pickByTotalDamage() {
+    private pickByTotalDamage() {
         const count = this.characters.length + 1 + this.createVariance(1);
         const totalPartyDamage = this.characters.reduce((prev, curr) => prev + curr.damage, 0);
         const seedDamage = totalPartyDamage / count;
@@ -108,12 +109,11 @@ export default class CombatBalancingService {
             const varianceB = Math.abs(b.damage - seedDamage);
             return varianceA - varianceB;
         });
-        // Pick the monster with the least variance
         const monster = monsters[0];
         return new Array(count).fill(monster);
     }
 
-    pickByTotalLevel() {
+    private pickByTotalLevel() {
         const count = this.characters.length + 1 + this.createVariance(1);
         const seedLevel = this.totalLvl / count;
         const monsters = [...this.monsters];
@@ -123,7 +123,6 @@ export default class CombatBalancingService {
             const varianceB = Math.abs(b.lvl - seedLevel);
             return varianceA - varianceB;
         });
-        // Pick the monster with the least variance
         const monster = monsters[0];
         return new Array(count).fill(monster);
     }
