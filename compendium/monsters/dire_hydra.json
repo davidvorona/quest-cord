@@ -1,0 +1,16 @@
+{
+    "id": "dire_hydra",
+    "name": "Dire Hydra",
+    "lvl": 4,
+    "hp": 33,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "hydra_scale"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

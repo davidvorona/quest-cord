@@ -1,0 +1,16 @@
+{
+    "id": "wild_dryad",
+    "name": "Wild Dryad",
+    "lvl": 4,
+    "hp": 39,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

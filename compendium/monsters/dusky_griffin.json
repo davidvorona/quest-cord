@@ -1,0 +1,16 @@
+{
+    "id": "dusky_griffin",
+    "name": "Dusky Griffin",
+    "lvl": 9,
+    "hp": 76,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

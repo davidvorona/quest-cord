@@ -1,0 +1,7 @@
+{
+    "id": "smoke_bomb",
+    "name": "Smoke Bomb",
+    "type": "consumable",
+    "description": "Creates a smoke cloud.",
+    "value": 14
+}

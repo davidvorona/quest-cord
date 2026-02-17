@@ -1,0 +1,18 @@
+{
+    "id": "storm_basilisk",
+    "name": "Storm Basilisk",
+    "lvl": 7,
+    "hp": 57,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "jungle",
+        "ocean"
+    ]
+}

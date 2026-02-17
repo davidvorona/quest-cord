@@ -1,0 +1,18 @@
+{
+    "id": "blazing_panther",
+    "name": "Blazing Panther",
+    "lvl": 10,
+    "hp": 81,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "panther_pelt"
+    ],
+    "zones": [
+        "forest",
+        "ocean",
+        "beach"
+    ]
+}

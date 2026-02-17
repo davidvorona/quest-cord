@@ -649,7 +649,7 @@ export default class QuestLord {
 
                 const forceType = this.forceEncounters[channelId];
                 const encounter = this.encounterBuilder
-                    .build(partyBiome, quest.getCharacters(), narrator, forceType);
+                    .build(partyBiome, quest.getPlayerCharacters(), narrator, forceType);
                 await quest.startEncounter(encounter);
 
                 const encounterDisplay = EncounterDisplay(encounter, partyBiome);
@@ -867,7 +867,7 @@ export default class QuestLord {
                     // Now that the party has reached a new location, start the next encounter
                     const forceType = this.forceEncounters[channelId];
                     const encounter = this.encounterBuilder
-                        .build(newBiome, quest.getCharacters(), narrator, forceType);
+                        .build(newBiome, quest.getPlayerCharacters(), narrator, forceType);
                     await quest.startEncounter(encounter);
 
                     const encounterDisplay = EncounterDisplay(encounter, newBiome);

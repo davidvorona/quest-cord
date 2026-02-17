@@ -1,0 +1,20 @@
+{
+    "id": "frozen_chimera",
+    "name": "Frozen Chimera",
+    "lvl": 6,
+    "hp": 49,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "lion_tooth",
+        "goat_hoof",
+        "snake_scale"
+    ],
+    "zones": [
+        "mountains",
+        "ocean",
+        "beach"
+    ]
+}

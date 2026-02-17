@@ -1,0 +1,16 @@
+{
+    "id": "wild_harpy",
+    "name": "Wild Harpy",
+    "lvl": 9,
+    "hp": 80,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

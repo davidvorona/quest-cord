@@ -1,0 +1,18 @@
+{
+    "id": "frozen_harpy",
+    "name": "Frozen Harpy",
+    "lvl": 5,
+    "hp": 48,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert",
+        "beach",
+        "mountains"
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "savage_wolf",
+    "name": "Savage Wolf",
+    "lvl": 2,
+    "hp": 16,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "wolf_pelt"
+    ],
+    "zones": [
+        "desert",
+        "forest"
+    ]
+}

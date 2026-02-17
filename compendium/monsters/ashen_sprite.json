@@ -1,0 +1,17 @@
+{
+    "id": "ashen_sprite",
+    "name": "Ashen Sprite",
+    "lvl": 1,
+    "hp": 15,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "ashes"
+    ],
+    "zones": [
+        "beach",
+        "forest"
+    ]
+}

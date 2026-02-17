@@ -1,0 +1,16 @@
+{
+    "id": "savage_troll",
+    "name": "Savage Troll",
+    "lvl": 8,
+    "hp": 68,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

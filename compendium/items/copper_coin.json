@@ -1,0 +1,7 @@
+{
+    "id": "copper_coin",
+    "name": "Copper Coin",
+    "type": "treasure",
+    "description": "A common coin.",
+    "value": 1
+}

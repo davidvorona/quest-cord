@@ -1,0 +1,7 @@
+{
+    "id": "spider_silk",
+    "name": "Spider Silk",
+    "type": "material",
+    "description": "Sticky but strong thread.",
+    "value": 4
+}

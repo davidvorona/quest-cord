@@ -1,0 +1,7 @@
+{
+    "id": "rat_tail",
+    "name": "Rat Tail",
+    "type": "treasure",
+    "description": "Proof of a small hunt.",
+    "value": 1
+}

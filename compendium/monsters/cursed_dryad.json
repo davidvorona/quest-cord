@@ -1,0 +1,16 @@
+{
+    "id": "cursed_dryad",
+    "name": "Cursed Dryad",
+    "lvl": 7,
+    "hp": 60,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

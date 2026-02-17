@@ -1,0 +1,17 @@
+{
+    "id": "dusky_boar",
+    "name": "Dusky Boar",
+    "lvl": 6,
+    "hp": 51,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "boar_tusk"
+    ],
+    "zones": [
+        "jungle",
+        "desert"
+    ]
+}

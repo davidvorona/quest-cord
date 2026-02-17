@@ -1,0 +1,7 @@
+{
+    "id": "spell_book",
+    "name": "Spell Book",
+    "type": "treasure",
+    "description": "Filled with arcane notes.",
+    "value": 60
+}

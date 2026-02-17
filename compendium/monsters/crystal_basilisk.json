@@ -1,0 +1,17 @@
+{
+    "id": "crystal_basilisk",
+    "name": "Crystal Basilisk",
+    "lvl": 8,
+    "hp": 68,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "basilisk_eye"
+    ],
+    "zones": [
+        "desert",
+        "beach"
+    ]
+}

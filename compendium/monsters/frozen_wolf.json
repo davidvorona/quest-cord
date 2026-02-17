@@ -1,0 +1,18 @@
+{
+    "id": "frozen_wolf",
+    "name": "Frozen Wolf",
+    "lvl": 3,
+    "hp": 33,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "wolf_pelt"
+    ],
+    "zones": [
+        "ocean",
+        "forest",
+        "mountains"
+    ]
+}

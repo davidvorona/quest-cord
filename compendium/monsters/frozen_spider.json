@@ -1,0 +1,18 @@
+{
+    "id": "frozen_spider",
+    "name": "Frozen Spider",
+    "lvl": 2,
+    "hp": 20,
+    "damage": 2,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "spider_silk"
+    ],
+    "zones": [
+        "desert",
+        "mountains",
+        "ocean"
+    ]
+}

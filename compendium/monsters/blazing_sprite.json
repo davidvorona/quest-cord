@@ -1,0 +1,17 @@
+{
+    "id": "blazing_sprite",
+    "name": "Blazing Sprite",
+    "lvl": 4,
+    "hp": 39,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "ashes"
+    ],
+    "zones": [
+        "beach",
+        "jungle"
+    ]
+}

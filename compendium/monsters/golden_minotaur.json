@@ -1,0 +1,17 @@
+{
+    "id": "golden_minotaur",
+    "name": "Golden Minotaur",
+    "lvl": 3,
+    "hp": 27,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "gilded_horn"
+    ],
+    "zones": [
+        "desert",
+        "forest"
+    ]
+}

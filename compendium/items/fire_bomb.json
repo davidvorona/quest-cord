@@ -1,0 +1,7 @@
+{
+    "id": "fire_bomb",
+    "name": "Fire Bomb",
+    "type": "consumable",
+    "description": "Explodes in flames.",
+    "value": 18
+}

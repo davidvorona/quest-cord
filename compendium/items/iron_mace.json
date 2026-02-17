@@ -1,0 +1,7 @@
+{
+    "id": "iron_mace",
+    "name": "Iron Mace",
+    "type": "weapon",
+    "description": "Crushes armor easily.",
+    "value": 16
+}

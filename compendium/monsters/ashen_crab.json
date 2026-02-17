@@ -1,0 +1,17 @@
+{
+    "id": "ashen_crab",
+    "name": "Ashen Crab",
+    "lvl": 2,
+    "hp": 22,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "crab_claw"
+    ],
+    "zones": [
+        "desert",
+        "forest"
+    ]
+}

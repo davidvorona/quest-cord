@@ -1,0 +1,18 @@
+{
+    "id": "stone_sprite",
+    "name": "Stone Sprite",
+    "lvl": 3,
+    "hp": 34,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean",
+        "beach",
+        "jungle"
+    ]
+}

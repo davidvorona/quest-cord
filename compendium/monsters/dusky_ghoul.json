@@ -1,0 +1,17 @@
+{
+    "id": "dusky_ghoul",
+    "name": "Dusky Ghoul",
+    "lvl": 5,
+    "hp": 48,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "jungle",
+        "mountains"
+    ]
+}

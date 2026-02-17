@@ -1,0 +1,7 @@
+{
+    "id": "mana_crystal",
+    "name": "Mana Crystal",
+    "type": "material",
+    "description": "Pulses with energy.",
+    "value": 30
+}

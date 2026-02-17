@@ -1,0 +1,18 @@
+{
+    "id": "thunder_harpy",
+    "name": "Thunder Harpy",
+    "lvl": 9,
+    "hp": 75,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest",
+        "beach",
+        "mountains"
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "savage_wraith",
+    "name": "Savage Wraith",
+    "lvl": 7,
+    "hp": 57,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest",
+        "jungle"
+    ]
+}

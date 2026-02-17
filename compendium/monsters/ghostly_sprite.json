@@ -1,0 +1,14 @@
+{
+    "id": "ghostly_sprite",
+    "name": "Ghostly Sprite",
+    "lvl": 1,
+    "hp": 18,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [],
+    "zones": [
+        "mountains"
+    ]
+}

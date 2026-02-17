@@ -1,0 +1,17 @@
+{
+    "id": "ancient_elemental",
+    "name": "Ancient Elemental",
+    "lvl": 6,
+    "hp": 55,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "elemental_core"
+    ],
+    "zones": [
+        "forest",
+        "desert"
+    ]
+}

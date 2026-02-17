@@ -1,0 +1,7 @@
+{
+    "id": "hunter_spear",
+    "name": "Hunter Spear",
+    "type": "weapon",
+    "description": "Good for thrusting.",
+    "value": 10
+}

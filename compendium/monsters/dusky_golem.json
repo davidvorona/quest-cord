@@ -1,0 +1,16 @@
+{
+    "id": "dusky_golem",
+    "name": "Dusky Golem",
+    "lvl": 8,
+    "hp": 70,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

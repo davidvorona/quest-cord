@@ -1,0 +1,18 @@
+{
+    "id": "savage_boar",
+    "name": "Savage Boar",
+    "lvl": 1,
+    "hp": 17,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "boar_tusk"
+    ],
+    "zones": [
+        "ocean",
+        "beach",
+        "jungle"
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "id": "feral_boar",
+    "name": "Feral Boar",
+    "lvl": 2,
+    "hp": 19,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "boar_tusk"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

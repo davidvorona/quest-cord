@@ -1,0 +1,7 @@
+{
+    "id": "wooden_shield",
+    "name": "Wooden Shield",
+    "type": "armor",
+    "description": "Basic protection.",
+    "value": 10
+}

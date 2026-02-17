@@ -1,0 +1,7 @@
+{
+    "id": "dried_meat",
+    "name": "Dried Meat",
+    "type": "food",
+    "description": "Salty preserved meat.",
+    "value": 3
+}

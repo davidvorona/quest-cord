@@ -2,7 +2,6 @@
     "id": "leather_armor",
     "name": "Leather Armor",
     "type": "armor",
-    "ac": 1,
-    "category": "light",
-    "value": 18
+    "description": "Flexible protection.",
+    "value": 15
 }

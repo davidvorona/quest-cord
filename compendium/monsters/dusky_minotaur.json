@@ -1,0 +1,16 @@
+{
+    "id": "dusky_minotaur",
+    "name": "Dusky Minotaur",
+    "lvl": 6,
+    "hp": 53,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains"
+    ]
+}

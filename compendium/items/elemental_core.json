@@ -1,0 +1,7 @@
+{
+    "id": "elemental_core",
+    "name": "Elemental Core",
+    "type": "treasure",
+    "description": "A faintly glowing crystal.",
+    "value": 15
+}

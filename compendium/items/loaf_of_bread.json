@@ -1,0 +1,7 @@
+{
+    "id": "loaf_of_bread",
+    "name": "Loaf of Bread",
+    "type": "food",
+    "description": "Simple travel food.",
+    "value": 2
+}

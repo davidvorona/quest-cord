@@ -1,0 +1,17 @@
+{
+    "id": "ashen_basilisk",
+    "name": "Ashen Basilisk",
+    "lvl": 8,
+    "hp": 71,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "basilisk_eye"
+    ],
+    "zones": [
+        "forest",
+        "mountains"
+    ]
+}

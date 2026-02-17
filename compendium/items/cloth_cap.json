@@ -1,0 +1,7 @@
+{
+    "id": "cloth_cap",
+    "name": "Cloth Cap",
+    "type": "armor",
+    "description": "Simple head covering.",
+    "value": 2
+}

@@ -1,0 +1,15 @@
+{
+    "id": "shadow_spider",
+    "name": "Shadow Spider",
+    "lvl": 8,
+    "hp": 67,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [],
+    "zones": [
+        "jungle",
+        "mountains"
+    ]
+}

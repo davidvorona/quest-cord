@@ -1,0 +1,16 @@
+{
+    "id": "iron_serpent",
+    "name": "Iron Serpent",
+    "lvl": 3,
+    "hp": 31,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

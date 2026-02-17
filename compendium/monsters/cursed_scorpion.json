@@ -1,0 +1,16 @@
+{
+    "id": "cursed_scorpion",
+    "name": "Cursed Scorpion",
+    "lvl": 2,
+    "hp": 26,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "scorpion_stinger"
+    ],
+    "zones": [
+        "desert"
+    ]
+}

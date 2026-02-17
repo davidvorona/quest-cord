@@ -1,0 +1,19 @@
+{
+    "id": "ashen_minotaur",
+    "name": "Ashen Minotaur",
+    "lvl": 4,
+    "hp": 39,
+    "damage": 7,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "old_locket",
+        "minotaur_horn"
+    ],
+    "zones": [
+        "jungle",
+        "beach",
+        "desert"
+    ]
+}

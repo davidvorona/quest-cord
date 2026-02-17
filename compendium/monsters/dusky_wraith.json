@@ -1,0 +1,16 @@
+{
+    "id": "dusky_wraith",
+    "name": "Dusky Wraith",
+    "lvl": 10,
+    "hp": 83,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "simple_ring"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

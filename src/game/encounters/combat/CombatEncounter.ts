@@ -30,10 +30,10 @@ import {
 } from "../../actions";
 import Spell, { AttackSpell } from "../../things/Spell";
 import Weapon from "../../things/Weapon";
+import Item from "../../things/Item";
 import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
-import Item from "../../things/Item";
 
 interface AttackOption {
     target: Creature;

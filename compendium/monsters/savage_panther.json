@@ -1,0 +1,18 @@
+{
+    "id": "savage_panther",
+    "name": "Savage Panther",
+    "lvl": 9,
+    "hp": 73,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "panther_pelt"
+    ],
+    "zones": [
+        "mountains",
+        "ocean",
+        "jungle"
+    ]
+}

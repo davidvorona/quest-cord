@@ -1,0 +1,18 @@
+{
+    "id": "feral_wraith",
+    "name": "Feral Wraith",
+    "lvl": 9,
+    "hp": 72,
+    "damage": 12,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains",
+        "desert",
+        "beach"
+    ]
+}

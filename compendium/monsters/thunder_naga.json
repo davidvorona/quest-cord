@@ -1,0 +1,16 @@
+{
+    "id": "thunder_naga",
+    "name": "Thunder Naga",
+    "lvl": 9,
+    "hp": 73,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

@@ -1,0 +1,7 @@
+{
+    "id": "long_bow",
+    "name": "Long Bow",
+    "type": "weapon",
+    "description": "Powerful and precise.",
+    "value": 25
+}

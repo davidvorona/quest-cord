@@ -1,0 +1,7 @@
+{
+    "id": "short_bow",
+    "name": "Short Bow",
+    "type": "weapon",
+    "description": "Light ranged weapon.",
+    "value": 15
+}

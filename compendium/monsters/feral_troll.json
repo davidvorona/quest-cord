@@ -1,0 +1,16 @@
+{
+    "id": "feral_troll",
+    "name": "Feral Troll",
+    "lvl": 9,
+    "hp": 76,
+    "damage": 12,
+    "equipment": {
+        "weapon": "great_club"
+    },
+    "loot": [
+        "great_club"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

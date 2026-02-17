@@ -1,0 +1,7 @@
+{
+    "id": "healing_potion",
+    "name": "Healing Potion",
+    "type": "consumable",
+    "description": "Restores health.",
+    "value": 20
+}

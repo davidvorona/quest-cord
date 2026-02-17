@@ -1,0 +1,17 @@
+{
+    "id": "iron_bat",
+    "name": "Iron Bat",
+    "lvl": 6,
+    "hp": 50,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "bat_wing"
+    ],
+    "zones": [
+        "mountains",
+        "desert"
+    ]
+}

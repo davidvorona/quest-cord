@@ -1,0 +1,8 @@
+{
+    "id": "battle_axe",
+    "name": "Battle Axe",
+    "type": "weapon",
+    "description": "Favored by raiders.",
+    "value": 20,
+    "damage": 2
+}

@@ -1,0 +1,18 @@
+{
+    "id": "golden_specter",
+    "name": "Golden Specter",
+    "lvl": 9,
+    "hp": 81,
+    "damage": 11,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "mountains",
+        "forest"
+    ]
+}

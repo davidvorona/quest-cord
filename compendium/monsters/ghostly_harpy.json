@@ -1,0 +1,17 @@
+{
+    "id": "ghostly_harpy",
+    "name": "Ghostly Harpy",
+    "lvl": 3,
+    "hp": 24,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "harpy_feather"
+    ],
+    "zones": [
+        "forest",
+        "jungle"
+    ]
+}

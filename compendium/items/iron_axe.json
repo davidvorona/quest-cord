@@ -1,0 +1,7 @@
+{
+    "id": "iron_axe",
+    "name": "Iron Axe",
+    "type": "weapon",
+    "description": "Heavy chopping weapon.",
+    "value": 14
+}

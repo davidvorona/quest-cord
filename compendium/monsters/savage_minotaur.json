@@ -1,0 +1,17 @@
+{
+    "id": "savage_minotaur",
+    "name": "Savage Minotaur",
+    "lvl": 10,
+    "hp": 89,
+    "damage": 13,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "minotaur_horn",
+        "old_locket"
+    ],
+    "zones": [
+        "desert"
+    ]
+}
