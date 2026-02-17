@@ -11,18 +11,19 @@
     "items": ["potion"],
     "lvlGains": [
         {
-            "hp": 1
+            "hp": 8
         },
         {
+            "hp": 8,
             "spells": ["fire_bolt"],
             "damage": 1
         },
         {
-            "hp": 1
+            "hp": 10
         },
         {
-            "spells": ["summon_wolf"],
-            "damage": 1
+            "spells": ["summon_wolf", "first_aid"],
+            "damage": 2
         }
     ]
 }

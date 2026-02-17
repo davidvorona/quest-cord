@@ -10,18 +10,19 @@
     "items": ["elixir"],
     "lvlGains": [
         {
-            "hp": 2
+            "hp": 15
         },
         {
-            "hp": 1,
-            "damage": 1
+            "hp": 15,
+            "damage": 2
         },
         {
-            "hp": 2
+            "hp": 15,
+            "damage": 2
         },
         {
-            "hp": 1,
-            "damage": 1
+            "hp": 20,
+            "damage": 2
         }
     ]
 }

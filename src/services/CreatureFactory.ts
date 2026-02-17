@@ -13,6 +13,7 @@ import {
 import { randKey } from "../util";
 import CompendiumReader from "./CompendiumReader";
 import ItemFactory from "./ItemFactory";
+import CombatBalancingService from "./CombatBalancingService";
 import Weapon from "../game/things/Weapon";
 import Item from "../game/things/Item";
 import SpellFactory from "./SpellFactory";
@@ -158,7 +159,7 @@ class CreatureFactory {
         return list;
     }
 
-    createRandomBiomeTypeMonsterList(length: number, biome: string) {
+    createBiomeTypeMonsterList(biome: string) {
         const biomeMonsters: MonsterData = {};
         Object.keys(this.data.monsters).forEach((m) => {
             const monsterData = this.data.monsters[m];
@@ -166,7 +167,21 @@ class CreatureFactory {
                 biomeMonsters[m] = monsterData;
             }
         });
+        return biomeMonsters;
+    }
+
+    createRandomBiomeTypeMonsterList(length: number, biome: string) {
+        const biomeMonsters = this.createBiomeTypeMonsterList(biome);
         return this.pickRandomMonsterList(biomeMonsters, length);
+    }
+
+    createLeveledBiomeTypeMonsterList(characters: Character[], biome: string, totalLvl: number) {
+        const monsterData = this.createBiomeTypeMonsterList(biome);
+        const balancingService = new CombatBalancingService(characters, monsterData, totalLvl);
+        const strategy = balancingService.pickRandomStrategy();
+        console.info(`Balancing encounter via '${strategy}' strategy`);
+        const monsters = balancingService.createMonsterList().map((m) => this.createMonster(m.id));
+        return monsters;
     }
 
 

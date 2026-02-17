@@ -1,0 +1,7 @@
+{
+    "id": "first_aid",
+    "name": "First Aid",
+    "effects": {
+        "hp": 5
+    }
+}

@@ -10,5 +10,26 @@
     },
     "spells": ["fire_bolt", "disintegrate"],
     "items": ["elixir", "potion", "ear", "torch", "skull", "wand"],
-    "lvlGains": []
+    "lvlGains": [
+        {
+            "hp": 15,
+            "damage": 2,
+            "spells": ["confuse"]
+        },
+        {
+            "hp": 15,
+            "damage": 2,
+            "spells": ["cone_of_cold"]
+        },
+        {
+            "hp": 15,
+            "damage": 2,
+            "spells": ["fireball"]
+        },
+        {
+            "hp": 15,
+            "damage": 2,
+            "spells": ["lay_on_hands"]
+        }
+    ]
 }

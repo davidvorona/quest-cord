@@ -12,20 +12,20 @@
     "items": ["potion"],
     "lvlGains": [
         {
-            "hp": 1,
+            "hp": 10,
             "spells": ["lay_on_hands"]
         },
         {
-            "hp": 1,
-            "damage": 1
+            "hp": 10,
+            "damage": 2
         },
         {
-            "hp": 1,
+            "hp": 12,
             "spells": ["smite"]
         },
         {
-            "hp": 1,
-            "damage": 1,
+            "hp": 12,
+            "damage": 2,
             "spells": ["retribution"]
         }
     ]
