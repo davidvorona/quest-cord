@@ -1,0 +1,17 @@
+{
+    "id": "naga",
+    "name": "Naga",
+    "lvl": 1,
+    "hp": 11,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "jungle",
+        "mountains"
+    ]
+}

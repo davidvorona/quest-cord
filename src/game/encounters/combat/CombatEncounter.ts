@@ -34,6 +34,7 @@ import Item from "../../things/Item";
 import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } from "../../../types";
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
+import { StringSelectMenuOptionBuilder } from "@discordjs/builders";
 
 interface AttackOption {
     target: Creature;
@@ -106,16 +107,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
                 .setDescription("Who do you want to attack?");
-            const options = this.getMonsterNames().map((n: string, idx) => ({
-                label: n,
-                value: idx.toString()
-            }));
             const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                 .addComponents(
                     new StringSelectMenuBuilder()
                         .setCustomId("attack")
                         .setPlaceholder("Nothing selected")
-                        .addOptions(options)
+                        .addOptions(this.getTargetOptions())
                 );
             await this.narrator.reply(interaction, {
                 ephemeral: true,
@@ -232,16 +229,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 .setColor(0x0099FF)
                 .setDescription(`You choose to cast **${spell.name}**. `
                     + "Who do you want to target?");
-            const options = this.getMonsterNames().map((n: string, idx) => ({
-                label: n,
-                value: idx.toString()
-            }));
             const row = new ActionRowBuilder<StringSelectMenuBuilder>()
                 .addComponents(
                     new StringSelectMenuBuilder()
                         .setCustomId("spell:target")
                         .setPlaceholder("Nothing selected")
-                        .addOptions(options)
+                        .addOptions(this.getTargetOptions())
                 );
             await this.narrator.ponderAndUpdate(interaction, {
                 components: [row],
@@ -333,6 +326,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     getMonsterNames = () => this.monsters.map(m => m.getName());
 
+    getAliveMonsterNames = () => this.monsters.filter(m => !m.isDead()).map(m => m.getName());
+
     getTotalCharacterHp = () => this.characters.reduce((acc, curr) => acc + curr.hp, 0);
 
     getTotalMonsterHp = () => this.monsters.reduce((acc, curr) => acc + curr.hp, 0);
@@ -353,6 +348,18 @@ export default class CombatEncounter extends TurnBasedEncounter {
     });
 
     getCurrentTurnCreature = () => this.getCreatureById(this.turnOrder.getCurrentTurn());
+
+    getTargetOptions = () => {
+        const options: StringSelectMenuOptionBuilder[] = [];
+        this.monsters.forEach((m, idx) => {
+            if (!m.isDead()) {
+                options.push(new StringSelectMenuOptionBuilder()
+                    .setLabel(m.getName())
+                    .setValue(idx.toString()));
+            }
+        });
+        return options;
+    };
 
     /**
      * @override
@@ -403,10 +410,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
         if (!currentTurn) {
             throw new Error("Invalid ID at current turn index, aborting");
         }
-        await this.narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
-        // If its a monster's turn, invoke its handler
-        if (currentTurn instanceof Monster) {
-            await this.handleMonsterTurn();
+        if (currentTurn.isDead()) {
+            await this.handleNextTurn();
+        } else {
+            await this.narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
+            // If its a monster's turn, invoke its handler
+            if (currentTurn instanceof Monster) {
+                await this.handleMonsterTurn();
+            }
         }
     }
 
@@ -479,6 +490,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
         if (this.heldMovement) {
             await this.handleMove(attacker);
         }
+
+        if (target.isDead()) {
+            await this.narrator.describeDeath(target);
+        }
     }
 
     private holdSpell(spellId: string) {
@@ -518,6 +533,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
 
         this.releaseSpell();
+
+        if (target.isDead()) {
+            await this.narrator.describeDeath(target);
+        }
     }
 
     public async handleUseItem(character: Character, itemId: string) {

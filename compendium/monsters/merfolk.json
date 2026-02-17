@@ -1,0 +1,17 @@
+{
+    "id": "merfolk",
+    "name": "Merfolk",
+    "lvl": 5,
+    "hp": 45,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "ocean",
+        "beach"
+    ]
+}

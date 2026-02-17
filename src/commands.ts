@@ -190,7 +190,10 @@ class CommandBuilder {
                                 .keys(EncounterType)
                                 .map(type => ({ name: type, value: type }))
                         );
-                })
+                }),
+            new SlashCommandBuilder()
+                .setName("enablefastxp")
+                .setDescription("Enable fast experience gain for testing purposes")
         ];
     }
 }

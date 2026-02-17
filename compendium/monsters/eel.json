@@ -1,0 +1,16 @@
+{
+    "id": "eel",
+    "name": "Eel",
+    "lvl": 1,
+    "hp": 13,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "eel_skin"
+    ],
+    "zones": [
+        "ocean"
+    ]
+}

@@ -5,7 +5,7 @@ import NonPlayerCharacter from "../game/NonPlayerCharacter";
 import Monster from "../game/creatures/Monster";
 import {
     CharacterClass,
-    BaseMonster,
+    MonsterData,
     BaseEquipment,
     BaseNonPlayerCharacter,
     BaseProfession
@@ -21,10 +21,6 @@ import Profession from "../game/things/Profession";
 
 interface CharacterClassData {
     [classId: string]: CharacterClass;
-}
-
-interface MonsterData {
-    [monsterId: string]: BaseMonster;
 }
 
 interface NonPlayerCharacterData {
@@ -178,7 +174,7 @@ class CreatureFactory {
     createLeveledBiomeTypeMonsterList(characters: Character[], biome: string, totalLvl: number) {
         const monsterData = this.createBiomeTypeMonsterList(biome);
         const balancingService = new CombatBalancingService(characters, monsterData, totalLvl);
-        const strategy = balancingService.pickRandomStrategy();
+        const strategy = balancingService.pickStrategy();
         console.info(`Balancing encounter via '${strategy}' strategy`);
         const monsters = balancingService.createMonsterList().map((m) => this.createMonster(m.id));
         return monsters;

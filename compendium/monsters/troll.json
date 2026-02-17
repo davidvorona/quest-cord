@@ -1,0 +1,16 @@
+{
+    "id": "troll",
+    "name": "Troll",
+    "lvl": 10,
+    "hp": 82,
+    "damage": 13,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert"
+    ]
+}

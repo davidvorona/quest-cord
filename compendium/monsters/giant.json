@@ -1,0 +1,17 @@
+{
+    "id": "giant",
+    "name": "Giant",
+    "lvl": 1,
+    "hp": 14,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "mountains",
+        "beach"
+    ]
+}

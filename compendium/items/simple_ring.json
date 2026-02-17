@@ -1,0 +1,7 @@
+{
+    "id": "simple_ring",
+    "name": "Simple Ring",
+    "type": "material",
+    "description": "A plain, unadorned ring.",
+    "value": 2
+}

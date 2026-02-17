@@ -1,0 +1,18 @@
+{
+    "id": "gargoyle",
+    "name": "Gargoyle",
+    "lvl": 8,
+    "hp": 71,
+    "damage": 9,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "mountains",
+        "desert"
+    ]
+}

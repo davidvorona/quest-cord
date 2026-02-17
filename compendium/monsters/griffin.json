@@ -1,0 +1,16 @@
+{
+    "id": "griffin",
+    "name": "Griffin",
+    "lvl": 3,
+    "hp": 25,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "jungle"
+    ]
+}

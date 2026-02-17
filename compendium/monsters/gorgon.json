@@ -1,0 +1,16 @@
+{
+    "id": "gorgon",
+    "name": "Gorgon",
+    "lvl": 1,
+    "hp": 11,
+    "damage": 1,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert"
+    ]
+}

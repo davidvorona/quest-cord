@@ -1,0 +1,17 @@
+{
+    "id": "hydra",
+    "name": "Hydra",
+    "lvl": 1,
+    "hp": 14,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "serpent_scale"
+    ],
+    "zones": [
+        "beach",
+        "ocean"
+    ]
+}

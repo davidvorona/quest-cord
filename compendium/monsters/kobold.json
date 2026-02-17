@@ -1,0 +1,16 @@
+{
+    "id": "kobold",
+    "name": "Kobold",
+    "lvl": 6,
+    "hp": 53,
+    "damage": 6,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach"
+    ]
+}

@@ -266,6 +266,14 @@ class Narrator {
             await this.describe(`Poll winner was determined by '${method}' vote.`);
         }
     }
+
+    async describeDeath(creature: Creature) {
+        if (creature instanceof Character) {
+            await this.ponderAndDescribe(`${creature.getName()} has fallen in battle...`);
+        } else {
+            await this.ponderAndDescribe(`The ${creature.getName()} has been slain!`);
+        }
+    }
 }
 
 export default Narrator;

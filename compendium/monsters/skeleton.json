@@ -1,0 +1,16 @@
+{
+    "id": "skeleton",
+    "name": "Skeleton",
+    "lvl": 2,
+    "hp": 19,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "desert"
+    ]
+}

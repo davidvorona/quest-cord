@@ -1,0 +1,18 @@
+{
+    "id": "titan",
+    "name": "Titan",
+    "lvl": 3,
+    "hp": 34,
+    "damage": 5,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "desert",
+        "mountains"
+    ]
+}

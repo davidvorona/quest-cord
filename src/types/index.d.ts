@@ -124,3 +124,7 @@ export type QuestLordInteraction<T extends Interaction> = T & {
 export type CommandInteraction = QuestLordInteraction<ChatInputCommandInteraction>;
 export type SelectMenuInteraction = QuestLordInteraction<StringSelectMenuInteraction>;
 export type ButtonPressInteraction = QuestLordInteraction<ButtonInteraction>;
+
+interface MonsterData {
+    [monsterId: string]: BaseMonster;
+}

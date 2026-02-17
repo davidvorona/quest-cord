@@ -1,0 +1,16 @@
+{
+    "id": "dryad",
+    "name": "Dryad",
+    "lvl": 2,
+    "hp": 17,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest"
+    ]
+}

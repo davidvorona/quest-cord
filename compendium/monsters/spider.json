@@ -1,0 +1,17 @@
+{
+    "id": "spider",
+    "name": "Spider",
+    "lvl": 6,
+    "hp": 56,
+    "damage": 8,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "spider_silk"
+    ],
+    "zones": [
+        "desert",
+        "forest"
+    ]
+}

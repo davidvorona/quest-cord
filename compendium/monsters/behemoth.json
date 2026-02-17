@@ -1,0 +1,18 @@
+{
+    "id": "behemoth",
+    "name": "Behemoth",
+    "lvl": 1,
+    "hp": 8,
+    "damage": 4,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "desert",
+        "jungle"
+    ]
+}

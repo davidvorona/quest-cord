@@ -1,0 +1,17 @@
+{
+    "id": "minotaur",
+    "name": "Minotaur",
+    "lvl": 1,
+    "hp": 10,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "beach",
+        "desert"
+    ]
+}

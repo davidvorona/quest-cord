@@ -1,0 +1,18 @@
+{
+    "id": "chimera",
+    "name": "Chimera",
+    "lvl": 1,
+    "hp": 18,
+    "damage": 3,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "jungle",
+        "mountains",
+        "forest"
+    ]
+}

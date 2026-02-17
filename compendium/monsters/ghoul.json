@@ -1,0 +1,17 @@
+{
+    "id": "ghoul",
+    "name": "Ghoul",
+    "lvl": 8,
+    "hp": 70,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "forest",
+        "mountains"
+    ]
+}

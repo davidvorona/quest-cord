@@ -1,0 +1,16 @@
+{
+    "id": "golem",
+    "name": "Golem",
+    "lvl": 7,
+    "hp": 60,
+    "damage": 10,
+    "equipment": {
+        "weapon": "natural"
+    },
+    "loot": [
+        "rat_tail"
+    ],
+    "zones": [
+        "jungle"
+    ]
+}
