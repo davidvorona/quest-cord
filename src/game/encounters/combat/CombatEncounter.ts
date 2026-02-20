@@ -362,9 +362,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
     };
 
     /**
+     * The base value for combat encounters is double that of a normal encounter, since
+     * combat is the most resource-intensive, time-consuming, and risky. The base value is
+     * set so that a single combat encounter at level 1 grants enough XP for level 2.
      * @override
      */
-    getXpReward = () => Math.max(this.monsters.length * 5, 10);
+    getXpReward = () => 3;
 
     /**
      * @override

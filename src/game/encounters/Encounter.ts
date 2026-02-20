@@ -45,7 +45,11 @@ export default class Encounter {
 
     getCharacterNames = () => this.characters.map(char => char.getName());
 
-    getXpReward = () => 10;
+    /**
+     * This is a base value. Once an encounter is over, the base value is used by
+     * XpAwardingService to calculate the final XP reward depending on various factors.
+     */
+    getXpReward = () => 1;
 
     /**
      * Returns a boolean indicating whether or not the encounter is over

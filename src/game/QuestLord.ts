@@ -49,7 +49,7 @@ import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { EncounterType } from "../constants";
 import { getHelpText } from "../commands";
-import { defaultXpService } from "../services/XpService";
+import { defaultXpService } from "../services/ExperienceCalculator";
 import EncounterDisplay from "./ui/EncounterDisplay";
 import EncounterResults from "./ui/EncounterResults";
 import LootDisplay from "./ui/LootDisplay";
@@ -1543,14 +1543,18 @@ export default class QuestLord {
         });
     }
 
-    private async awardExperience(channelId: string, xpReward: number) {
+    private async awardExperience(channelId: string, xpBaseValue: number) {
         this.assertQuestStarted(channelId);
         const quest = this.quests[channelId];
+
+        const party = quest.getPlayerCharacters();
+        const avgLvl = party.reduce((sum, pc) => sum + pc.lvl, 0) / quest.getPartySize();
+        const xpReward = defaultXpService
+            .getExperienceForEncounter(Math.round(avgLvl), xpBaseValue);
 
         const narrator = quest.getNarrator();
         await narrator.ponderAndDescribe(`The party is awarded ${xpReward} XP.`);
 
-        const party = quest.getPlayerCharacters();
         for (const userId in party) {
             const pc = party[userId];
             const newLvl = pc.gainXp(xpReward);
@@ -1558,6 +1562,7 @@ export default class QuestLord {
                 await narrator.ponderAndDescribe(`${pc.getName()} is now level ${newLvl}!`);
             }
         }
+        return xpReward;
     }
 
     private async handleEncounterResults(
@@ -1574,14 +1579,16 @@ export default class QuestLord {
         const quest = this.quests[channelId];
 
         const encounter = quest.assertAndGetEncounter();
-        const encounterResults = EncounterResults(encounter.type, results);
 
         await quest.endEncounter();
 
         // Award XP from encounter results to party
         if (results.success && results.xp) {
-            await this.awardExperience(channelId, results.xp);
+            const xpReward = await this.awardExperience(channelId, results.xp);
+            results.xp = xpReward;
         }
+
+        const encounterResults = EncounterResults(encounter.type, results);
 
         const narrator = quest.getNarrator();
         await narrator.describe({

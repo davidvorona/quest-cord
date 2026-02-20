@@ -1,6 +1,6 @@
 import { rand, loadNames } from "../util";
 import Character from "./creatures/Character";
-import { defaultXpService } from "../services/XpService";
+import { defaultXpService } from "../services/ExperienceCalculator";
 import { LevelGain } from "../types";
 import Profession from "./things/Profession";
 

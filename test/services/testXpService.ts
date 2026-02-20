@@ -1,5 +1,5 @@
 import assert from "assert";
-import XpService from "../../src/services/XpService";
+import XpService from "../../src/services/ExperienceCalculator";
 
 describe("testXpService", () => {
     let xpService: XpService;

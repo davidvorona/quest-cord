@@ -1,3 +1,34 @@
+/**
+ * This map equates each level to a derived value that is the average amount of XP
+ * each encounter should reward at that level. This value is then multiplied by
+ * the Encounter's base XP value to get the final XP reward for that encounter.
+ *
+ * Values are derived from XP balancing sheet:
+ * https://docs.google.com/spreadsheets/d/1AK97jFVJ9r2TywjFRiW9QF82qp4pgNSz0fAnyfhx8DU
+ */
+const lvlToXpE: Record<number, number> = {
+    1: 17,
+    2: 28,
+    3: 41,
+    4: 55,
+    5: 69,
+    6: 84,
+    7: 99,
+    8: 114,
+    9: 129,
+    10: 144,
+    11: 159,
+    12: 173,
+    13: 201,
+    14: 216,
+    15: 245,
+    16: 277,
+    17: 290,
+    18: 323,
+    19: 356,
+    20: 0
+} as const;
+
 // Used this formula: https://sumrndmdde.github.io/EXP-Calculator
 class XpService {
     private readonly accelerationA = 30;
@@ -56,6 +87,10 @@ class XpService {
             result.xp = newXp - xpForNextLvl;
         }
         return result;
+    }
+
+    getExperienceForEncounter(lvl: number, baseXpValue: number) {
+        return lvlToXpE[lvl] * baseXpValue;
     }
 }
 
