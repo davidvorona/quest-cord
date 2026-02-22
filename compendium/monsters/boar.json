@@ -1,9 +1,9 @@
 {
     "id": "boar",
     "name": "Boar",
-    "lvl": 3,
-    "hp": 34,
-    "damage": 4,
+    "lvl": 2,
+    "hp": 21,
+    "damage": 3,
     "equipment": {
         "weapon": "natural"
     },
@@ -11,6 +11,7 @@
         "boar_tusk"
     ],
     "zones": [
-        "jungle"
+        "jungle",
+        "forest"
     ]
 }

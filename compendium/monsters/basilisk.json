@@ -1,9 +1,9 @@
 {
     "id": "basilisk",
     "name": "Basilisk",
-    "lvl": 2,
-    "hp": 26,
-    "damage": 2,
+    "lvl": 4,
+    "hp": 35,
+    "damage": 6,
     "equipment": {
         "weapon": "natural"
     },

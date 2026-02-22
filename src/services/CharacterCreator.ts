@@ -88,7 +88,7 @@ export default class CharacterCreator {
                 .addSeparatorComponents(separator => separator)
                 .addTextDisplayComponents((textDisplay) =>
                     textDisplay.setContent(
-                        `Weapon: **${weaponItem.name}** (+${weaponItem?.damage})`),
+                        `Weapon: **${weaponItem?.name}** (+${weaponItem?.damage})`),
                 (textDisplay) => textDisplay.setContent(
                     `Spells: **${spells?.map(spell => spell.name).join(", ") || "None"}**`));
             if (init) {

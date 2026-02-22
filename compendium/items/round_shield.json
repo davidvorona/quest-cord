@@ -1,10 +1,9 @@
 {
-    "id": "shield",
-    "name": "Shield",
+    "id": "round_shield",
+    "name": "Round Shield",
     "type": "offhand",
     "effects": {
         "ac": 2
     },
-    "properties": ["heavy"],
     "value": 12
 }

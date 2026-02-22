@@ -1,9 +1,9 @@
 {
     "id": "naga",
     "name": "Naga",
-    "lvl": 1,
-    "hp": 11,
-    "damage": 3,
+    "lvl": 6,
+    "hp": 50,
+    "damage": 8,
     "equipment": {
         "weapon": "natural"
     },

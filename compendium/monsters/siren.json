@@ -1,9 +1,9 @@
 {
     "id": "siren",
     "name": "Siren",
-    "lvl": 9,
-    "hp": 76,
-    "damage": 10,
+    "lvl": 5,
+    "hp": 45,
+    "damage": 8,
     "equipment": {
         "weapon": "natural"
     },
@@ -11,7 +11,7 @@
         "rat_tail"
     ],
     "zones": [
-        "mountains",
+        "ocean",
         "jungle"
     ]
 }

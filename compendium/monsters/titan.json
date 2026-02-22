@@ -1,9 +1,9 @@
 {
     "id": "titan",
     "name": "Titan",
-    "lvl": 3,
-    "hp": 34,
-    "damage": 5,
+    "lvl": 15,
+    "hp": 150,
+    "damage": 25,
     "equipment": {
         "weapon": "natural"
     },

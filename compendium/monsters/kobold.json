@@ -1,9 +1,9 @@
 {
     "id": "kobold",
     "name": "Kobold",
-    "lvl": 6,
-    "hp": 53,
-    "damage": 6,
+    "lvl": 1,
+    "hp": 10,
+    "damage": 2,
     "equipment": {
         "weapon": "natural"
     },

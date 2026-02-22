@@ -1,9 +1,9 @@
 {
     "id": "behemoth",
     "name": "Behemoth",
-    "lvl": 1,
-    "hp": 8,
-    "damage": 4,
+    "lvl": 8,
+    "hp": 72,
+    "damage": 10,
     "equipment": {
         "weapon": "natural"
     },

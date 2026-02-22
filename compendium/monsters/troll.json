@@ -11,6 +11,8 @@
         "rat_tail"
     ],
     "zones": [
-        "desert"
+        "desert",
+        "forest",
+        "mountains"
     ]
 }

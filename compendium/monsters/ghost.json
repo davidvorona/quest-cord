@@ -2,7 +2,7 @@
     "id": "ghost",
     "name": "Ghost",
     "lvl": 2,
-    "hp": 8,
+    "hp": 17,
     "damage": 3,
     "equipment": {
         "weapon": "ghost_blade"

@@ -1,9 +1,9 @@
 {
-    "id": "efreet",
-    "name": "Efreet",
-    "lvl": 8,
-    "hp": 66,
-    "damage": 10,
+    "id": "buck_bunyan",
+    "name": "Buck Bunyan",
+    "lvl": 20,
+    "hp": 500,
+    "damage": 50,
     "equipment": {
         "weapon": "natural"
     },

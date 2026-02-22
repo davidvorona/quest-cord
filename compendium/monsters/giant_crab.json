@@ -1,6 +1,6 @@
 {
-    "id": "crab",
-    "name": "Crab",
+    "id": "giant_crab",
+    "name": "Giant Crab",
     "lvl": 7,
     "hp": 64,
     "damage": 7,

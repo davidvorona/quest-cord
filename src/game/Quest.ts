@@ -1,6 +1,6 @@
 import { Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
-import PlayerCharacter from "./PlayerCharacter";
+import PlayerCharacter, { LevelUp } from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
@@ -9,7 +9,6 @@ import Button from "./actions/buttons/Button";
 import {
     ButtonPressInteraction,
     CommandInteraction,
-    LevelGain,
     SelectMenuInteraction
 } from "../types";
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
@@ -101,7 +100,7 @@ export default class Quest {
     createPlayerCharacter(
         userId: string,
         character: Character,
-        lvlGains: LevelGain[],
+        lvlGains: LevelUp[],
         profession: Profession
     ) {
         const playerCharacter = new PlayerCharacter(userId, character, lvlGains, profession);

@@ -1,9 +1,9 @@
 {
     "id": "chimera",
     "name": "Chimera",
-    "lvl": 1,
-    "hp": 18,
-    "damage": 3,
+    "lvl": 5,
+    "hp": 45,
+    "damage": 7,
     "equipment": {
         "weapon": "natural"
     },

@@ -1,9 +1,9 @@
 {
     "id": "kraken",
     "name": "Kraken",
-    "lvl": 3,
-    "hp": 32,
-    "damage": 6,
+    "lvl": 12,
+    "hp": 120,
+    "damage": 18,
     "equipment": {
         "weapon": "natural"
     },

@@ -1,9 +1,9 @@
 {
     "id": "sprite",
     "name": "Sprite",
-    "lvl": 5,
-    "hp": 47,
-    "damage": 7,
+    "lvl": 1,
+    "hp": 7,
+    "damage": 1,
     "equipment": {
         "weapon": "natural"
     },

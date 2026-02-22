@@ -1,9 +1,9 @@
 {
     "id": "minotaur",
     "name": "Minotaur",
-    "lvl": 1,
-    "hp": 10,
-    "damage": 3,
+    "lvl": 8,
+    "hp": 80,
+    "damage": 12,
     "equipment": {
         "weapon": "natural"
     },

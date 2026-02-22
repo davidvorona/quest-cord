@@ -1,9 +1,9 @@
 {
-    "id": "efreet",
-    "name": "Efreet",
-    "lvl": 8,
-    "hp": 66,
-    "damage": 10,
+    "id": "sphinx",
+    "name": "Sphinx",
+    "lvl": 9,
+    "hp": 84,
+    "damage": 11,
     "equipment": {
         "weapon": "natural"
     },
@@ -11,6 +11,7 @@
         "rat_tail"
     ],
     "zones": [
+        "desert",
         "mountains"
     ]
 }

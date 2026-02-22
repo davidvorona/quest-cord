@@ -1,9 +1,9 @@
 {
     "id": "angel",
     "name": "Angel",
-    "lvl": 7,
-    "hp": 58,
-    "damage": 9,
+    "lvl": 12,
+    "hp": 112,
+    "damage": 18,
     "equipment": {
         "weapon": "natural"
     },

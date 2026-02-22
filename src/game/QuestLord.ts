@@ -566,7 +566,7 @@ export default class QuestLord {
         if (!quest.isUserInParty(userId)) {
             await interaction.reply({
                 content: "Destiny has not claimed you yet, your time will come...",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -574,7 +574,7 @@ export default class QuestLord {
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -617,11 +617,11 @@ export default class QuestLord {
             const narrator = quest.getNarrator();
             const character = this.creatureFactory
                 .createClassCharacter(characterCreator.getClassId());
-            const { lvlGains } = this.creatureFactory
-                .getCharacterClass(characterCreator.getClassId());
+            const lvlUps = this.creatureFactory
+                .createClassLevelUps(characterCreator.getClassId());
             const profession = this.creatureFactory
                 .createProfession(characterCreator.getProfessionId());
-            const pc = quest.createPlayerCharacter(userId, character, lvlGains, profession);
+            const pc = quest.createPlayerCharacter(userId, character, lvlUps, profession);
 
             // The name of the base character is the class name, the character name
             // is attached to the PlayerCharacter object
@@ -1559,6 +1559,7 @@ export default class QuestLord {
             const pc = party[userId];
             const newLvl = pc.gainXp(xpReward);
             if (newLvl) {
+                pc.levelUp(newLvl);
                 await narrator.ponderAndDescribe(`${pc.getName()} is now level ${newLvl}!`);
             }
         }

@@ -1,0 +1,8 @@
+{
+    "id": "blunt_longsword",
+    "name": "Blunt Longsword",
+    "type": "weapon",
+    "description": "Balanced but blunt.",
+    "value": 10,
+    "damage": 2
+}

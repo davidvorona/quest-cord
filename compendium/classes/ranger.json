@@ -8,22 +8,30 @@
         "armor": "leather_armor"
     },
     "spells": [],
-    "items": ["potion"],
+    "items": [
+        "potion"
+    ],
     "lvlGains": [
         {
-            "hp": 8
+            "hp": 6
         },
         {
-            "hp": 8,
-            "spells": ["fire_bolt"],
+            "hp": 6,
+            "spells": [
+                "fire_bolt"
+            ],
             "damage": 1
         },
         {
-            "hp": 10
+            "hp": 6
         },
         {
-            "spells": ["summon_wolf", "first_aid"],
-            "damage": 2
+            "hp": 6,
+            "spells": [
+                "summon_wolf",
+                "first_aid"
+            ],
+            "damage": 1
         }
     ]
 }
