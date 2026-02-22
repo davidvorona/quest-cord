@@ -7,7 +7,9 @@
     "equipment": {
         "weapon": "scimitar"
     },
-    "loot": ["scimitar"],
+    "loot": [
+        "scimitar"
+    ],
     "zones": [
         "forest",
         "mountains",

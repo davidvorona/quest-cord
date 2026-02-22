@@ -1,9 +1,9 @@
 {
     "id": "hydra",
     "name": "Hydra",
-    "lvl": 1,
-    "hp": 14,
-    "damage": 4,
+    "lvl": 10,
+    "hp": 82,
+    "damage": 14,
     "equipment": {
         "weapon": "natural"
     },

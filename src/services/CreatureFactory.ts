@@ -86,6 +86,18 @@ class CreatureFactory {
         return new Profession(data);
     }
 
+    createClassLevelUps(classId: string) {
+        const data = this.data.classes[classId];
+        if (!data) {
+            throw new Error(`Invalid class ID: ${classId}`);
+        }
+        return data.lvlGains.map((lvlGain) => ({
+            hp: lvlGain.hp,
+            damage: lvlGain.damage,
+            spells: this.spellFactory.hydrateList(lvlGain.spells)
+        }));
+    }
+
     createClassCharacter(classId: string) {
         const data = this.data.classes[classId];
         if (!data) {

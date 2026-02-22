@@ -1,9 +1,9 @@
 {
     "id": "griffin",
     "name": "Griffin",
-    "lvl": 3,
-    "hp": 25,
-    "damage": 4,
+    "lvl": 6,
+    "hp": 50,
+    "damage": 8,
     "equipment": {
         "weapon": "natural"
     },
@@ -11,6 +11,8 @@
         "rat_tail"
     ],
     "zones": [
-        "jungle"
+        "jungle",
+        "mountains",
+        "forest"
     ]
 }

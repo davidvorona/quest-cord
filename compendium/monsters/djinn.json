@@ -1,9 +1,9 @@
 {
     "id": "djinn",
     "name": "Djinn",
-    "lvl": 2,
-    "hp": 17,
-    "damage": 4,
+    "lvl": 7,
+    "hp": 65,
+    "damage": 9,
     "equipment": {
         "weapon": "natural"
     },

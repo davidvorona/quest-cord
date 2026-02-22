@@ -1,9 +1,9 @@
 {
     "id": "lizard",
     "name": "Lizard",
-    "lvl": 3,
-    "hp": 25,
-    "damage": 4,
+    "lvl": 1,
+    "hp": 9,
+    "damage": 1,
     "equipment": {
         "weapon": "natural"
     },

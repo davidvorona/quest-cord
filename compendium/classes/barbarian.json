@@ -7,21 +7,21 @@
         "weapon": "club"
     },
     "spells": [],
-    "items": ["elixir"],
+    "items": [
+        "elixir"
+    ],
     "lvlGains": [
         {
-            "hp": 15
+            "hp": 8
         },
         {
-            "hp": 15,
-            "damage": 2
+            "hp": 8
         },
         {
-            "hp": 15,
-            "damage": 2
+            "hp": 8
         },
         {
-            "hp": 20,
+            "hp": 10,
             "damage": 2
         }
     ]

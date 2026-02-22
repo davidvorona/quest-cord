@@ -1,9 +1,9 @@
 {
     "id": "giant",
     "name": "Giant",
-    "lvl": 1,
-    "hp": 14,
-    "damage": 1,
+    "lvl": 9,
+    "hp": 81,
+    "damage": 13,
     "equipment": {
         "weapon": "natural"
     },

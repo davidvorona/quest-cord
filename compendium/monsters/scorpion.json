@@ -1,14 +1,14 @@
 {
     "id": "scorpion",
     "name": "Scorpion",
-    "lvl": 5,
-    "hp": 43,
-    "damage": 6,
+    "lvl": 1,
+    "hp": 8,
+    "damage": 2,
     "equipment": {
         "weapon": "natural"
     },
     "loot": [
-        "scorpion_sting"
+        "scorpion_stinger"
     ],
     "zones": [
         "desert"

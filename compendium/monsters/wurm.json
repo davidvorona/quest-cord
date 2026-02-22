@@ -1,6 +1,6 @@
 {
-    "id": "worm",
-    "name": "Worm",
+    "id": "wurm",
+    "name": "Wurm",
     "lvl": 2,
     "hp": 26,
     "damage": 5,
@@ -8,7 +8,7 @@
         "weapon": "natural"
     },
     "loot": [
-        "worm_hide"
+        "wurm_hide"
     ],
     "zones": [
         "jungle",

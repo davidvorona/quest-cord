@@ -1,9 +1,9 @@
 {
     "id": "dragon",
     "name": "Dragon",
-    "lvl": 9,
-    "hp": 74,
-    "damage": 12,
+    "lvl": 13,
+    "hp": 124,
+    "damage": 24,
     "equipment": {
         "weapon": "natural"
     },

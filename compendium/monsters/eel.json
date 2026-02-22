@@ -2,8 +2,8 @@
     "id": "eel",
     "name": "Eel",
     "lvl": 1,
-    "hp": 13,
-    "damage": 4,
+    "hp": 9,
+    "damage": 3,
     "equipment": {
         "weapon": "natural"
     },

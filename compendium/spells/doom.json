@@ -1,0 +1,6 @@
+{
+    "id": "doom",
+    "name": "Doom",
+    "damage": 1000,
+    "properties": ["range"]
+}

@@ -2,7 +2,7 @@
     "id": "sea_hag",
     "name": "Sea Hag",
     "lvl": 2,
-    "hp": 11,
+    "hp": 16,
     "damage": 1,
     "spells": [
         "death_glare"

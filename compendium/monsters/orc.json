@@ -2,11 +2,18 @@
     "id": "orc",
     "name": "Orc",
     "lvl": 2,
-    "hp": 13,
-    "damage": 2,
+    "hp": 21,
+    "damage": 4,
     "equipment": {
         "weapon": "axe"
     },
-    "loot": ["axe", "skull"],
-    "zones": ["forest", "cave", "mountains"]
+    "loot": [
+        "axe",
+        "skull"
+    ],
+    "zones": [
+        "forest",
+        "cave",
+        "mountains"
+    ]
 }

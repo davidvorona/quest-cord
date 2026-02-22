@@ -1,9 +1,9 @@
 {
     "id": "werewolf",
     "name": "Werewolf",
-    "lvl": 10,
-    "hp": 81,
-    "damage": 13,
+    "lvl": 5,
+    "hp": 41,
+    "damage": 6,
     "equipment": {
         "weapon": "natural"
     },

@@ -216,14 +216,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
         this.holdSpell(spellId);
 
-        if (this.monsters.length === 1) {
+        if (this.getAliveMonsters().length === 1) {
             await this.narrator.ponderAndUpdate(interaction, {
                 content: "You prepare to cast the spell...",
                 embeds: [],
                 components: []
             });
 
-            await this.handleSpell(character, this.monsters[0], spellId);
+            await this.handleSpell(character, this.getAliveMonsters()[0], spellId);
         } else {
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
@@ -326,7 +326,9 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     getMonsterNames = () => this.monsters.map(m => m.getName());
 
-    getAliveMonsterNames = () => this.monsters.filter(m => !m.isDead()).map(m => m.getName());
+    getAliveMonsters = () => this.monsters.filter(m => !m.isDead());
+
+    getAliveMonsterNames = () => this.getAliveMonsters().map(m => m.getName());
 
     getTotalCharacterHp = () => this.characters.reduce((acc, curr) => acc + curr.hp, 0);
 
@@ -362,9 +364,12 @@ export default class CombatEncounter extends TurnBasedEncounter {
     };
 
     /**
+     * The base value for combat encounters is double that of a normal encounter, since
+     * combat is the most resource-intensive, time-consuming, and risky. The base value is
+     * set so that a single combat encounter at level 1 grants enough XP for level 2.
      * @override
      */
-    getXpReward = () => Math.max(this.monsters.length * 5, 10);
+    getXpReward = () => 3;
 
     /**
      * @override

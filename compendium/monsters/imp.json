@@ -1,9 +1,9 @@
 {
     "id": "imp",
     "name": "Imp",
-    "lvl": 8,
-    "hp": 68,
-    "damage": 9,
+    "lvl": 3,
+    "hp": 26,
+    "damage": 4,
     "equipment": {
         "weapon": "natural"
     },

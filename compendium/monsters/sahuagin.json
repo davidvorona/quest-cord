@@ -11,6 +11,7 @@
         "rat_tail"
     ],
     "zones": [
-        "beach"
+        "beach",
+        "ocean"
     ]
 }

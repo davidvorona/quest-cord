@@ -1,7 +1,7 @@
 {
     "id": "iron_shield",
     "name": "Iron Shield",
-    "type": "armor",
-    "description": "Solid defensive gear.",
+    "type": "offhand",
+    "description": "You have to carry this?!",
     "value": 20
 }

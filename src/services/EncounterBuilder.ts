@@ -12,6 +12,9 @@ import { randInList } from "../util";
 import config from "../config";
 import { EncounterType } from "../constants";
 
+const encounterTypes = Object.keys(EncounterType) as (keyof typeof EncounterType)[];
+encounterTypes.splice(encounterTypes.indexOf("Unspecified"), 1);
+
 class EncounterBuilder {
     creatureFactory: CreatureFactory;
 
@@ -24,7 +27,7 @@ class EncounterBuilder {
         const totalLvl = pcs.reduce((prev, curr) => prev + curr.lvl, 0);
         // Quest-specific forced type > instance-specific forced type > random type
         const encounterType = forceType || config.forceEncounterType
-            || randInList(Object.keys(EncounterType));
+            || randInList(encounterTypes);
         switch (encounterType) {
         case (EncounterType.Combat): {
             const monsters = this.creatureFactory

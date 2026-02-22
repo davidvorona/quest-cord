@@ -4,12 +4,25 @@
     "hp": 1000,
     "damage": 5,
     "equipment": {
-        "weapon": "sword",
-        "offhand": "shield",
-        "armor": "chain_mail"
+        "weapon": "iron_mace",
+        "offhand": "iron_shield",
+        "armor": "iron_plate_armor",
+        "helm": "iron_helmet",
+        "boots": "leather_boots"
     },
-    "spells": ["fire_bolt", "disintegrate"],
-    "items": ["elixir", "potion", "ear", "torch", "skull", "wand"],
+    "spells": [
+        "fire_bolt",
+        "disintegrate",
+        "doom"
+    ],
+    "items": [
+        "elixir",
+        "potion",
+        "ear",
+        "torch",
+        "skull",
+        "wand"
+    ],
     "lvlGains": [
         {
             "hp": 15,

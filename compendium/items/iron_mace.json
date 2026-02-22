@@ -2,6 +2,7 @@
     "id": "iron_mace",
     "name": "Iron Mace",
     "type": "weapon",
-    "description": "Crushes armor easily.",
+    "description": "Crushes armor easily and also heads.",
+    "damage": 4,
     "value": 16
 }

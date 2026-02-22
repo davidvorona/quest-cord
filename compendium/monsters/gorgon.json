@@ -1,9 +1,9 @@
 {
     "id": "gorgon",
     "name": "Gorgon",
-    "lvl": 1,
-    "hp": 11,
-    "damage": 1,
+    "lvl": 5,
+    "hp": 45,
+    "damage": 6,
     "equipment": {
         "weapon": "natural"
     },

@@ -1,9 +1,9 @@
 {
     "id": "centaur",
     "name": "Centaur",
-    "lvl": 1,
-    "hp": 10,
-    "damage": 1,
+    "lvl": 3,
+    "hp": 25,
+    "damage": 4,
     "equipment": {
         "weapon": "natural"
     },

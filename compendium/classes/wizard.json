@@ -7,24 +7,34 @@
         "weapon": "wand",
         "armor": "wizard_robes"
     },
-    "spells": ["fire_bolt"],
-    "items": ["potion"],
+    "spells": [
+        "fire_bolt"
+    ],
+    "items": [
+        "potion"
+    ],
     "lvlGains": [
         {
-            "spells": ["cone_of_cold", "confuse"]
+            "hp": 4,
+            "spells": [
+                "cone_of_cold",
+                "confuse"
+            ]
         },
         {
-            "hp": 1,
-            "damage": 1
+            "hp": 4
         },
         {
-            "damage": 1,
-            "spells": ["blink"]
+            "hp": 4,
+            "spells": [
+                "blink"
+            ]
         },
         {
-            "hp": 1,
-            "damage": 1,
-            "spells": ["fireball"]
+            "hp": 4,
+            "spells": [
+                "fireball"
+            ]
         }
     ]
 }

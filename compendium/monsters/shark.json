@@ -1,9 +1,9 @@
 {
     "id": "shark",
     "name": "Shark",
-    "lvl": 1,
+    "lvl": 2,
     "hp": 17,
-    "damage": 1,
+    "damage": 3,
     "equipment": {
         "weapon": "natural"
     },

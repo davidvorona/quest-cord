@@ -1,9 +1,9 @@
 {
     "id": "leviathan",
     "name": "Leviathan",
-    "lvl": 4,
-    "hp": 33,
-    "damage": 7,
+    "lvl": 18,
+    "hp": 330,
+    "damage": 70,
     "equipment": {
         "weapon": "natural"
     },

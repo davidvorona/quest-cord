@@ -1,10 +1,16 @@
 import { rand, loadNames } from "../util";
 import Character from "./creatures/Character";
-import { defaultXpService } from "../services/XpService";
-import { LevelGain } from "../types";
+import { defaultXpService } from "../services/ExperienceCalculator";
 import Profession from "./things/Profession";
+import Spell from "./things/Spell";
 
 const { firstNames, lastNames } = loadNames();
+
+export interface LevelUp {
+    hp?: number;
+    damage?: number;
+    spells?: Spell[];
+}
 
 
 export default class PlayerCharacter {
@@ -24,12 +30,12 @@ export default class PlayerCharacter {
 
     lvl: number;
 
-    lvlGains: LevelGain[];
+    lvlGains: LevelUp[];
 
     constructor(
         userId: string,
         character: Character,
-        lvlGains: LevelGain[],
+        lvlGains: LevelUp[],
         profession: Profession
     ) {
         this.userId = userId;
@@ -88,5 +94,19 @@ export default class PlayerCharacter {
 
     getEquipment() {
         return this.character.equipment;
+    }
+
+    levelUp(lvl: number) {
+        const lvlGain = this.lvlGains[lvl - 2];
+        if (lvlGain.hp) {
+            this.character.maxHp += lvlGain.hp;
+            this.character.hp += lvlGain.hp;
+        }
+        if (lvlGain.damage) {
+            this.character.damage += lvlGain.damage;
+        }
+        if (lvlGain.spells) {
+            this.character.spells.push(...lvlGain.spells);
+        }
     }
 }

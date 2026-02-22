@@ -4,29 +4,36 @@
     "hp": 13,
     "damage": 2,
     "equipment": {
-        "weapon": "sword",
-        "offhand": "shield",
+        "weapon": "blunt_longsword",
+        "offhand": "round_shield",
         "armor": "chain_mail"
     },
     "spells": [],
-    "items": ["potion"],
+    "items": [
+        "potion"
+    ],
     "lvlGains": [
         {
-            "hp": 10,
-            "spells": ["lay_on_hands"]
+            "hp": 6,
+            "spells": [
+                "lay_on_hands"
+            ]
         },
         {
-            "hp": 10,
-            "damage": 2
+            "hp": 6
         },
         {
-            "hp": 12,
-            "spells": ["smite"]
+            "hp": 6,
+            "spells": [
+                "smite"
+            ]
         },
         {
-            "hp": 12,
+            "hp": 6,
             "damage": 2,
-            "spells": ["retribution"]
+            "spells": [
+                "retribution"
+            ]
         }
     ]
 }

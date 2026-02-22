@@ -1,6 +1,6 @@
 {
-    "id": "spider",
-    "name": "Spider",
+    "id": "giant_spider",
+    "name": "Giant Spider",
     "lvl": 6,
     "hp": 56,
     "damage": 8,
