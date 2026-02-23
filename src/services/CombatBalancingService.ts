@@ -34,7 +34,7 @@ export default class CombatBalancingService {
             const index = strategies.indexOf(BalancingStrategy.BossAndMinions);
             strategies.splice(index, 1);
         }
-        this.strategy = randInList(strategies);
+        this.strategy = BalancingStrategy.Level; // randInList(strategies);
         return this.strategy;
     }
 

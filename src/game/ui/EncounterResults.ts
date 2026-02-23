@@ -21,7 +21,6 @@ export default function EncounterResults(
             .addSectionComponents((section) =>
                 section.addTextDisplayComponents((textDisplay) =>
                     textDisplay.setContent("Loot"),
-                (textDisplay) => textDisplay.setContent("### :coin: 50 gold"),
                 (textDisplay) => textDisplay
                     .setContent("*You find some random loot on the monster...*"))
                     .setButtonAccessory(button => button
