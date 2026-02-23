@@ -32,6 +32,7 @@ import TalkButton from "./buttons/TalkButton";
 import IgnoreButton from "./buttons/IgnoreButton";
 import SneakButton from "./buttons/SneakButton";
 import SurpriseButton from "./buttons/SurpriseButton";
+import RestButton from "./buttons/RestButton";
 
 export {
     Action,
@@ -64,5 +65,6 @@ export {
     TalkButton,
     IgnoreButton,
     SneakButton,
-    SurpriseButton
+    SurpriseButton,
+    RestButton
 };

@@ -2,6 +2,8 @@
     "id": "iron_plate_armor",
     "name": "Iron Plate Armor",
     "type": "armor",
+    "slot": "body",
     "description": "Heavy iron armor that protects the chest, arms, and legs.",
-    "value": 40
+    "value": 40,
+    "ac": 2
 }

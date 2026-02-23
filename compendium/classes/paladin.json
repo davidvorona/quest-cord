@@ -6,7 +6,7 @@
     "equipment": {
         "weapon": "blunt_longsword",
         "offhand": "round_shield",
-        "armor": "chain_mail"
+        "body": "chain_mail"
     },
     "spells": [],
     "items": [

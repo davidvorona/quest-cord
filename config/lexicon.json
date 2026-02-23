@@ -32,6 +32,11 @@
         ],
         "magic": [
 
+        ],
+        "natural": [
+            "$2 attacks $3 ferociously!",
+            "$2 lashes out, trying to rip $3 apart!",
+            "$2 strikes $3 with a powerful blow!"
         ]
     }
 }

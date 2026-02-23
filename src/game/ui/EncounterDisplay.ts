@@ -6,6 +6,7 @@ import EncounterButtonRows from "./EncounterButtonRows";
 
 export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?: PlayerCharacter) {
     const encounterDesc = encounter.getDescription() || "Exploring...";
+    const names = encounter.getCharacterNames();
     const components = [];
     const container = new ContainerBuilder()
         .setAccentColor(0x0099ff)
@@ -16,7 +17,7 @@ export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?
             section.addTextDisplayComponents((textDisplay) =>
                 textDisplay.setContent(pc
                     ? `### :heart: ${pc?.getCharacter().hp} / ${pc?.getCharacter().maxHp}`
-                    : "In a party"
+                    : "Traveling..."
                 ),
             (textDisplay) => textDisplay
                 .setContent(`### :map: ${
@@ -25,7 +26,17 @@ export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?
                 .setButtonAccessory(button => button
                     .setCustomId("map")
                     .setLabel("See Local Map")
-                    .setStyle(ButtonStyle.Secondary)));
+                    .setStyle(ButtonStyle.Secondary)))
+        .addSeparatorComponents(separator => separator)
+        .addSectionComponents((section) =>
+            section.addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(names.length > 1 ? "In a party" : "Lone adventurer"),
+            (textDisplay) => textDisplay
+                .setContent(names.map(name => `:bust_in_silhouette: **${name}**`).join("\n")))
+                .setButtonAccessory(button => button
+                    .setCustomId("quest")
+                    .setLabel("See Quest")
+                    .setStyle(ButtonStyle.Primary)));
     components.push(container);
     if (Object.keys(encounter.buttons).length > 0) {
         const buttonRows = EncounterButtonRows(encounter.buttons);

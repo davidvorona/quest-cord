@@ -17,7 +17,6 @@ import {
     ButtonStyle,
     SectionBuilder,
     TextDisplayBuilder,
-    StringSelectMenuOptionBuilder
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -47,12 +46,13 @@ import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
-import { EncounterType } from "../constants";
+import { DIRECTION_EMOJI, EncounterType, FORMATTED_DIRECTION } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/ExperienceCalculator";
 import EncounterDisplay from "./ui/EncounterDisplay";
 import EncounterResults from "./ui/EncounterResults";
 import LootDisplay from "./ui/LootDisplay";
+import TravelPrompt from "./ui/TravelPrompt";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -420,6 +420,10 @@ export default class QuestLord {
 
             if (interaction.customId === "surprise") {
                 await this.handleSurprise(interaction);
+            }
+
+            if (interaction.customId === "rest") {
+                await this.handleRest(interaction);
             }
 
             if (interaction.customId === "loot") {
@@ -798,6 +802,27 @@ export default class QuestLord {
         }
     }
 
+    private async editQuestTravelPrompt(quest: Quest) {
+        const travelPoll = quest.getPollBooth().getPoll(PollType.Travel);
+        if (!travelPoll) {
+            console.warn("Unable to find travel poll, ignoring");
+            return;
+        }
+        const travelVotes = travelPoll.votes as Record<string, Direction>;
+        const displayedVotes = Object.entries(travelVotes).map(([userId, vote]) => {
+            const pc = quest.assertAndGetPlayerCharacter(userId);
+            const dirKey = vote.toUpperCase() as keyof typeof FORMATTED_DIRECTION;
+            return `${pc.getName()}: **${FORMATTED_DIRECTION[dirKey]}** ${DIRECTION_EMOJI[dirKey]}`;
+        }).join("\n");
+        const travelPrompt = TravelPrompt(displayedVotes);
+        const travelPromptRef = quest.getTravelPromptReference();
+        if (travelPromptRef) {
+            await travelPromptRef.edit({
+                components: [travelPrompt]
+            });
+        }
+    }
+
     private async handleTravel(
         interaction: CommandInteraction | ButtonPressInteraction | SelectMenuInteraction,
         directionParam?: Direction
@@ -806,8 +831,6 @@ export default class QuestLord {
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-        // TODO: Probably need a better way to handle difference between a quest
-        // being created and a quest being started.
         if (!quest.areAllCharactersCreated()) {
             throw new Error("The questing party hasn't formed yet!");
         }
@@ -818,7 +841,7 @@ export default class QuestLord {
         if (quest.isInEncounter() && !(quest.encounter instanceof FreeEncounter)) {
             await interaction.reply({
                 content: "You cannot travel during an encounter.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         } else {
             const direction = interaction.isCommand()
@@ -838,7 +861,7 @@ export default class QuestLord {
             // We can reply here, since we don't reply in the result callback
             await interaction.reply({
                 content: `You voted to travel '${direction}'!`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
 
             const voterId = interaction.user.id;
@@ -847,6 +870,8 @@ export default class QuestLord {
                 PollType.Travel,
                 direction,
                 async (vote: Direction) => {
+                    await this.editQuestTravelPrompt(quest);
+
                     const coordinates = quest.getPartyCoordinates();
                     // Store current biome string in a variable for use
                     const biome = world.getBiome(coordinates);
@@ -880,6 +905,8 @@ export default class QuestLord {
                     });
                 }
             );
+
+            await this.editQuestTravelPrompt(quest);
         }
     }
 
@@ -1079,6 +1106,15 @@ export default class QuestLord {
         const results = await quest.handleEncounterInteraction(interaction, command);
 
         await this.handleEncounterResults(guildId, channelId, results);
+    }
+
+    private async handleRest(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const action = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, action);
     }
 
     private async promptUse(
@@ -1359,8 +1395,8 @@ export default class QuestLord {
         if (equipment.offhand) {
             equipmentTextDisplay.push(`Offhand: *${equipment.offhand.name}*`);
         }
-        if (equipment.armor) {
-            equipmentTextDisplay.push(`Armor: *${equipment.armor.name}*`);
+        if (equipment.body) {
+            equipmentTextDisplay.push(`Body: *${equipment.body.name}*`);
         }
         if (equipment.helm) {
             equipmentTextDisplay.push(`Helm: *${equipment.helm.name}*`);
@@ -1491,10 +1527,6 @@ export default class QuestLord {
         delete this.forceEncounters[channelId];
     }
 
-    // TODO: This should be handled better. Currently, it sends a message to the
-    // channel with the travel prompt. In some cases (after a FreeEncounter, for
-    // example), it's preferable for the response to be ephemeral so users aren't
-    // spamming the channel OR rushing their party members.
     private async promptTravel(guildId: string, channelId: string) {
         this.assertQuestStarted(channelId);
 
@@ -1505,42 +1537,13 @@ export default class QuestLord {
         const narrator = quest.getNarrator();
         const partyBiome = world.getBiome(quest.getPartyCoordinates());
         await narrator.describeSurroundings(partyBiome);
-        const container = new ContainerBuilder()
-            .setAccentColor(0x0099ff)
-            .addTextDisplayComponents((textDisplay) => textDisplay
-                .setContent("# Where would you like to go? :person_walking_facing_right:"))
-            .addSeparatorComponents((separator) => separator)
-            .addActionRowComponents((actionRow) =>
-                actionRow.setComponents(
-                    new StringSelectMenuBuilder()
-                        .setCustomId("choose-direction")
-                        .setPlaceholder("Choose a direction")
-                        .addOptions(
-                            new StringSelectMenuOptionBuilder()
-                                .setLabel("North")
-                                .setValue("north")
-                                .setDescription("Travel north"),
-                            new StringSelectMenuOptionBuilder()
-                                .setLabel("South")
-                                .setValue("south")
-                                .setDescription("Travel south"),
-                            new StringSelectMenuOptionBuilder()
-                                .setLabel("East")
-                                .setValue("east")
-                                .setDescription("Travel east"),
-                            new StringSelectMenuOptionBuilder()
-                                .setLabel("West")
-                                .setValue("west")
-                                .setDescription("Travel west")
-                        )
-                ),
-            )
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent("*Waiting for the party to choose a direction...*"));
-        await narrator.ponderAndDescribe({
-            components: [container],
+
+        const message = await narrator.ponderAndDescribe({
+            components: [TravelPrompt()],
             flags: MessageFlags.IsComponentsV2
         });
+        // Save a reference to this message so we can edit it
+        quest.setTravelPromptReference(message);
     }
 
     private async awardExperience(channelId: string, xpBaseValue: number) {

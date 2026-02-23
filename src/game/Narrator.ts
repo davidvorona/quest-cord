@@ -49,12 +49,12 @@ class Narrator {
     }
 
     async describe(payload: string | MessagePayload | MessageCreateOptions) {
-        await this.channel.send(payload);
+        return this.channel.send(payload);
     }
 
     async ponderAndDescribe(payload: string | MessagePayload | MessageCreateOptions) {
         await sendTypingAndWaitRandom(this.channel, Narrator.TIME_TO_PONDER);
-        await this.channel.send(payload);
+        return this.channel.send(payload);
     }
 
     async reply(
@@ -124,41 +124,50 @@ class Narrator {
     }
 
     async describeAttack(attacker: Creature, target: Creature, damage: number) {
-        const textBuilder = new TextBuilder()
-            .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
         const weapon = attacker.equipment.weapon;
         const weaponName = weapon ? weapon.name : attacker.getWeaponId();
+        const subActivity = weaponName === "natural" ? "natural" : "melee";
+        const textBuilder = new TextBuilder()
+            .setActivity(ACTIVITY.ATTACK).setSubActivity(subActivity);
         const text = textBuilder.build(weaponName, attacker.getName(), target.getName());
         await this.ponderAndDescribe(text);
-        await this.ponderAndDescribe(`It deals ${damage} damage.`);
+        if (damage === 0) {
+            await this.ponderAndDescribe("The attack is blocked!");
+        } else if (attacker.getDamage() > damage) {
+            await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+        } else {
+            await this.ponderAndDescribe(`It deals ${damage} damage.`);
+        }
     }
 
     async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {
-        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at `
-            + `the enemy and deals ${damage} damage.`);
+        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at the enemy.`);
+        if (damage === 0) {
+            await this.ponderAndDescribe("The attack is blocked!");
+        } else if (spell.damage && (spell.damage > damage)) {
+            await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+        } else {
+            await this.ponderAndDescribe(`It deals ${damage} damage.`);
+        }
     }
 
     async explainEncounter(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
-            await this.ponderAndDescribe("On your turn, you can attack with the "
-                + "**/action attack** command, or cast a spell with **/action spell**. "
-                + "You can also use items with **/use**.\nBefore you act, you can decide "
-                + "if you want to move with **/move**.");
+            await this.ponderAndDescribe("On your turn, you can **Attack** or cast a **Spell**. "
+                + "You can also **Use** items.\n"
+                + " Before you act, you can decide if you want to **Move**.");
         } else if (encounter instanceof StealthEncounter) {
-            await this.ponderAndDescribe("Choose between a stealthy approach with the "
-                + "**/action sneak** command, or surprise your enemies with **/action surprise**!");
+            await this.ponderAndDescribe("**Sneak** past to avoid a confrontation, "
+                + "or **Surprise** your enemies!");
         } else if (encounter instanceof SocialEncounter) {
-            await this.ponderAndDescribe("Talk to the figure with the **/action talk** command, "
-                + "or ignore them with **/action ignore**.");
+            await this.ponderAndDescribe("**Talk** to the figure or **Ignore** them.");
         } else if (encounter instanceof MerchantEncounter) {
-            await this.ponderAndDescribe("Trade with the merchant using the **/action buy** or "
-                + "**/action sell** commands!");
+            await this.ponderAndDescribe("Trade with the merchant and **Buy** or **Sell** items.");
         } else if (encounter instanceof LookoutEncounter) {
-            await this.ponderAndDescribe("Take advantage of the view, and uncover more of the map "
-                + "with the **/action lookout** command!");
+            await this.ponderAndDescribe("Take advantage of the **Lookout**, "
+                + "and uncover more of the map.");
         } else if (encounter instanceof RestEncounter) {
-            await this.ponderAndDescribe("The days is yours! Rest, relax, and feel free to "
-                + "check your character status with **/status**.");
+            await this.ponderAndDescribe("The day is yours! **Rest** to restore your health.");
         }
         if (encounter instanceof FreeEncounter) {
             const section = new SectionBuilder()

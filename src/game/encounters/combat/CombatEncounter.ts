@@ -468,8 +468,26 @@ export default class CombatEncounter extends TurnBasedEncounter {
         // Monsters are always willing to move if it means attacking their target
         const willMove = attacker instanceof Monster ? true : this.heldMovement;
         if (mustMove && !willMove) {
-            throw new Error("You must **/move** to attack with this option!");
+            throw new Error("You must **Move** to attack with this option!");
         }
+    }
+
+    private calculateDamage(target: Creature, damage: number) {
+        const ac = target.getArmorClass();
+        const acDamageDiff = ac - damage;
+        // If AC is not at least the damage value, the attack does full damage.
+        if (acDamageDiff <= 0) {
+            return damage;
+        }
+        // To get the true damage, we multiple the damage value by the proportion of
+        // the damage value to the difference between the AC and the damage.
+        const trueDamage = (damage / acDamageDiff) * damage;
+        // If true damage isn't at least 1, the attack does no damage and is "blocked".
+        if (trueDamage < 1) {
+            return 0;
+        }
+        // If the attack does damage but is reduced by AC, it is considered "glancing".
+        return Math.round(trueDamage);
     }
 
     private async handleAttack(attacker: Creature, target: Creature) {
@@ -480,7 +498,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             await this.handleMove(attacker);
         }
 
-        const damage = attacker.getDamage();
+        const damage = this.calculateDamage(target, attacker.getDamage());
         target.setHp(target.hp - damage);
 
         const weaponId = attacker.getWeaponId();
@@ -522,7 +540,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
             await this.handleMove(caster);
         }
 
-        const damage = heldSpell.damage || 0;
+        const spellDamage = heldSpell.damage || 0;
+        const damage = this.calculateDamage(target, spellDamage);
         target.setHp(target.hp - damage);
 
         this.combatLog.appendSpell(

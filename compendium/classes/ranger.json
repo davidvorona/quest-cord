@@ -5,7 +5,7 @@
     "damage": 3,
     "equipment": {
         "weapon": "longbow",
-        "armor": "leather_armor"
+        "body": "leather_armor"
     },
     "spells": [],
     "items": [

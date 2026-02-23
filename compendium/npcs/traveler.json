@@ -5,7 +5,7 @@
     "damage": 1,
     "equipment": {
         "weapon": "chipped_shortsword",
-        "armor": "leather_armor"
+        "body": "leather_armor"
     },
     "items": [
         "torch"

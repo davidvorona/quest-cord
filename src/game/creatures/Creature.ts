@@ -8,7 +8,7 @@ export interface Equipment {
     weapon?: Weapon;
     offhand?: Item;
     helm?: Item;
-    armor?: Item;
+    body?: Item;
     cape?: Item;
     boots?: Item;
 }
@@ -107,5 +107,9 @@ export default class Creature {
 
     isDead() {
         return this.hp <= 0;
+    }
+
+    getArmorClass() {
+        return Object.values(this.equipment).reduce((ac, item) => ac + (item.ac || 0), 0);
     }
 }

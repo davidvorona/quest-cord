@@ -3,5 +3,6 @@
     "name": "Iron Shield",
     "type": "offhand",
     "description": "You have to carry this?!",
-    "value": 20
+    "value": 20,
+    "ac": 2
 }

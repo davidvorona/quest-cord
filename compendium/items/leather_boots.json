@@ -1,7 +1,9 @@
 {
     "id": "leather_boots",
     "name": "Leather Boots",
-    "type": "boots",
+    "type": "armor",
+    "slot": "boots",
     "description": "Good for the trail, but not much else.",
-    "value": 8
+    "value": 8,
+    "ac": 1
 }

@@ -14,7 +14,9 @@ export const COMPENDIUM_SECTION = {
 
 export const ITEM_TYPE = {
     CONSUMABLE: "consumable",
-    WEAPON: "weapon"
+    WEAPON: "weapon",
+    ARMOR: "armor",
+    OFFHAND: "offhand",
 } as const;
 
 export const BIOME = {
@@ -38,6 +40,13 @@ export const FORMATTED_DIRECTION = {
     SOUTH: "South",
     EAST: "East",
     WEST: "West"
+} as const;
+
+export const DIRECTION_EMOJI = {
+    NORTH: "⬆️",
+    SOUTH: "⬇️",
+    EAST: "➡️",
+    WEST: "⬅️"
 } as const;
 
 export const WORLD_DIMENSION = 40 as const;
