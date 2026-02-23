@@ -1395,8 +1395,8 @@ export default class QuestLord {
         if (equipment.offhand) {
             equipmentTextDisplay.push(`Offhand: *${equipment.offhand.name}*`);
         }
-        if (equipment.armor) {
-            equipmentTextDisplay.push(`Armor: *${equipment.armor.name}*`);
+        if (equipment.body) {
+            equipmentTextDisplay.push(`Body: *${equipment.body.name}*`);
         }
         if (equipment.helm) {
             equipmentTextDisplay.push(`Helm: *${equipment.helm.name}*`);

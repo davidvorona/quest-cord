@@ -5,7 +5,7 @@
     "damage": 3,
     "equipment": {
         "weapon": "wand",
-        "armor": "wizard_robes"
+        "body": "wizard_robes"
     },
     "spells": [
         "fire_bolt"

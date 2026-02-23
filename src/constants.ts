@@ -14,7 +14,9 @@ export const COMPENDIUM_SECTION = {
 
 export const ITEM_TYPE = {
     CONSUMABLE: "consumable",
-    WEAPON: "weapon"
+    WEAPON: "weapon",
+    ARMOR: "armor",
+    OFFHAND: "offhand",
 } as const;
 
 export const BIOME = {

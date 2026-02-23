@@ -30,6 +30,13 @@ export interface BiomeData {
 export type Biome = "forest" | "beach" | "desert" | "mountains" | "ocean" | "jungle";
 export type BiomesJson = Record<Biome, BiomeData>;
 
+export enum ArmorSlot {
+    Helm = "helm",
+    Body = "body",
+    Boots = "boots",
+    Cape = "cape"
+}
+
 export interface AnyObject {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: string | number | any;
@@ -45,6 +52,18 @@ export interface BaseItem {
 
 export interface BaseWeapon extends BaseItem {
     damage: number;
+    properties?: string[];
+}
+
+export interface BaseArmor extends BaseItem {
+    slot: ArmorSlot;
+    ac: number;
+    properties?: string[];
+}
+
+export interface BaseOffhand extends BaseItem {
+    damage: number;
+    ac: number;
     properties?: string[];
 }
 
@@ -71,7 +90,7 @@ export interface BaseConsumable extends BaseItem {
 export interface BaseEquipment {
     weapon?: string;
     offhand?: string;
-    armor?: string;
+    body?: string;
     helm?: string;
     cape?: string;
     boots?: string;

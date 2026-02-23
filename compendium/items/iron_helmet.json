@@ -1,7 +1,9 @@
 {
     "id": "iron_helmet",
     "name": "Iron Helmet",
-    "type": "helm",
+    "type": "armor",
+    "slot": "helm",
     "description": "Solid head protection.",
-    "value": 14
+    "value": 14,
+    "ac": 2
 }

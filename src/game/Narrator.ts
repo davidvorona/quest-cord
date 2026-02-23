@@ -124,18 +124,31 @@ class Narrator {
     }
 
     async describeAttack(attacker: Creature, target: Creature, damage: number) {
-        const textBuilder = new TextBuilder()
-            .setActivity(ACTIVITY.ATTACK).setSubActivity("melee");
         const weapon = attacker.equipment.weapon;
         const weaponName = weapon ? weapon.name : attacker.getWeaponId();
+        const subActivity = weaponName === "natural" ? "natural" : "melee";
+        const textBuilder = new TextBuilder()
+            .setActivity(ACTIVITY.ATTACK).setSubActivity(subActivity);
         const text = textBuilder.build(weaponName, attacker.getName(), target.getName());
         await this.ponderAndDescribe(text);
-        await this.ponderAndDescribe(`It deals ${damage} damage.`);
+        if (damage === 0) {
+            await this.ponderAndDescribe("The attack is blocked!");
+        } else if (attacker.getDamage() > damage) {
+            await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+        } else {
+            await this.ponderAndDescribe(`It deals ${damage} damage.`);
+        }
     }
 
     async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {
-        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at `
-            + `the enemy and deals ${damage} damage.`);
+        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at the enemy.`);
+        if (damage === 0) {
+            await this.ponderAndDescribe("The attack is blocked!");
+        } else if (spell.damage && (spell.damage > damage)) {
+            await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+        } else {
+            await this.ponderAndDescribe(`It deals ${damage} damage.`);
+        }
     }
 
     async explainEncounter(encounter: Encounter) {

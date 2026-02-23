@@ -1,9 +1,11 @@
 import { COMPENDIUM_SECTION, ITEM_TYPE } from "../constants";
 import Item from "../game/things/Item";
 import Consumable from "../game/things/Consumable";
-import { BaseItem, BaseConsumable, BaseWeapon } from "../types";
+import { BaseItem, BaseConsumable, BaseWeapon, BaseArmor, BaseOffhand } from "../types";
 import CompendiumReader from "./CompendiumReader";
 import Weapon from "../game/things/Weapon";
+import Offhand from "../game/things/Offhand";
+import Armor from "../game/things/Armor";
 import { randKey } from "../util";
 
 class ItemFactory {
@@ -26,6 +28,10 @@ class ItemFactory {
             return new Consumable(data as BaseConsumable);
         case ITEM_TYPE.WEAPON:
             return new Weapon(data as BaseWeapon);
+        case ITEM_TYPE.OFFHAND:
+            return new Offhand(data as BaseOffhand);
+        case ITEM_TYPE.ARMOR:
+            return new Armor(data as BaseArmor);
         default:
             return new Item(data as BaseItem);
         }
