@@ -46,7 +46,7 @@ import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
-import { EncounterType } from "../constants";
+import { DIRECTION_EMOJI, EncounterType, FORMATTED_DIRECTION } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/ExperienceCalculator";
 import EncounterDisplay from "./ui/EncounterDisplay";
@@ -802,6 +802,27 @@ export default class QuestLord {
         }
     }
 
+    private async editQuestTravelPrompt(quest: Quest) {
+        const travelPoll = quest.getPollBooth().getPoll(PollType.Travel);
+        if (!travelPoll) {
+            console.warn("Unable to find travel poll, ignoring");
+            return;
+        }
+        const travelVotes = travelPoll.votes as Record<string, Direction>;
+        const displayedVotes = Object.entries(travelVotes).map(([userId, vote]) => {
+            const pc = quest.assertAndGetPlayerCharacter(userId);
+            const dirKey = vote.toUpperCase() as keyof typeof FORMATTED_DIRECTION;
+            return `${pc.getName()}: **${FORMATTED_DIRECTION[dirKey]}** ${DIRECTION_EMOJI[dirKey]}`;
+        }).join("\n");
+        const travelPrompt = TravelPrompt(displayedVotes);
+        const travelPromptRef = quest.getTravelPromptReference();
+        if (travelPromptRef) {
+            await travelPromptRef.edit({
+                components: [travelPrompt]
+            });
+        }
+    }
+
     private async handleTravel(
         interaction: CommandInteraction | ButtonPressInteraction | SelectMenuInteraction,
         directionParam?: Direction
@@ -849,6 +870,8 @@ export default class QuestLord {
                 PollType.Travel,
                 direction,
                 async (vote: Direction) => {
+                    await this.editQuestTravelPrompt(quest);
+
                     const coordinates = quest.getPartyCoordinates();
                     // Store current biome string in a variable for use
                     const biome = world.getBiome(coordinates);
@@ -883,23 +906,7 @@ export default class QuestLord {
                 }
             );
 
-            // Edit the poll once the vote has been cast. Because the poll is deleted once the
-            // results are processed, the final vote is never recorded in the travel prompt.
-            const poll = pollBooth.getPoll(PollType.Travel);
-            if (poll) {
-                const travelVotes = poll.votes as Record<string, Direction>;
-                const displayedVotes = Object.entries(travelVotes).map(([userId, vote]) => {
-                    const pc = quest.assertAndGetPlayerCharacter(userId);
-                    return `${pc.getName()}: **${vote}**`;
-                }).join("\n");
-                const travelPrompt = TravelPrompt(displayedVotes);
-                const travelPromptRef = quest.getTravelPromptReference();
-                if (travelPromptRef) {
-                    await travelPromptRef.edit({
-                        components: [travelPrompt]
-                    });
-                }
-            }
+            await this.editQuestTravelPrompt(quest);
         }
     }
 

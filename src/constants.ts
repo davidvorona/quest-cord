@@ -40,6 +40,13 @@ export const FORMATTED_DIRECTION = {
     WEST: "West"
 } as const;
 
+export const DIRECTION_EMOJI = {
+    NORTH: "⬆️",
+    SOUTH: "⬇️",
+    EAST: "➡️",
+    WEST: "⬅️"
+} as const;
+
 export const WORLD_DIMENSION = 40 as const;
 
 export const REGION_DIMENSION = 4 as const;
