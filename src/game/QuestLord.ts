@@ -422,6 +422,10 @@ export default class QuestLord {
                 await this.handleSurprise(interaction);
             }
 
+            if (interaction.customId === "rest") {
+                await this.handleRest(interaction);
+            }
+
             if (interaction.customId === "loot") {
                 await this.rollForLoot(interaction);
             }
@@ -1079,6 +1083,15 @@ export default class QuestLord {
         const results = await quest.handleEncounterInteraction(interaction, command);
 
         await this.handleEncounterResults(guildId, channelId, results);
+    }
+
+    private async handleRest(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const action = quest.validateEncounterInteraction(interaction);
+        await quest.handleEncounterInteraction(interaction, action);
     }
 
     private async promptUse(

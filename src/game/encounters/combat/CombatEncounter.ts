@@ -468,7 +468,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         // Monsters are always willing to move if it means attacking their target
         const willMove = attacker instanceof Monster ? true : this.heldMovement;
         if (mustMove && !willMove) {
-            throw new Error("You must **/move** to attack with this option!");
+            throw new Error("You must **Move** to attack with this option!");
         }
     }
 
