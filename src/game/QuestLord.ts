@@ -1592,6 +1592,7 @@ export default class QuestLord {
             results.xp = xpReward;
         }
 
+        // Initialize loot boxes for combat encounter loot
         if (encounter instanceof CombatEncounter && results.loot) {
             encounter.createLootBoxes(results.loot);
         }
