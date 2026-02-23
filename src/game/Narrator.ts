@@ -125,8 +125,10 @@ class Narrator {
 
     async describeAttack(attacker: Creature, target: Creature, damage: number) {
         const weapon = attacker.equipment.weapon;
-        const weaponName = weapon ? weapon.name : attacker.getWeaponId();
-        const subActivity = weaponName === "natural" ? "natural" : "melee";
+        const weaponId = weapon?.id || "natural";
+        const weaponName = weapon?.name || "[weapon]";
+        const isRanged = weapon?.isRanged();
+        const subActivity = weaponId === "natural" ? "natural" : isRanged ? "range" : "melee";
         const textBuilder = new TextBuilder()
             .setActivity(ACTIVITY.ATTACK).setSubActivity(subActivity);
         const text = textBuilder.build(weaponName, attacker.getName(), target.getName());

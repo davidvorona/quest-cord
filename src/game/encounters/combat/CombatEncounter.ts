@@ -92,8 +92,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
         interaction: CommandInteraction | ButtonPressInteraction,
         character: Character
     ) => {
-        if (this.monsters.length === 1) {
-            const target = this.monsters[0];
+        if (this.getAliveMonsters().length === 1) {
+            const target = this.getAliveMonsters()[0];
 
             await this.narrator.reply(interaction, {
                 ephemeral: true,
