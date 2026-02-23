@@ -1,4 +1,4 @@
-import { Snowflake } from "discord.js";
+import { Message, Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
 import PlayerCharacter, { LevelUp } from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
@@ -32,6 +32,7 @@ export default class Quest {
 
     pcs: Record<string, PlayerCharacter | null> = {};
 
+    travelPromptRef?: Message<true>;
     route: [number, number][] = [];
 
     encounter?: Encounter;
@@ -59,6 +60,14 @@ export default class Quest {
 
     setCharacterCreator(userId: Snowflake, creator: CharacterCreator) {
         this.characterCreators[userId] = creator;
+    }
+
+    getTravelPromptReference() {
+        return this.travelPromptRef;
+    }
+
+    setTravelPromptReference(message: Message<true>) {
+        this.travelPromptRef = message;
     }
 
     getNarrator() {

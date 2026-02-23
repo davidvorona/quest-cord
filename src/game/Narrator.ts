@@ -49,12 +49,12 @@ class Narrator {
     }
 
     async describe(payload: string | MessagePayload | MessageCreateOptions) {
-        await this.channel.send(payload);
+        return this.channel.send(payload);
     }
 
     async ponderAndDescribe(payload: string | MessagePayload | MessageCreateOptions) {
         await sendTypingAndWaitRandom(this.channel, Narrator.TIME_TO_PONDER);
-        await this.channel.send(payload);
+        return this.channel.send(payload);
     }
 
     async reply(

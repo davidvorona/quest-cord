@@ -32,7 +32,7 @@ export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?
             section.addTextDisplayComponents((textDisplay) =>
                 textDisplay.setContent(names.length > 1 ? "In a party" : "Lone adventurer"),
             (textDisplay) => textDisplay
-                .setContent(names.map(name => `:bust_in_silhouette: **${name}**\n`).join(", ")))
+                .setContent(names.map(name => `:bust_in_silhouette: **${name}**`).join("\n")))
                 .setButtonAccessory(button => button
                     .setCustomId("quest")
                     .setLabel("See Quest")
