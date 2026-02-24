@@ -657,13 +657,8 @@ export default class QuestLord {
                 const forceType = this.forceEncounters[channelId];
                 const encounter = this.encounterBuilder
                     .build(partyBiome, quest.getPlayerCharacters(), narrator, forceType);
-                await quest.startEncounter(encounter);
 
-                const encounterDisplay = EncounterDisplay(encounter, partyBiome);
-                await narrator.describe({
-                    components: encounterDisplay,
-                    flags: MessageFlags.IsComponentsV2
-                });
+                await quest.startEncounter(encounter, partyBiome);
             }
         }
     }
@@ -896,13 +891,8 @@ export default class QuestLord {
                     const forceType = this.forceEncounters[channelId];
                     const encounter = this.encounterBuilder
                         .build(newBiome, quest.getPlayerCharacters(), narrator, forceType);
-                    await quest.startEncounter(encounter);
 
-                    const encounterDisplay = EncounterDisplay(encounter, newBiome);
-                    await narrator.describe({
-                        components: encounterDisplay,
-                        flags: MessageFlags.IsComponentsV2
-                    });
+                    await quest.startEncounter(encounter, newBiome);
                 }
             );
 
@@ -981,13 +971,8 @@ export default class QuestLord {
                 // Start the combat encounter
                 const world = this.worlds[quest.guildId];
                 const biome = world.getBiome(quest.getPartyCoordinates());
-                await quest.startEncounter(cmbEncounter);
 
-                const encounterDisplay = EncounterDisplay(cmbEncounter, biome);
-                await narrator.describe({
-                    components: encounterDisplay,
-                    flags: MessageFlags.IsComponentsV2
-                });
+                await quest.startEncounter(cmbEncounter, biome);
             }
         );
     }
