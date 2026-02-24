@@ -25,7 +25,6 @@ import CharacterCreator from "../services/CharacterCreator";
 import { PollType } from "./polls/PollBooth";
 import CreatureFactory from "../services/CreatureFactory";
 import {
-    Direction,
     QuestLordInteraction,
     CommandInteraction,
     SelectMenuInteraction,
@@ -45,7 +44,7 @@ import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
-import { DIRECTION_EMOJI, EncounterType, FORMATTED_DIRECTION } from "../constants";
+import { Direction, EncounterType, DirectionEmoji } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/ExperienceCalculator";
 import EncounterDisplay from "./ui/EncounterDisplay";
@@ -184,7 +183,7 @@ export default class QuestLord {
             if (interaction.commandName === "help") {
                 await interaction.reply({
                     content: getHelpText(),
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -254,7 +253,7 @@ export default class QuestLord {
             if (!interaction.replied) {
                 await interaction.reply({
                     content: errMessage,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }
@@ -495,7 +494,7 @@ export default class QuestLord {
             if (!interaction.replied) {
                 await interaction.reply({
                     content: errMessage,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } else {
                 await interaction.editReply({
@@ -540,7 +539,7 @@ export default class QuestLord {
         this.quests[channelId] = quest;
 
         // Defer reply in case guild commands take a while
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         await narrator.ponderAndReply(interaction, {
             content: `Quest created for **${players.length}** players...`,
@@ -602,7 +601,7 @@ export default class QuestLord {
         if (!quest.isUserInParty(userId)) {
             await interaction.reply({
                 content: "Destiny has not claimed you yet, your time will come...",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -610,7 +609,7 @@ export default class QuestLord {
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -676,7 +675,7 @@ export default class QuestLord {
         if (!quest.isUserInParty(userId)) {
             await interaction.reply({
                 content: "Destiny has not claimed you yet, your time will come...",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -684,7 +683,7 @@ export default class QuestLord {
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -705,7 +704,7 @@ export default class QuestLord {
         if (!quest.isUserInParty(userId)) {
             await interaction.reply({
                 content: "Destiny has not claimed you yet, your time will come...",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -713,7 +712,7 @@ export default class QuestLord {
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -734,7 +733,7 @@ export default class QuestLord {
         if (!quest.isUserInParty(userId)) {
             await interaction.reply({
                 content: "Destiny has not claimed you yet, your time will come...",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -742,7 +741,7 @@ export default class QuestLord {
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -763,7 +762,7 @@ export default class QuestLord {
         if (!quest.isUserInParty(userId)) {
             await interaction.reply({
                 content: "Destiny has not claimed you yet, your time will come...",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -771,7 +770,7 @@ export default class QuestLord {
         if (quest.isCharacterCreated(userId)) {
             await interaction.reply({
                 content: "You already have a character in the questing party.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -809,8 +808,8 @@ export default class QuestLord {
         const travelVotes = travelPoll.votes as Record<string, Direction>;
         const displayedVotes = Object.entries(travelVotes).map(([userId, vote]) => {
             const pc = quest.assertAndGetPlayerCharacter(userId);
-            const dirKey = vote.toUpperCase() as keyof typeof FORMATTED_DIRECTION;
-            return `${pc.getName()}: **${FORMATTED_DIRECTION[dirKey]}** ${DIRECTION_EMOJI[dirKey]}`;
+            const dirKey = vote as Direction;
+            return `${pc.getName()}: **${Direction[dirKey]}** ${DirectionEmoji[dirKey]}`;
         }).join("\n");
         const travelPrompt = TravelPrompt(displayedVotes);
         const travelPromptRef = quest.getTravelPromptReference();
@@ -849,7 +848,10 @@ export default class QuestLord {
                 this.validateTravelDirection(guildId, channelId, direction);
             } catch (err) {
                 if (err instanceof Error) {
-                    await interaction.reply({ content: err.message, ephemeral: true });
+                    await interaction.reply({
+                        content: err.message,
+                        flags: MessageFlags.Ephemeral
+                    });
                 }
                 return;
             }
@@ -918,7 +920,7 @@ export default class QuestLord {
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
             content: `You voted to '${stealthAction}'!`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         await pollBooth.castVote(
@@ -948,7 +950,7 @@ export default class QuestLord {
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
             content: `You voted to '${stealthAction}'!`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         await pollBooth.castVote(
@@ -995,7 +997,7 @@ export default class QuestLord {
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
             content: `You voted to '${socialAction}'!`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         await pollBooth.castVote(
@@ -1025,7 +1027,7 @@ export default class QuestLord {
         // We can reply here, since we don't reply in the result callback
         await interaction.reply({
             content: `You voted to '${socialAction}'!`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         await pollBooth.castVote(
@@ -1137,7 +1139,7 @@ export default class QuestLord {
                         .addOptions(options)
                 );
             await interaction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 embeds: [embed],
                 components: [row]
             });
@@ -1162,7 +1164,7 @@ export default class QuestLord {
             } catch (err) {
                 await interaction.reply({
                     content: "You do not have this item!",
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -1421,7 +1423,7 @@ export default class QuestLord {
         const localMap = world.stringifyLocal(quest.getRoute());
         await interaction.reply({
             content: localMap,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 

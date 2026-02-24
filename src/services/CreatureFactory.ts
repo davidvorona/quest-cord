@@ -1,4 +1,4 @@
-import { COMPENDIUM_SECTION } from "../constants";
+import { CompendiumSection } from "../constants";
 import { Equipment } from "../game/creatures/Creature";
 import Character from "../game/creatures/Character";
 import NonPlayerCharacter from "../game/NonPlayerCharacter";
@@ -55,10 +55,10 @@ class CreatureFactory {
         this.compendium = compendiumReader;
         this.itemFactory = itemFactory;
         this.spellFactory = spellFactory;
-        const classes = this.compendium.read(COMPENDIUM_SECTION.CLASSES);
-        const monsters = this.compendium.read(COMPENDIUM_SECTION.MONSTERS);
-        const npcs = this.compendium.read(COMPENDIUM_SECTION.NPCS);
-        const professions = this.compendium.read(COMPENDIUM_SECTION.PROFESSIONS);
+        const classes = this.compendium.read(CompendiumSection.Classes);
+        const monsters = this.compendium.read(CompendiumSection.Monsters);
+        const npcs = this.compendium.read(CompendiumSection.NPCs);
+        const professions = this.compendium.read(CompendiumSection.Professions);
         this.data = { classes, monsters, npcs, professions };
     }
 

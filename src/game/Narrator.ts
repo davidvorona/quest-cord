@@ -13,7 +13,7 @@ import {
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
-import { ACTIVITY } from "../constants";
+import { TextActivity, Biome } from "../constants";
 import { CombatPosition } from "./encounters/combat/CombatPositionCache";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
@@ -26,7 +26,7 @@ import LookoutEncounter from "./encounters/lookout/LookoutEncounter";
 import RestEncounter from "./encounters/rest/RestEncounter";
 import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
-import { Biome, ButtonPressInteraction } from "../types";
+import { ButtonPressInteraction } from "../types";
 import EncounterDisplay from "./ui/EncounterDisplay";
 
 /**
@@ -129,7 +129,7 @@ class Narrator {
         const isRanged = weapon?.isRanged();
         const subActivity = weaponId === "natural" ? "natural" : isRanged ? "range" : "melee";
         const textBuilder = new TextBuilder()
-            .setActivity(ACTIVITY.ATTACK).setSubActivity(subActivity);
+            .setActivity(TextActivity.Attack).setSubActivity(subActivity);
         const text = textBuilder.build(weaponName, attacker.getName(), target.getName());
         await this.ponderAndDescribe(text);
         if (damage === 0) {
@@ -157,7 +157,7 @@ class Narrator {
             // Get names of monsters in encounter
             const monsterNames = encounter.getMonsterNames();
             const textBuilder = new TextBuilder()
-                .setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
+                .setActivity(TextActivity.Encounter).setSubActivity("start");
             await this.ponderAndDescribe(textBuilder.build(monsterNames)
                 + "\nOn your turn, you can **Attack** or cast a **Spell**. "
                 + "You can also **Use** items.\n"

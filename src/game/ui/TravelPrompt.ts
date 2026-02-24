@@ -4,6 +4,7 @@ import {
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder
 } from "discord.js";
+import { Direction } from "../../constants";
 
 export default function TravelPrompt(votesDisplayText?: string) {
     const container = new ContainerBuilder()
@@ -18,20 +19,20 @@ export default function TravelPrompt(votesDisplayText?: string) {
                     .setPlaceholder("Choose a direction")
                     .addOptions(
                         new StringSelectMenuOptionBuilder()
-                            .setLabel("North")
-                            .setValue("north")
+                            .setLabel(Direction.North)
+                            .setValue(Direction.North)
                             .setDescription("Travel north"),
                         new StringSelectMenuOptionBuilder()
-                            .setLabel("South")
-                            .setValue("south")
+                            .setLabel(Direction.South)
+                            .setValue(Direction.South)
                             .setDescription("Travel south"),
                         new StringSelectMenuOptionBuilder()
-                            .setLabel("East")
-                            .setValue("east")
+                            .setLabel(Direction.East)
+                            .setValue(Direction.East)
                             .setDescription("Travel east"),
                         new StringSelectMenuOptionBuilder()
-                            .setLabel("West")
-                            .setValue("west")
+                            .setLabel(Direction.West)
+                            .setValue(Direction.West)
                             .setDescription("Travel west")
                     )
             )

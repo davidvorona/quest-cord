@@ -1,5 +1,6 @@
 import { Message, Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
+import { Biome } from "../constants";
 import PlayerCharacter, { LevelUp } from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
@@ -7,7 +8,6 @@ import Narrator from "./Narrator";
 import Command from "./actions/commands/Command";
 import Button from "./actions/buttons/Button";
 import {
-    Biome,
     ButtonPressInteraction,
     CommandInteraction,
     SelectMenuInteraction

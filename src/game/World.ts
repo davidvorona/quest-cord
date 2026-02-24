@@ -1,8 +1,17 @@
 import path from "path";
 import { createRandomId, rand, parseJson, readFile } from "../util";
-import { BiomesJson, Biome, Direction } from "../types";
-import { BIOME, DIRECTION, REGION_DIMENSION, WORLD_DIMENSION } from "../constants";
+import { Biome, Direction, REGION_DIMENSION, WORLD_DIMENSION } from "../constants";
+
 const biomesPath = path.join(__dirname, "../../config/biomes.json");
+export interface BiomeData {
+    depth?: number;
+    region: boolean;
+    emoji: string;
+}
+
+/* Structure of JSON file with biome data */
+export type BiomesJson = Record<Biome, BiomeData>;
+
 const biomesData = parseJson(readFile(biomesPath)) as BiomesJson;
 
 function getRegionBiomes() {
@@ -78,10 +87,10 @@ class World {
             for (let x = 0; x < WORLD_DIMENSION; x++) {
                 // The perimeter is always an endless ocean
                 if (World.isMatrixPerimeter(x, y)) {
-                    matrix[y][x] = BIOME.OCEAN;
+                    matrix[y][x] = Biome.Ocean;
                 // One depth in from the ocean is a beach layer
                 } else if (World.isDepth(1, x, y)) {
-                    matrix[y][x] = BIOME.BEACH;
+                    matrix[y][x] = Biome.Beach;
                 // Random biome region generation relies on iteration order: if the coordinate is
                 // the upper-left tile of a region, then set it to a random biome. This is the
                 // "seed" of the region, and must be set first per region for generation to
@@ -124,13 +133,13 @@ class World {
         direction: Direction,
         [x, y]: [number, number]
     ): [number, number] {
-        if (direction === DIRECTION.NORTH) {
+        if (direction === Direction.North) {
             y -= 1;
-        } else if (direction === DIRECTION.SOUTH) {
+        } else if (direction === Direction.South) {
             y += 1;
-        } else if (direction === DIRECTION.EAST) {
+        } else if (direction === Direction.East) {
             x += 1;
-        } else if (direction === DIRECTION.WEST) {
+        } else if (direction === Direction.West) {
             x -= 1;
         }
         if (x < 0 || x > WORLD_DIMENSION - 1 || y < 0 || y > WORLD_DIMENSION - 1) {
@@ -146,13 +155,13 @@ class World {
         const [fromX, fromY] = from;
         const [toX, toY] = to;
         if (toX === fromX && toY === fromY - 1) {
-            return DIRECTION.NORTH;
+            return Direction.North;
         } else if (toX === fromX && toY === fromY + 1) {
-            return DIRECTION.SOUTH;
+            return Direction.South;
         } else if (toX === fromX + 1 && toY === fromY) {
-            return DIRECTION.EAST;
+            return Direction.East;
         } else if (toX === fromX - 1 && toY === fromY) {
-            return DIRECTION.WEST;
+            return Direction.West;
         }
     }
 
@@ -207,7 +216,7 @@ class World {
                 } else if (route.findIndex(r => r[0] === cx && r[1] === cy) !== -1) {
                     let emoji = biomesData[biome].emoji;
                     // Normalizes emoji length on Discord
-                    if (biome === BIOME.FOREST || biome === BIOME.JUNGLE) {
+                    if (biome === Biome.Forest || biome === Biome.Jungle) {
                         emoji += " ";
                     }
                     worldStr += emoji;
@@ -235,18 +244,18 @@ class World {
 
     // TODO: Improve this function to actually work correctly
     private randomizePerimeterTile(previousTile: string, x: number, y: number) {
-        let biome: Biome = BIOME.OCEAN;
+        let biome: Biome = Biome.Ocean;
         if (this.isNormalFaultAxis() && (x === 0 || x === WORLD_DIMENSION - 1)) {
-            if (previousTile === BIOME.MOUNTAINS) {
-                biome = rand(5) === 0 ? BIOME.OCEAN : BIOME.MOUNTAINS;
+            if (previousTile === Biome.Mountains) {
+                biome = rand(5) === 0 ? Biome.Ocean : Biome.Mountains;
             } else if (rand(5) === 0) {
-                biome = BIOME.MOUNTAINS;
+                biome = Biome.Mountains;
             }
         } else if (!this.isNormalFaultAxis() && (y === 0 || y === WORLD_DIMENSION - 1)) {
-            if (previousTile === BIOME.MOUNTAINS) {
-                biome = rand(5) === 0 ? BIOME.OCEAN : BIOME.MOUNTAINS;
+            if (previousTile === Biome.Mountains) {
+                biome = rand(5) === 0 ? Biome.Ocean : Biome.Mountains;
             } else if (rand(5) === 0) {
-                biome = BIOME.MOUNTAINS;
+                biome = Biome.Mountains;
             }
         }
         return biome;
@@ -258,8 +267,8 @@ class World {
      */
     private smartGenerate() {
         const matrix = Array(WORLD_DIMENSION)
-            .fill("forest")
-            .map(() => Array(WORLD_DIMENSION).fill("forest"));
+            .fill(Biome.Forest)
+            .map(() => Array(WORLD_DIMENSION).fill(Biome.Forest));
         // 1. Generate the perimeter of the world: mostly oceans and some mountains
         for (let d = 0; d < WORLD_DIMENSION; d++) {
             // Generate tiles along the x-axis at y = 0

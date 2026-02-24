@@ -1,4 +1,4 @@
-import { Direction } from "../../types";
+import { Direction } from "../../constants";
 import Poll from "./Poll";
 
 type ResultCallback = (voteResult: Direction) => Promise<void>;

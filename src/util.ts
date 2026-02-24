@@ -5,6 +5,7 @@ import {
     ChatInputCommandInteraction,
     EmbedBuilder,
     GuildMember,
+    MessageFlags,
     PermissionsBitField,
     TextChannel
 } from "discord.js";
@@ -113,7 +114,7 @@ export const sendMissingPermissionsMessage = async (
         .setDescription(`It looks like you have some permissions issues.\n\n${permissionsMessage}`);
     await interaction.reply({
         embeds: [embed],
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
     });
 };
 
