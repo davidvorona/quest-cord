@@ -1,6 +1,5 @@
 import {
-    ActionRowBuilder,
-    EmbedBuilder,
+    MessageFlags,
     StringSelectMenuBuilder
 } from "discord.js";
 import Character from "../../creatures/Character";
@@ -18,7 +17,7 @@ import {
     SellButton
 } from "../../actions";
 import Item from "../../things/Item";
-import Inventory from "../../creatures/Inventory";
+import InventoryDisplay, { ShopInventoryDisplay } from "../../ui/InventoryDisplay";
 
 export default class MerchantEncounter extends FreeEncounter {
     type = EncounterType.Merchant;
@@ -26,27 +25,43 @@ export default class MerchantEncounter extends FreeEncounter {
 
     merchant: NonPlayerCharacter;
 
-    handlePlayerBuy = async (interaction: CommandInteraction | ButtonPressInteraction) => {
+    getBuySelectMenu = () => {
         const options = this.getMerchant()
             .getCharacter()
             .getInventory()
             .getInteractionOptions();
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("What do you want to buy?");
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("buy")
-                    .setPlaceholder("Nothing selected")
-                    .setMinValues(1)
-                    .setMaxValues(options.length)
-                    .addOptions(options)
-            );
+        return new StringSelectMenuBuilder()
+            .setCustomId("buy")
+            .setPlaceholder("Select item to buy")
+            .setMinValues(1)
+            .setMaxValues(options.length)
+            .addOptions(options);
+    };
+
+    getSellSelectMenu = (character: Character) => {
+        const options = character.getInventory().getInteractionOptions();
+        return new StringSelectMenuBuilder()
+            .setCustomId("sell")
+            .setPlaceholder("Select item to sell")
+            .setMinValues(1)
+            .setMaxValues(options.length)
+            .addOptions(options);
+    };
+
+    handlePlayerBuy = async (
+        interaction: CommandInteraction | ButtonPressInteraction,
+        character: Character
+    ) => {
+        const inventoryDisplay = ShopInventoryDisplay(this.getMerchant());
+        const buySelectMenu = this.getBuySelectMenu();
+        inventoryDisplay.addSeparatorComponents(separator => separator)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`You have :coin: ${character.getGp()} gold`))
+            .addActionRowComponents((actionRow) =>
+                actionRow.setComponents(buySelectMenu));
         await this.narrator.reply(interaction, {
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
+            components: [inventoryDisplay],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     };
 
@@ -54,33 +69,34 @@ export default class MerchantEncounter extends FreeEncounter {
         interaction: CommandInteraction | ButtonPressInteraction,
         character: Character
     ) => {
-        const options = character.getInventory().getInteractionOptions();
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription("What do you want to sell?");
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("sell")
-                    .setPlaceholder("Nothing selected")
-                    .setMinValues(1)
-                    .setMaxValues(options.length)
-                    .addOptions(options)
-            );
+        const inventoryDisplay = InventoryDisplay(character);
+        const sellSelectMenu = this.getSellSelectMenu(character);
+        inventoryDisplay.addSeparatorComponents(separator => separator)
+            .addActionRowComponents((actionRow) =>
+                actionRow.setComponents(sellSelectMenu));
         await this.narrator.reply(interaction, {
-            ephemeral: true,
-            embeds: [embed],
-            components: [row]
+            components: [inventoryDisplay],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     };
 
     handlePlayerBuySelection = async (interaction: SelectMenuInteraction, character: Character) => {
         const itemIds = interaction.values;
         const merchantCharacter = this.merchant.getCharacter();
-        const embed = this.doTransaction(character, merchantCharacter, itemIds);
+        const resultStr = this.doTransaction(character, merchantCharacter, itemIds);
+
+        const inventoryDisplay = ShopInventoryDisplay(this.getMerchant());
+        const buySelectMenu = this.getBuySelectMenu();
+        inventoryDisplay.addSeparatorComponents(separator => separator)
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`You have :coin: ${character.getGp()} gold`))
+            .addActionRowComponents((actionRow) =>
+                actionRow.setComponents(buySelectMenu))
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(resultStr));
         await this.narrator.update(interaction, {
-            embeds: [embed],
-            components: []
+            components: [inventoryDisplay],
+            flags: MessageFlags.IsComponentsV2
         });
     };
 
@@ -90,10 +106,18 @@ export default class MerchantEncounter extends FreeEncounter {
     ) => {
         const itemIds = interaction.values;
         const merchantCharacter = this.merchant.getCharacter();
-        const embed = this.doTransaction(merchantCharacter, character, itemIds);
+        const resultStr = this.doTransaction(merchantCharacter, character, itemIds);
+
+        const inventoryDisplay = InventoryDisplay(character);
+        const sellSelectMenu = this.getSellSelectMenu(character);
+        inventoryDisplay.addSeparatorComponents(separator => separator)
+            .addActionRowComponents((actionRow) =>
+                actionRow.setComponents(sellSelectMenu))
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(resultStr));
         await this.narrator.update(interaction, {
-            embeds: [embed],
-            components: []
+            components: [inventoryDisplay],
+            flags: MessageFlags.IsComponentsV2
         });
     };
 
@@ -151,14 +175,12 @@ export default class MerchantEncounter extends FreeEncounter {
                 : "The merchant cannot afford this.";
         } else {
             inventory.removeItems(itemIds);
+            seller.gp += totalValue;
             buyer.gp -= totalValue;
             buyer.addToInventory(itemsToBuy);
             description = `You ${isPurchase ? "purchase" : "sell"} **${itemsToBuy.length}** `
                 + `items for **${totalValue}gp**!`;
         }
-        return new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setDescription(description)
-            .addFields(...Inventory.getInteractionFields(itemsToBuy));
+        return description;
     };
 }

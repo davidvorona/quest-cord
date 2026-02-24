@@ -1,6 +1,14 @@
 import Item from "../game/things/Item";
 import { rand, randInList } from "../util";
 
+/**
+ * This map equates each level to a derived value that is the average amount of GP
+ * each encounter should reward at that level. We can use this value to adjust loot
+ * rolled by the loot box.
+ *
+ * Values are derived from game balancing sheet:
+ * https://docs.google.com/spreadsheets/d/1AK97jFVJ9r2TywjFRiW9QF82qp4pgNSz0fAnyfhx8DU
+ */
 const gpE: Record<number, number> = {
     1: 7,
     2: 10,

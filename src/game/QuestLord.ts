@@ -16,7 +16,7 @@ import {
     ContainerBuilder,
     ButtonStyle,
     SectionBuilder,
-    TextDisplayBuilder,
+    TextDisplayBuilder
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -41,7 +41,6 @@ import Quest from "./Quest";
 import World from "./World";
 import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
-import Inventory from "./creatures/Inventory";
 import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
@@ -53,6 +52,7 @@ import EncounterDisplay from "./ui/EncounterDisplay";
 import EncounterResults from "./ui/EncounterResults";
 import LootDisplay from "./ui/LootDisplay";
 import TravelPrompt from "./ui/TravelPrompt";
+import InventoryDisplay from "./ui/InventoryDisplay";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -242,6 +242,9 @@ export default class QuestLord {
             }
             if (interaction.commandName === "enablefastxp") {
                 await this.enableFastXp(interaction);
+            }
+            if (interaction.commandName === "disabledeath") {
+                await this.disableDeath(interaction);
             }
         } catch (err) {
             const errMessage = err instanceof Error
@@ -1333,28 +1336,9 @@ export default class QuestLord {
         const quest = this.quests[channelId];
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
 
-        const quantities = pc.getCharacter().getInventory().getQuantities();
-        const description = `*${Object.keys(quantities).length} / ${Inventory.MAX_SIZE}*`;
-        const container = new ContainerBuilder()
-            .setAccentColor(0x0099ff)
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(`# Inventory (${description})`))
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(`### :coin: ${pc.getCharacter().getGp()} gold`))
-            .addSeparatorComponents(separator => separator);
-        quantities.forEach((q, idx) => {
-            container.addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(`*${q.item.name}* x${q.quantity}`));
-            if (idx < quantities.length - 1) {
-                container.addSeparatorComponents(separator => separator);
-            }
-        });
-        if (quantities.length === 0) {
-            container.addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent("*Inventory is empty*"));
-        }
+        const inventoryDisplay = InventoryDisplay(pc.getCharacter());
         await interaction.reply({
-            components: [container],
+            components: [inventoryDisplay],
             flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
     }
@@ -1537,18 +1521,22 @@ export default class QuestLord {
 
         const party = quest.getPlayerCharacters();
         const avgLvl = party.reduce((sum, pc) => sum + pc.lvl, 0) / quest.getPartySize();
-        const xpReward = defaultXpService
+        const encounterXpValue = defaultXpService
             .getExperienceForEncounter(Math.round(avgLvl), xpBaseValue);
 
         const narrator = quest.getNarrator();
-        await narrator.ponderAndDescribe(`The party is awarded ${xpReward} XP.`);
+        const xpReward = encounterXpValue * defaultXpService.multiplier;
+        const xpRewardString = `The party is awarded **${xpReward} XP**`
+            + `${defaultXpService.multiplier === 1 ? "." : ` (${defaultXpService.multiplier}x).`}`;
+        await narrator.ponderAndDescribe(xpRewardString);
 
         for (const userId in party) {
             const pc = party[userId];
-            const newLvl = pc.gainXp(xpReward);
+            // Gain XP applies multiplier so we pass in encounter XP value
+            const newLvl = pc.gainXp(encounterXpValue);
             if (newLvl) {
                 pc.levelUp(newLvl);
-                await narrator.ponderAndDescribe(`${pc.getName()} is now level ${newLvl}!`);
+                await narrator.ponderAndDescribe(`${pc.getName()} is now **Level ${newLvl}**!`);
             }
         }
         return xpReward;
@@ -1641,15 +1629,29 @@ export default class QuestLord {
         const { channelId } = interaction;
         this.assertQuestStarted(channelId);
 
+        const quest = this.quests[channelId];
+
         let content;
         if (defaultXpService.multiplier !== 1) {
-            content = "Setting XP multiplier back to normal.";
+            content = `Setting XP multiplier back to normal for quest '${quest.id}'.`;
             defaultXpService.setMultiplier(1);
         } else {
-            content = "Setting XP multiplier to 5x.";
+            content = `Setting XP multiplier to 5x for quest '${quest.id}'.`;
             defaultXpService.setMultiplier(5);
         }
 
         await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+    }
+
+    private async disableDeath(interaction: CommandInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+
+        await interaction.reply({
+            content: `Death disabled for quest '${quest.id}'!`,
+            flags: MessageFlags.Ephemeral
+        });
     }
 }
