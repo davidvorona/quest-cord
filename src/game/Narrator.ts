@@ -24,7 +24,6 @@ import SocialEncounter from "./encounters/social/SocialEncounter";
 import MerchantEncounter from "./encounters/merchant/MerchantEncounter";
 import LookoutEncounter from "./encounters/lookout/LookoutEncounter";
 import RestEncounter from "./encounters/rest/RestEncounter";
-import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
 import { Biome, ButtonPressInteraction } from "../types";
@@ -192,20 +191,20 @@ class Narrator {
             components: encounterDisplay,
             flags: MessageFlags.IsComponentsV2
         });
+    }
 
-        if (encounter instanceof FreeEncounter) {
-            const section = new SectionBuilder()
-                .addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent("Whenever you're ready, you can **Travel** to move on."))
-                .setButtonAccessory(button => button
-                    .setCustomId("travel")
-                    .setLabel("Travel")
-                    .setStyle(ButtonStyle.Success));
-            await this.ponderAndDescribe({
-                components: [section],
-                flags: MessageFlags.IsComponentsV2
-            });
-        }
+    async promptFreeTravel() {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("Whenever you're ready, you can **Travel** to move on."))
+            .setButtonAccessory(button => button
+                .setCustomId("travel")
+                .setLabel("Travel")
+                .setStyle(ButtonStyle.Success));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
     }
 
     async describeEncounterOver(encounter: Encounter) {

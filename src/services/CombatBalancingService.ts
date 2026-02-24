@@ -34,7 +34,7 @@ export default class CombatBalancingService {
             const index = strategies.indexOf(BalancingStrategy.BossAndMinions);
             strategies.splice(index, 1);
         }
-        this.strategy = randInList(strategies);
+        this.strategy = BalancingStrategy.Level; // randInList(strategies);
         return this.strategy;
     }
 
@@ -57,9 +57,9 @@ export default class CombatBalancingService {
     }
 
     private createVariance(maxV: number) {
-        const diff = rand(maxV);
+        const diff = rand(maxV + 1);
         let result = 0;
-        const signedness = rand(1);
+        const signedness = rand(2);
         if (signedness) {
             result += diff;
         } else {

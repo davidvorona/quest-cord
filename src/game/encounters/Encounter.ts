@@ -30,7 +30,7 @@ export default class Encounter {
     menus: Record<string, Selection> = {};
 
     // Strings for display purposes
-    type: EncounterType = EncounterType.Unspecified;
+    type: EncounterType = EncounterType.Rest;
     description = "In an encounter...";
 
     constructor(characters: Character[], narrator: Narrator, turnBased = false) {

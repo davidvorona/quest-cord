@@ -17,6 +17,7 @@ import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
 import Profession from "./things/Profession";
 import EncounterButtonRows from "./ui/EncounterButtonRows";
+import FreeEncounter from "./encounters/FreeEncounter";
 
 export default class Quest {
     readonly id: string;
@@ -209,6 +210,11 @@ export default class Quest {
         }
 
         await this.narrator.describe({ components: EncounterButtonRows(encounter.buttons) });
+
+        // Prompt the party to travel if it's a free encounter
+        if (encounter instanceof FreeEncounter) {
+            await this.narrator.promptFreeTravel();
+        }
     }
 
     async endEncounter() {

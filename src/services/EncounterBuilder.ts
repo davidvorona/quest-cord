@@ -13,7 +13,6 @@ import config from "../config";
 import { EncounterType } from "../constants";
 
 const encounterTypes = Object.keys(EncounterType) as (keyof typeof EncounterType)[];
-encounterTypes.splice(encounterTypes.indexOf("Unspecified"), 1);
 
 class EncounterBuilder {
     creatureFactory: CreatureFactory;
