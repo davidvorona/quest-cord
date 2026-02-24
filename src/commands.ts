@@ -193,7 +193,10 @@ class CommandBuilder {
                 }),
             new SlashCommandBuilder()
                 .setName("enablefastxp")
-                .setDescription("Enable fast experience gain for testing purposes")
+                .setDescription("Enable fast experience gain for testing purposes"),
+            new SlashCommandBuilder()
+                .setName("disabledeath")
+                .setDescription("Disable death for testing purposes")
         ];
     }
 }
