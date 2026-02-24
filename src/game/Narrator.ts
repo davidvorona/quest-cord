@@ -1,7 +1,6 @@
 import {
     ChatInputCommandInteraction,
     InteractionReplyOptions,
-    EmbedBuilder,
     StringSelectMenuInteraction,
     InteractionUpdateOptions,
     TextChannel,
@@ -25,10 +24,10 @@ import SocialEncounter from "./encounters/social/SocialEncounter";
 import MerchantEncounter from "./encounters/merchant/MerchantEncounter";
 import LookoutEncounter from "./encounters/lookout/LookoutEncounter";
 import RestEncounter from "./encounters/rest/RestEncounter";
-import FreeEncounter from "./encounters/FreeEncounter";
 import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
-import { ButtonPressInteraction } from "../types";
+import { Biome, ButtonPressInteraction } from "../types";
+import EncounterDisplay from "./ui/EncounterDisplay";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -153,72 +152,59 @@ class Narrator {
         }
     }
 
-    async explainEncounter(encounter: Encounter) {
-        if (encounter instanceof CombatEncounter) {
-            await this.ponderAndDescribe("On your turn, you can **Attack** or cast a **Spell**. "
-                + "You can also **Use** items.\n"
-                + " Before you act, you can decide if you want to **Move**.");
-        } else if (encounter instanceof StealthEncounter) {
-            await this.ponderAndDescribe("**Sneak** past to avoid a confrontation, "
-                + "or **Surprise** your enemies!");
-        } else if (encounter instanceof SocialEncounter) {
-            await this.ponderAndDescribe("**Talk** to the figure or **Ignore** them.");
-        } else if (encounter instanceof MerchantEncounter) {
-            await this.ponderAndDescribe("Trade with the merchant and **Buy** or **Sell** items.");
-        } else if (encounter instanceof LookoutEncounter) {
-            await this.ponderAndDescribe("Take advantage of the **Lookout**, "
-                + "and uncover more of the map.");
-        } else if (encounter instanceof RestEncounter) {
-            await this.ponderAndDescribe("The day is yours! **Rest** to restore your health.");
-        }
-        if (encounter instanceof FreeEncounter) {
-            const section = new SectionBuilder()
-                .addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent("Whenever you're ready, you can travel to move on."))
-                .setButtonAccessory(button => button
-                    .setCustomId("travel")
-                    .setLabel("Travel")
-                    .setStyle(ButtonStyle.Success));
-            await this.ponderAndDescribe({
-                components: [section],
-                flags: MessageFlags.IsComponentsV2
-            });
-        }
-    }
-
-    async describeEncounter(encounter: Encounter) {
+    async describeEncounter(encounter: Encounter, biome: Biome) {
         if (encounter instanceof CombatEncounter) {
             // Get names of monsters in encounter
             const monsterNames = encounter.getMonsterNames();
             const textBuilder = new TextBuilder()
                 .setActivity(ACTIVITY.ENCOUNTER).setSubActivity("start");
-            await this.ponderAndDescribe(textBuilder.build(monsterNames));
-            // Send an embed of the turn order
-            const turnOrder = encounter.getTurnOrderNames()
-                .reduce((acc, curr, idx) => `${acc}\n**${idx + 1}.** ${curr}`, "");
-            const embed = new EmbedBuilder()
-                .setColor("#0099ff")
-                .setTitle("Turn order")
-                .setDescription(turnOrder);
-            await this.ponderAndDescribe({ embeds: [embed] });
+            await this.ponderAndDescribe(textBuilder.build(monsterNames)
+                + "\nOn your turn, you can **Attack** or cast a **Spell**. "
+                + "You can also **Use** items.\n"
+                + "Before you act, you can decide if you want to **Move**.");
         } else if (encounter instanceof StealthEncounter) {
             await this.ponderAndDescribe("You peer forward and see a group of monsters. "
-                + "They don't seem to see your party yet.");
+                + "They don't seem to see your party yet.\n"
+                + "**Sneak** past to avoid a confrontation, "
+                + "or **Surprise** your enemies!");
         } else if (encounter instanceof SocialEncounter) {
             await this.ponderAndDescribe("Up ahead, you see a figure standing. They seem "
-                + "friendly.");
+                + "friendly.\n**Talk** to the figure or **Ignore** them.");
         } else if (encounter instanceof MerchantEncounter) {
             await this.ponderAndDescribe("You've come across a merchant. Hooray for "
-                + "mutually beneficial trade!");
+                + "mutually beneficial trade!\n"
+                + "Trade with the merchant and **Buy** or **Sell** items.");
         } else if (encounter instanceof LookoutEncounter) {
             await this.ponderAndDescribe("You find yourself at a vantage point, giving you "
-                + "a great view of land around you.");
+                + "a great view of land around you.\nTake advantage of the **Lookout**, "
+                + "and uncover more of the map.");
         } else if (encounter instanceof RestEncounter) {
             await this.ponderAndDescribe("You find yourself in a place of peace, sheltered from "
-                + "bad weather and hidden from roaming monsters. A place to rest.");
+                + "bad weather and hidden from roaming monsters. A place to rest.\n"
+                + "The day is yours! **Rest** to restore your health.");
         } else {
             await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
         }
+
+        const encounterDisplay = EncounterDisplay(encounter, biome);
+        await this.describe({
+            components: encounterDisplay,
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
+    async promptFreeTravel() {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("Whenever you're ready, you can **Travel** to move on."))
+            .setButtonAccessory(button => button
+                .setCustomId("travel")
+                .setLabel("Travel")
+                .setStyle(ButtonStyle.Success));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
     }
 
     async describeEncounterOver(encounter: Encounter) {

@@ -57,9 +57,9 @@ export default class CombatBalancingService {
     }
 
     private createVariance(maxV: number) {
-        const diff = rand(maxV);
+        const diff = rand(maxV + 1);
         let result = 0;
-        const signedness = rand(1);
+        const signedness = rand(2);
         if (signedness) {
             result += diff;
         } else {

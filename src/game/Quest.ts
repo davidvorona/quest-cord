@@ -7,6 +7,7 @@ import Narrator from "./Narrator";
 import Command from "./actions/commands/Command";
 import Button from "./actions/buttons/Button";
 import {
+    Biome,
     ButtonPressInteraction,
     CommandInteraction,
     SelectMenuInteraction
@@ -16,6 +17,7 @@ import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
 import Profession from "./things/Profession";
 import EncounterButtonRows from "./ui/EncounterButtonRows";
+import FreeEncounter from "./encounters/FreeEncounter";
 
 export default class Quest {
     readonly id: string;
@@ -197,16 +199,21 @@ export default class Quest {
         return this.encounter;
     }
 
-    async startEncounter(encounter: Encounter) {
+    async startEncounter(encounter: Encounter, biome: Biome) {
         this.encounter = encounter;
 
-        // Narrate the encounter
-        await this.narrator.describeEncounter(encounter);
-        await this.narrator.explainEncounter(encounter);
+        await this.narrator.describeEncounter(encounter, biome);
 
         // If it's a turn-based encounter, then prompt for or handle the first turn
         if (encounter instanceof TurnBasedEncounter) {
             await encounter.handleTurn();
+        }
+
+        await this.narrator.describe({ components: EncounterButtonRows(encounter.buttons) });
+
+        // Prompt the party to travel if it's a free encounter
+        if (encounter instanceof FreeEncounter) {
+            await this.narrator.promptFreeTravel();
         }
     }
 

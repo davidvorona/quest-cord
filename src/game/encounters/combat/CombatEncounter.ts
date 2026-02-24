@@ -590,6 +590,9 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     public handlePlayerLoot(lvl: number, character: Character) {
         const lootBox = this.lootCache[character.id];
+        if (!lootBox) {
+            throw new Error("No loot found!");
+        }
         if (lootBox.isLooted()) {
             throw new Error("You have already looted!");
         }
