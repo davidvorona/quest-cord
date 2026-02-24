@@ -1,6 +1,7 @@
 import {
     ActionRowBuilder,
     EmbedBuilder,
+    MessageFlags,
     StringSelectMenuBuilder
 } from "discord.js";
 import SmartCombatLog from "./SmartCombatLog";
@@ -84,7 +85,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         }
 
         await this.narrator.reply(interaction, {
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             content: movementText
         });
     };
@@ -97,7 +98,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
             const target = this.getAliveMonsters()[0];
 
             await this.narrator.reply(interaction, {
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: "You prepare to attack the creature...",
                 components: [],
                 embeds: []
@@ -116,7 +117,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                         .addOptions(this.getTargetOptions())
                 );
             await this.narrator.reply(interaction, {
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 embeds: [embed],
                 components: [row]
             });
@@ -144,7 +145,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                         .addOptions(options)
                 );
             await this.narrator.reply(interaction, {
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 embeds: [embed],
                 components: [row]
             });
@@ -169,7 +170,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
                     .addOptions(options)
             );
         await this.narrator.reply(interaction, {
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             embeds: [embed],
             components: [row]
         });
@@ -276,7 +277,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
         } catch (err) {
             await this.narrator.reply(interaction, {
                 content: "You do not have this item!",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     };

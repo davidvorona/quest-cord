@@ -1,53 +1,46 @@
-export const ACTIVITY = {
-    ENCOUNTER: "encounter",
-    ATTACK: "attack"
-} as const;
+export enum TextActivity {
+    Encounter = "encounter",
+    Attack = "attack"
+}
 
-export const COMPENDIUM_SECTION = {
-    MONSTERS: "monsters",
-    CLASSES: "classes",
-    ITEMS: "items",
-    SPELLS: "spells",
-    NPCS: "npcs",
-    PROFESSIONS: "professions"
-} as const;
+export enum CompendiumSection {
+    Monsters = "monsters",
+    Classes = "classes",
+    Items = "items",
+    Spells = "spells",
+    NPCs = "npcs",
+    Professions = "professions"
+}
 
-export const ITEM_TYPE = {
-    CONSUMABLE: "consumable",
-    WEAPON: "weapon",
-    ARMOR: "armor",
-    OFFHAND: "offhand",
-} as const;
+export enum ItemType {
+    Consumable = "consumable",
+    Weapon = "weapon",
+    Armor = "armor",
+    Offhand = "offhand",
+}
 
-export const BIOME = {
-    FOREST: "forest",
-    BEACH: "beach",
-    OCEAN: "ocean",
-    DESERT: "desert",
-    JUNGLE: "jungle",
-    MOUNTAINS: "mountains"
-} as const;
+export enum Biome {
+    Forest = "forest",
+    Beach = "beach",
+    Ocean = "ocean",
+    Desert = "desert",
+    Jungle = "jungle",
+    Mountains = "mountains"
+}
 
-export const DIRECTION = {
-    NORTH: "north",
-    SOUTH: "south",
-    EAST: "east",
-    WEST: "west"
-} as const;
+export enum Direction {
+    North = "North",
+    South = "South",
+    East = "East",
+    West = "West"
+}
 
-export const FORMATTED_DIRECTION = {
-    NORTH: "North",
-    SOUTH: "South",
-    EAST: "East",
-    WEST: "West"
-} as const;
-
-export const DIRECTION_EMOJI = {
-    NORTH: "⬆️",
-    SOUTH: "⬇️",
-    EAST: "➡️",
-    WEST: "⬅️"
-} as const;
+export enum DirectionEmoji {
+    North = "⬆️",
+    South = "⬇️",
+    East = "➡️",
+    West = "⬅️"
+}
 
 export const WORLD_DIMENSION = 40 as const;
 

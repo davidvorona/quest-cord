@@ -1,4 +1,4 @@
-import { COMPENDIUM_SECTION, ITEM_TYPE } from "../constants";
+import { CompendiumSection, ItemType } from "../constants";
 import Item from "../game/things/Item";
 import Consumable from "../game/things/Consumable";
 import { BaseItem, BaseConsumable, BaseWeapon, BaseArmor, BaseOffhand } from "../types";
@@ -15,7 +15,7 @@ class ItemFactory {
 
     constructor(compendiumReader: CompendiumReader) {
         this.compendium = compendiumReader;
-        this.data = this.compendium.read(COMPENDIUM_SECTION.ITEMS);
+        this.data = this.compendium.read(CompendiumSection.Items);
     }
 
     create(itemId: string) {
@@ -24,13 +24,13 @@ class ItemFactory {
             throw new Error(`Invalid item ID: ${itemId}`);
         }
         switch (data.type) {
-        case ITEM_TYPE.CONSUMABLE:
+        case ItemType.Consumable:
             return new Consumable(data as BaseConsumable);
-        case ITEM_TYPE.WEAPON:
+        case ItemType.Weapon:
             return new Weapon(data as BaseWeapon);
-        case ITEM_TYPE.OFFHAND:
+        case ItemType.Offhand:
             return new Offhand(data as BaseOffhand);
-        case ITEM_TYPE.ARMOR:
+        case ItemType.Armor:
             return new Armor(data as BaseArmor);
         default:
             return new Item(data as BaseItem);

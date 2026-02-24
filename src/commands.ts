@@ -1,7 +1,7 @@
 import path from "path";
 import { Routes, REST, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import { CharacterClass } from "./types";
-import { DIRECTION, EncounterType, FORMATTED_DIRECTION } from "./constants";
+import { Direction, EncounterType } from "./constants";
 import { readDir } from "./util";
 import { defaultCompendiumReader as compendium } from "./services/CompendiumReader";
 import config from "./config";
@@ -155,10 +155,10 @@ class CommandBuilder {
                         .setDescription("Pick the compass direction")
                         .setRequired(true)
                         .addChoices(
-                            { name: FORMATTED_DIRECTION.NORTH, value: DIRECTION.NORTH },
-                            { name: FORMATTED_DIRECTION.SOUTH, value: DIRECTION.SOUTH },
-                            { name: FORMATTED_DIRECTION.EAST, value: DIRECTION.EAST },
-                            { name: FORMATTED_DIRECTION.WEST, value: DIRECTION.WEST },
+                            { name: Direction.North, value: Direction.North },
+                            { name: Direction.South, value: Direction.South },
+                            { name: Direction.East, value: Direction.East },
+                            { name: Direction.West, value: Direction.West },
                         );
                 }),
             // /use - Use an item, behavior depends on encounter state

@@ -1,8 +1,7 @@
 import { ButtonStyle, ContainerBuilder } from "discord.js";
 import Encounter from "../encounters/Encounter";
 import PlayerCharacter from "../PlayerCharacter";
-import { Biome } from "../../types";
-import { EncounterType } from "../../constants";
+import { EncounterType, Biome } from "../../constants";
 import CombatEncounter from "../encounters/combat/CombatEncounter";
 import MerchantEncounter from "../encounters/merchant/MerchantEncounter";
 import SocialEncounter from "../encounters/social/SocialEncounter";

@@ -20,16 +20,6 @@ export interface ConfigJson {
     FORCE_ENCOUNTER_TYPE?: string;
 }
 
-export interface BiomeData {
-    depth?: number;
-    region: boolean;
-    emoji: string;
-}
-
-/* Stricture of JSON file with biome data */
-export type Biome = "forest" | "beach" | "desert" | "mountains" | "ocean" | "jungle";
-export type BiomesJson = Record<Biome, BiomeData>;
-
 export enum ArmorSlot {
     Helm = "helm",
     Body = "body",
@@ -131,8 +121,6 @@ export interface CharacterClass extends BaseCreature {
     items?: string[];
     lvlGains: LevelGain[];
 }
-
-export type Direction = "north" | "south" | "east" | "west";
 
 export type QuestLordInteraction<T extends Interaction> = T & {
     guildId: string;
