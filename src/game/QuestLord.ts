@@ -1505,7 +1505,7 @@ export default class QuestLord {
         }
 
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
-        const loot = lastEncounter.handlePlayerLoot(pc.getCharacter());
+        const loot = lastEncounter.handlePlayerLoot(pc.lvl, pc.getCharacter());
 
         const attachment = new AttachmentBuilder("assets/inventory.png");
         await interaction.reply({
@@ -1590,6 +1590,11 @@ export default class QuestLord {
         if (results.success && results.xp) {
             const xpReward = await this.awardExperience(channelId, results.xp);
             results.xp = xpReward;
+        }
+
+        // Initialize loot boxes for combat encounter loot
+        if (encounter instanceof CombatEncounter && results.loot) {
+            encounter.createLootBoxes(results.loot);
         }
 
         const encounterResults = EncounterResults(encounter.type, results);

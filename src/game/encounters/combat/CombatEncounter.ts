@@ -7,7 +7,7 @@ import SmartCombatLog from "./SmartCombatLog";
 import TurnBasedEncounter from "../TurnBasedEncounter";
 import Character from "../../creatures/Character";
 import Monster from "../../creatures/Monster";
-import { rand, randInList } from "../../../util";
+import { rand } from "../../../util";
 import { EncounterType } from "../../../constants";
 import Creature from "../../creatures/Creature";
 import Narrator from "../../Narrator";
@@ -35,6 +35,7 @@ import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } fro
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
 import { StringSelectMenuOptionBuilder } from "@discordjs/builders";
+import LootBox from "../../../services/LootBox";
 
 interface AttackOption {
     target: Creature;
@@ -70,7 +71,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     positions: CombatPositionCache;
 
-    lootCache: Record<string, Item[]> = {};
+    lootCache: Record<string, LootBox> = {};
 
     handlePlayerMove = async (interaction: CommandInteraction | ButtonPressInteraction) => {
         this.toggleMovement();
@@ -92,8 +93,8 @@ export default class CombatEncounter extends TurnBasedEncounter {
         interaction: CommandInteraction | ButtonPressInteraction,
         character: Character
     ) => {
-        if (this.monsters.length === 1) {
-            const target = this.monsters[0];
+        if (this.getAliveMonsters().length === 1) {
+            const target = this.getAliveMonsters()[0];
 
             await this.narrator.reply(interaction, {
                 ephemeral: true,
@@ -388,11 +389,14 @@ export default class CombatEncounter extends TurnBasedEncounter {
         let result = super.isActionTurnConsuming(action);
         // If an attack command is issued and there's only one monster, we automatically
         // target the only monster and complete the turn
-        if (action instanceof AttackCommand && this.monsters.length === 1) {
+        if (
+            (action instanceof AttackCommand || action instanceof AttackButton)
+            && this.getAliveMonsters().length === 1
+        ) {
             result = true;
         // If a spell:cast selection is submitted and there's only one monster, we
         // automatically target the only monster and complete the turn
-        } else if (action instanceof SpellCastSelection && this.monsters.length === 1) {
+        } else if (action instanceof SpellCastSelection && this.getAliveMonsters().length === 1) {
             result = true;
         }
         return result;
@@ -578,15 +582,21 @@ export default class CombatEncounter extends TurnBasedEncounter {
         );
     }
 
-    public handlePlayerLoot(character: Character) {
-        if (this.lootCache[character.id]) {
+    public createLootBoxes(lootTable: Item[]) {
+        this.characters.forEach((character) => {
+            this.lootCache[character.id] = new LootBox(lootTable);
+        });
+    }
+
+    public handlePlayerLoot(lvl: number, character: Character) {
+        const lootBox = this.lootCache[character.id];
+        if (lootBox.isLooted()) {
             throw new Error("You have already looted!");
         }
-        const loot = this.getResults().loot;
-        const lootRoll = randInList(loot);
-        character.addToInventory([lootRoll]);
-        this.lootCache[character.id] = [lootRoll];
-        return lootRoll;
+        const loot = lootBox.roll(lvl);
+        character.addToInventory(loot.items);
+        character.gp += loot.gp;
+        return loot;
     }
 
     /* ENEMY AI METHODS */

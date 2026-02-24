@@ -28,7 +28,9 @@
             "$2 embeds their $1 into $3's shoulder."
         ],
         "range": [
-
+            "$2 fires at $3 with their $1.",
+            "With a $1, $2 shoots at $3.",
+            "$2 takes aim with their $1 and fires at $3."
         ],
         "magic": [
 
@@ -36,7 +38,10 @@
         "natural": [
             "$2 attacks $3 ferociously!",
             "$2 lashes out, trying to rip $3 apart!",
-            "$2 strikes $3 with a powerful blow!"
+            "$2 strikes $3 with a powerful blow!",
+            "$2 unleashes a flurry of attacks on $3!",
+            "$3 is caught in $2's grasp as they attack!",
+            "$3 is pummeled by $2's relentless assault!"
         ]
     }
 }
