@@ -2,5 +2,5 @@
     "id": "doom",
     "name": "Doom",
     "damage": 1000,
-    "properties": ["range"]
+    "properties": ["range", "aoe"]
 }

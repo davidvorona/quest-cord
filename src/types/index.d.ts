@@ -6,6 +6,7 @@ import {
     StringSelectMenuInteraction,
     TextChannel
 } from "discord.js";
+import { WeaponProperty, ArmorSlot, ArmorProperty, SpellProperty } from "../constants";
 
 /* Structure of JSON file with bot token */
 export interface AuthJson {
@@ -18,13 +19,6 @@ export interface ConfigJson {
     GUILD_ID?: string;
     DATA_DIR?: string;
     FORCE_ENCOUNTER_TYPE?: string;
-}
-
-export enum ArmorSlot {
-    Helm = "helm",
-    Body = "body",
-    Boots = "boots",
-    Cape = "cape"
 }
 
 export interface AnyObject {
@@ -42,19 +36,19 @@ export interface BaseItem {
 
 export interface BaseWeapon extends BaseItem {
     damage: number;
-    properties?: string[];
+    properties?: WeaponProperty[];
 }
 
 export interface BaseArmor extends BaseItem {
     slot: ArmorSlot;
     ac: number;
-    properties?: string[];
+    properties?: ArmorProperty[];
 }
 
 export interface BaseOffhand extends BaseItem {
     damage: number;
     ac: number;
-    properties?: string[];
+    properties?: WeaponProperty[];
 }
 
 export interface Effects {
@@ -68,7 +62,7 @@ export interface BaseSpell {
     id: string;
     name: string;
     damage?: number;
-    properties?: string[];
+    properties?: SpellProperty[];
     effects?: Effects
 }
 

@@ -1,11 +1,6 @@
 import { BaseWeapon } from "../../types";
+import { WeaponProperty } from "../../constants";
 import Item from "./Item";
-
-export enum WeaponProperty {
-    Range = "range",
-    Magic = "magic",
-    TwoHanded = "two-handed"
-}
 
 class Weapon extends Item {
     damage: number;

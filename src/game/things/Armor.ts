@@ -1,4 +1,5 @@
-import { BaseArmor, ArmorSlot } from "../../types";
+import { BaseArmor } from "../../types";
+import { ArmorProperty, ArmorSlot } from "../../constants";
 import Item from "./Item";
 
 class Armor extends Item {
@@ -6,7 +7,7 @@ class Armor extends Item {
 
     slot: ArmorSlot;
 
-    properties: string[];
+    properties: ArmorProperty[];
 
     constructor(data: BaseArmor) {
         super(data);

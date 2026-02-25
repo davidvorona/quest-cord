@@ -1,8 +1,5 @@
 import { BaseSpell, Effects } from "../../types";
-
-export enum SpellProperty {
-    Range = "range"
-}
+import { SpellProperty } from "../../constants";
 
 class Spell {
     id: string;
@@ -13,7 +10,7 @@ class Spell {
 
     effects?: Effects;
 
-    properties: string[];
+    properties: SpellProperty[];
 
     constructor(args: BaseSpell) {
         this.id = args.id;
@@ -25,6 +22,10 @@ class Spell {
 
     isRanged() {
         return this.properties.indexOf(SpellProperty.Range) > -1;
+    }
+
+    isAoe() {
+        return this.properties.indexOf(SpellProperty.AOE) > -1;
     }
 }
 

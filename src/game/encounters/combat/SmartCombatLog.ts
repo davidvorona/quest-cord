@@ -9,12 +9,12 @@ export enum LogEntryAction {
     Use = "Use"
 }
 
-interface CombatLogEntry {
+export interface CombatLogEntry {
     action: LogEntryAction,
     method: string;
     value: number;
     /* [actorIdx, targetIdx] */
-    creatures: [number, number?]
+    creatures: [number, number?];
 }
 
 /**

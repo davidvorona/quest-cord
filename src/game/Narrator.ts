@@ -28,6 +28,7 @@ import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
 import { ButtonPressInteraction } from "../types";
 import EncounterDisplay from "./ui/EncounterDisplay";
+import { CombatLogEntry } from "./encounters/combat/SmartCombatLog";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -141,14 +142,23 @@ class Narrator {
         }
     }
 
-    async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {
-        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at the enemy.`);
-        if (damage === 0) {
-            await this.ponderAndDescribe("The attack is blocked!");
-        } else if (spell.damage && (spell.damage > damage)) {
-            await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+    async describeCastSpell(attacker: Creature, spell: Spell, logEntries: CombatLogEntry[]) {
+        const targetCount = logEntries.length;
+        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} `
+            + `at ${targetCount} ${targetCount === 1 ? "target" : "targets"}.`);
+        const sortedDamage = logEntries.map(e => e.value).sort((a, b) => b - a);
+        if (sortedDamage.length === 1) {
+            const damage = sortedDamage[0];
+            if (damage === 0) {
+                await this.ponderAndDescribe("The attack is blocked!");
+            } else if (spell.damage && (spell.damage > damage)) {
+                await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+            } else {
+                await this.ponderAndDescribe(`It deals ${damage} damage.`);
+            }
         } else {
-            await this.ponderAndDescribe(`It deals ${damage} damage.`);
+            await this.ponderAndDescribe(`It deals up to ${sortedDamage[0]} damage `
+                + `to ${targetCount} ${targetCount === 1 ? "target" : "targets"}.`);
         }
     }
 

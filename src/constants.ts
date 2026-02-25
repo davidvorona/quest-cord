@@ -54,3 +54,25 @@ export enum EncounterType {
     Lookout = "Lookout",    // WIP: Get to a vantage point for greater map visibility
     Rest = "Rest"           // A day where nothing happens, characters can rest
 }
+
+export enum WeaponProperty {
+    Range = "range",
+    AOE = "aoe",
+    TwoHanded = "two-handed"
+}
+
+export enum ArmorSlot {
+    Helm = "helm",
+    Body = "body",
+    Boots = "boots",
+    Cape = "cape"
+}
+
+export enum ArmorProperty {
+    Heavy = "heavy"
+}
+
+export enum SpellProperty {
+    AOE = "aoe",
+    Range = "range"
+}
