@@ -10,6 +10,8 @@ export default class Character extends Creature {
 
     gp: number;
 
+    immortal = false;
+
     constructor(
         args: CharacterClass | BaseNonPlayerCharacter,
         equipment: Equipment,
@@ -47,5 +49,17 @@ export default class Character extends Creature {
 
     getWeaponId() {
         return super.getWeaponId() || "fists";
+    }
+
+    makeImmortal() {
+        this.immortal = !this.immortal;
+    }
+
+    setHp(hp: number) {
+        if (this.immortal) {
+            this.hp = this.maxHp;
+        } else {
+            super.setHp(hp);
+        }
     }
 }

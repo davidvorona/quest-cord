@@ -1651,8 +1651,15 @@ export default class QuestLord {
 
         const quest = this.quests[channelId];
 
+        const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
+        const character = pc.getCharacter();
+        character.makeImmortal();
+
         await interaction.reply({
-            content: `Death disabled for quest '${quest.id}'!`,
+            content: `Death ${character.immortal
+                ? "disabled"
+                : "enabled"
+            } for character '${pc.getName()}'!`,
             flags: MessageFlags.Ephemeral
         });
     }

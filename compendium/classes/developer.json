@@ -1,8 +1,8 @@
 {
     "id": "developer",
     "name": "Developer",
-    "hp": 1000,
-    "damage": 5,
+    "hp": 10,
+    "damage": 2,
     "equipment": {
         "weapon": "iron_mace",
         "offhand": "iron_shield",
@@ -12,6 +12,7 @@
     },
     "spells": [
         "fire_bolt",
+        "fireball",
         "disintegrate",
         "doom"
     ],
