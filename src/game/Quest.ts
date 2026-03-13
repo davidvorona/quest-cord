@@ -1,6 +1,6 @@
 import { Message, Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
-import { Biome } from "../constants";
+import { Biome, Dungeon } from "../constants";
 import PlayerCharacter, { LevelUp } from "./PlayerCharacter";
 import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
@@ -36,6 +36,7 @@ export default class Quest {
 
     travelPromptRef?: Message<true>;
     route: [number, number][] = [];
+    dungeonIdx: number | null = null;
 
     encounter?: Encounter;
     lastEncounter?: Encounter;
@@ -199,10 +200,26 @@ export default class Quest {
         return this.encounter;
     }
 
-    async startEncounter(encounter: Encounter, biome: Biome) {
+    isInDungeon() {
+        return this.dungeonIdx !== null;
+    }
+
+    enterDungeon() {
+        this.dungeonIdx = 0;
+    }
+
+    leaveDungeon() {
+        this.dungeonIdx = null;
+    }
+
+    setDungeonIdx(idx: number) {
+        this.dungeonIdx = idx;
+    }
+
+    async startEncounter(encounter: Encounter, setting: Biome | Dungeon, hasDungeon = false) {
         this.encounter = encounter;
 
-        await this.narrator.describeEncounter(encounter, biome);
+        await this.narrator.describeEncounter(encounter, setting);
 
         // If it's a turn-based encounter, then prompt for or handle the first turn
         if (encounter instanceof TurnBasedEncounter) {
@@ -211,9 +228,13 @@ export default class Quest {
 
         await this.narrator.describe({ components: EncounterButtonRows(encounter.buttons) });
 
-        // Prompt the party to travel if it's a free encounter
+        // Prompt the party to travel/dungeon if it's a free encounter
         if (encounter instanceof FreeEncounter) {
-            await this.narrator.promptFreeTravel();
+            if (hasDungeon) {
+                await this.narrator.promptDungeon();
+            } else {
+                await this.narrator.promptFreeTravel();
+            }
         }
     }
 

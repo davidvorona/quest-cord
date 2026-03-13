@@ -1,6 +1,13 @@
 import path from "path";
-import { createRandomId, rand, parseJson, readFile } from "../util";
-import { Biome, Direction, REGION_DIMENSION, WORLD_DIMENSION } from "../constants";
+import Dungeon from "./Dungeon";
+import { createRandomId, rand, parseJson, readFile, randInList } from "../util";
+import {
+    Biome,
+    Dungeon as DungeonType,
+    Direction,
+    REGION_DIMENSION,
+    WORLD_DIMENSION
+} from "../constants";
 
 const biomesPath = path.join(__dirname, "../../config/biomes.json");
 export interface BiomeData {
@@ -16,7 +23,25 @@ const biomesData = parseJson(readFile(biomesPath)) as BiomesJson;
 
 function getRegionBiomes() {
     const biomes = Object.keys(biomesData);
-    return biomes.filter(b => biomesData[b as Biome].region);
+    return new Set(biomes.filter(b => biomesData[b as Biome].region)) as Set<Biome>;
+}
+
+const dungeonsPath = path.join(__dirname, "../../config/dungeons.json");
+export interface DungeonData {
+    emoji: string;
+}
+
+export type DungeonsJson = Record<DungeonType, DungeonData>;
+
+const dungeonsData = parseJson(readFile(dungeonsPath)) as DungeonsJson;
+
+function getDungeonTypes() {
+    return new Set(Object.keys(dungeonsData)) as Set<DungeonType>;
+}
+
+interface WorldCell {
+    biome: Biome;
+    dungeon?: Dungeon;
 }
 
 /**
@@ -44,7 +69,7 @@ class World {
      * When accessing the matrix, you must invert traditional (x, y) coordinates to (y, x)
      * to find the corresponding cell in the two-dimensional array.
      */
-    matrix: Biome[][];
+    matrix: WorldCell[][];
 
     constructor(guildId: string) {
         console.info("Generating new world...");
@@ -81,23 +106,26 @@ class World {
      * by a beach and ocean layer.
      */
     private simpleGenerate() {
-        const matrix = Array(WORLD_DIMENSION).fill(0).map(() => Array(WORLD_DIMENSION).fill(0));
+        const matrix = Array(WORLD_DIMENSION)
+            .fill(0)
+            .map(() => Array(WORLD_DIMENSION).fill(0)) as WorldCell[][];
         // We iterate through the world tiles by row, starting from the top and going left to right.
         for (let y = 0; y < WORLD_DIMENSION; y++) {
             for (let x = 0; x < WORLD_DIMENSION; x++) {
+                matrix[y][x] = {} as WorldCell;
                 // The perimeter is always an endless ocean
                 if (World.isMatrixPerimeter(x, y)) {
-                    matrix[y][x] = Biome.Ocean;
+                    matrix[y][x].biome = Biome.Ocean;
                 // One depth in from the ocean is a beach layer
                 } else if (World.isDepth(1, x, y)) {
-                    matrix[y][x] = Biome.Beach;
+                    matrix[y][x].biome = Biome.Beach;
                 // Random biome region generation relies on iteration order: if the coordinate is
                 // the upper-left tile of a region, then set it to a random biome. This is the
                 // "seed" of the region, and must be set first per region for generation to
                 // function.
                 } else if (World.isMatrixRegionSeed(x, y)) {
                     const biomes = getRegionBiomes();
-                    matrix[y][x] = biomes[rand(biomes.length)];
+                    matrix[y][x].biome = randInList(Array.from(biomes));
                 /**
                  * Because of the iteration order, biomes will generate outward from the "seed":
                  * | 1 2 3 |
@@ -108,10 +136,23 @@ class World {
                 // If x is a seed coordinate but y is not, then get the biome from the tile
                 // above (y - 1).
                 } else if (World.isMatrixSeedColumn(x)) {
-                    matrix[y][x] = matrix[y - 1][x];
+                    matrix[y][x].biome = matrix[y - 1][x].biome;
                 // Otherwise, use the biome of the tile to the left (x - 1).
                 } else {
-                    matrix[y][x] = matrix[y][x - 1];
+                    matrix[y][x].biome = matrix[y][x - 1].biome;
+                }
+                // Attempt to generate a dungeon on the tile.
+                if (
+                    // Dungeons cannot (currently) spawn on the perimeter
+                    !World.isMatrixPerimeter(x, y)
+                    // Dungeons can't be next to another dungeon (relies on iteration order)
+                    && matrix[y - 1][x].dungeon === undefined
+                    && matrix[y][x - 1].dungeon === undefined
+                    // If above conditions are met, 5% chance to spawn a dungeon tile
+                    && rand(20) === 0
+                ) {
+                    const dungeons = getDungeonTypes();
+                    matrix[y][x].dungeon = new Dungeon(randInList(Array.from(dungeons)));
                 }
             }
         }
@@ -126,7 +167,23 @@ class World {
     }
 
     getBiome([x, y]: [number, number]): Biome {
-        return this.matrix[y][x];
+        return this.matrix[y][x].biome;
+    }
+
+    hasDungeon([x, y]: [number, number]): boolean {
+        return this.matrix[y][x].dungeon !== undefined;
+    }
+
+    getDungeon([x, y]: [number, number]): Dungeon | undefined {
+        return this.matrix[y][x].dungeon;
+    }
+
+    assertAndGetDungeon([x, y]: [number, number]): Dungeon {
+        const dungeon = this.getDungeon([x, y]);
+        if (!dungeon) {
+            throw new Error(`No dungeon at coordinates (${x}, ${y})`);
+        }
+        return dungeon;
     }
 
     applyDirectionToCoordinates(
@@ -171,10 +228,14 @@ class World {
     stringify([partyX, partyY]: [number, number] = [-1, -1]) {
         let worldStr = "";
         this.matrix.forEach((row, y) => {
-            row.forEach((biome, x) => {
+            row.forEach((cell, x) => {
                 if (x === partyX && y === partyY) {
                     worldStr += "🧑";
+                }  else if (cell.dungeon !== undefined) {
+                    const dungeonType = cell.dungeon.type;
+                    worldStr += dungeonsData[dungeonType].emoji;
                 } else {
+                    const biome = cell.biome;
                     worldStr += biomesData[biome].emoji;
                 }
             });
@@ -209,14 +270,14 @@ class World {
         const c = this.getLocalFramingCoordinates([partyX, partyY]);
         for (let cy = c.startingY; cy <= c.endingY; cy++) {
             for (let cx = c.startingX; cx <= c.endingX; cx++) {
-                const biome = this.matrix[cy][cx];
+                const cell = this.matrix[cy][cx];
                 if (cx === partyX && cy === partyY) {
                     worldStr += "🧑";
                 // Only show biome for coordinates party has explored
                 } else if (route.findIndex(r => r[0] === cx && r[1] === cy) !== -1) {
-                    let emoji = biomesData[biome].emoji;
+                    let emoji = biomesData[cell.biome].emoji;
                     // Normalizes emoji length on Discord
-                    if (biome === Biome.Forest || biome === Biome.Jungle) {
+                    if (cell.biome === Biome.Forest || cell.biome === Biome.Jungle) {
                         emoji += " ";
                     }
                     worldStr += emoji;

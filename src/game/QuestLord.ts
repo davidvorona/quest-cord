@@ -44,7 +44,7 @@ import FreeEncounter from "./encounters/FreeEncounter";
 import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
-import { Direction, EncounterType, DirectionEmoji } from "../constants";
+import { Direction, EncounterType, DirectionEmoji, DungeonVote } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/ExperienceCalculator";
 import EncounterDisplay from "./ui/EncounterDisplay";
@@ -52,6 +52,7 @@ import EncounterResults from "./ui/EncounterResults";
 import LootDisplay from "./ui/LootDisplay";
 import TravelPrompt from "./ui/TravelPrompt";
 import InventoryDisplay from "./ui/InventoryDisplay";
+import DungeonPrompt from "./ui/DungeonPrompt";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -301,6 +302,11 @@ export default class QuestLord {
                 const direction = interaction.values[0] as Direction;
                 await this.handleTravel(interaction, direction);
             }
+
+            if (interaction.customId === "enter-dungeon") {
+                const choice = interaction.values[0];
+                await this.handleDungeon(interaction, choice);
+            }
         } catch (err) {
             const errMessage = err instanceof Error
                 ? err.message : "Unable to submit selection, try again.";
@@ -370,10 +376,17 @@ export default class QuestLord {
                 await this.displayEncounter(interaction);
             }
 
-            // TODO: Can probably clean this up...
             if (interaction.customId === "travel") {
                 await interaction.reply({ content: "Onward...", flags: MessageFlags.Ephemeral });
                 await this.promptTravel(interaction.guildId, interaction.channelId);
+            }
+
+            if (interaction.customId === "dungeon") {
+                await interaction.reply({
+                    content: "Approaching the dungeon...",
+                    flags: MessageFlags.Ephemeral
+                });
+                await this.promptDungeon(interaction.guildId, interaction.channelId);
             }
 
             if (interaction.customId === "move") {
@@ -782,7 +795,11 @@ export default class QuestLord {
         await characterCreator.showStep(interaction);
     }
 
-    private validateTravelDirection(guildId: string, channelId: string, direction: Direction) {
+    private validateTravelDirection(
+        guildId: string,
+        channelId: string,
+        direction: Direction
+    ): [number, number] {
         const world = this.worlds[guildId];
         this.assertQuestStarted(channelId);
 
@@ -876,7 +893,7 @@ export default class QuestLord {
                     // Store current biome string in a variable for use
                     const biome = world.getBiome(coordinates);
 
-                    const [x, y] = this.validateTravelDirection(guildId, channelId, vote);
+                    const newCoordinates = this.validateTravelDirection(guildId, channelId, vote);
 
                     // If traveling from a free encounter, end that encounter
                     if (quest.encounter instanceof FreeEncounter) {
@@ -886,9 +903,9 @@ export default class QuestLord {
                     }
 
                     // Set the new coordinates, and continue
-                    quest.setPartyCoordinates([x, y]);
+                    quest.setPartyCoordinates(newCoordinates);
 
-                    const newBiome = world.getBiome([x, y]);
+                    const newBiome = world.getBiome(newCoordinates);
                     await narrator.ponderAndDescribe(`The party chooses to travel ${vote}.`);
                     await narrator.describeTravel(biome, newBiome);
 
@@ -897,12 +914,83 @@ export default class QuestLord {
                     const encounter = this.encounterBuilder
                         .build(newBiome, quest.getPlayerCharacters(), narrator, forceType);
 
-                    await quest.startEncounter(encounter, newBiome);
+                    const hasDungeon = world.hasDungeon(newCoordinates);
+                    await quest.startEncounter(encounter, newBiome, hasDungeon);
                 }
             );
 
             await this.editQuestTravelPrompt(quest);
         }
+    }
+
+    private async handleDungeon(
+        interaction: SelectMenuInteraction,
+        dungeonParam: string
+    ): Promise<void> {
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const narrator = quest.getNarrator();
+
+        if (quest.isInEncounter() && !(quest.encounter instanceof FreeEncounter)) {
+            await interaction.reply({
+                content: "You cannot enter a dungeon during an encounter.",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        const world = this.worlds[guildId];
+        const coordinates = quest.getPartyCoordinates();
+
+        if (!world.hasDungeon(coordinates)) {
+            await interaction.reply({
+                content: "There is no dungeon to enter here.",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        const pollBooth = quest.getPollBooth();
+
+        // We can reply here, since we don't reply in the result callback
+        await interaction.reply({
+            content: `You voted to ${dungeonParam} the dungeon!`,
+            flags: MessageFlags.Ephemeral
+        });
+
+        const voterId = interaction.user.id;
+        await pollBooth.castVote(
+            voterId,
+            PollType.Dungeon,
+            dungeonParam,
+            async (vote: string) => {
+                await narrator.ponderAndDescribe(`The party chooses to ${vote} the dungeon.`);
+
+                if (vote === DungeonVote.Enter) {
+                    const dungeon = world.assertAndGetDungeon(coordinates);
+                    quest.enterDungeon();
+
+                    // TODO: Once we enter a dungeon, it spawns a combat encounter. We should be
+                    // more intentional about the kind of combat encounter generated. For example,
+                    // the final room should use the BossAndMinions strategy. When the encounter
+                    // ends, the results handler needs to know that the party is in a dungeon, and
+                    // move them forward in the dungeon instead of sending a world travel prompt.
+                    // After any encounter, the party should have the option to leave the dungeon.
+                    const encounter = this.encounterBuilder.build(
+                        dungeon.type,
+                        quest.getPlayerCharacters(),
+                        narrator,
+                        EncounterType.Combat
+                    );
+
+                    await quest.startEncounter(encounter, dungeon.type);
+                } else {
+                    await this.promptTravel(guildId, channelId);
+                }
+            }
+        );
     }
 
     private async handleSneak(
@@ -1517,6 +1605,33 @@ export default class QuestLord {
         quest.setTravelPromptReference(message);
     }
 
+    // TODO: How do dungeons work?. A party enters a tile with a dungeon and rolls for an
+    // encounter as per usual (we can add a narrative hint that there's a dungeon nearby).
+    // Once the encounter is complete, instead of just a travel prompt, first there's a
+    // poll to "Enter" the dungeon, or "Move On". Voting "Enter" will generate a dungeon
+    // map and move the party through its encounters, whereas voting "Move On" will send
+    // the normal travel prompt for the party to vote on. When a party leaves the dungeon,
+    // they should get sent the normal travel prompt again so they can easily travel.
+    private async promptDungeon(guildId: string, channelId: string) {
+        this.assertQuestStarted(channelId);
+
+        const world = this.worlds[guildId];
+        const quest = this.quests[channelId];
+
+        const coordinates = quest.getPartyCoordinates();
+        if (world.hasDungeon(coordinates)) {
+            const dungeon = world.getDungeon(coordinates);
+            const narrator = quest.getNarrator();
+            await narrator.ponderAndDescribe(
+                `In the distance, you see an ominous ${dungeon} entrance...`
+            );
+            await narrator.describe({
+                components: [DungeonPrompt()],
+                flags: MessageFlags.IsComponentsV2
+            });
+        }
+    }
+
     private async awardExperience(channelId: string, xpBaseValue: number) {
         this.assertQuestStarted(channelId);
         const quest = this.quests[channelId];
@@ -1582,7 +1697,12 @@ export default class QuestLord {
 
         // If success, continue quest
         if (results.success) {
-            await this.promptTravel(guildId, channelId);
+            const world = this.worlds[guildId];
+            if (world.hasDungeon(quest.getPartyCoordinates())) {
+                await this.promptDungeon(guildId, channelId);
+            } else {
+                await this.promptTravel(guildId, channelId);
+            }
         // If not success, quest ends
         } else {
             await this.failQuest(channelId);

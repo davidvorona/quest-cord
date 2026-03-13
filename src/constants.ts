@@ -28,6 +28,17 @@ export enum Biome {
     Mountains = "mountains"
 }
 
+export enum Dungeon {
+    Cave = "cave",
+    Temple = "temple",
+    Crypt = "crypt"
+}
+
+export enum DungeonVote {
+    Enter = "Enter",
+    Leave = "Leave"
+}
+
 export enum Direction {
     North = "North",
     South = "South",

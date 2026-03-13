@@ -13,7 +13,7 @@ import {
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
-import { TextActivity, Biome } from "../constants";
+import { TextActivity, Biome, Dungeon } from "../constants";
 import { CombatPosition } from "./encounters/combat/CombatPositionCache";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
@@ -162,7 +162,7 @@ class Narrator {
         }
     }
 
-    async describeEncounter(encounter: Encounter, biome: Biome) {
+    async describeEncounter(encounter: Encounter, setting: Biome | Dungeon) {
         if (encounter instanceof CombatEncounter) {
             // Get names of monsters in encounter
             const monsterNames = encounter.getMonsterNames();
@@ -196,7 +196,7 @@ class Narrator {
             await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
         }
 
-        const encounterDisplay = EncounterDisplay(encounter, biome);
+        const encounterDisplay = EncounterDisplay(encounter, setting);
         await this.describe({
             components: encounterDisplay,
             flags: MessageFlags.IsComponentsV2
@@ -211,6 +211,20 @@ class Narrator {
                 .setCustomId("travel")
                 .setLabel("Travel")
                 .setStyle(ButtonStyle.Success));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
+    async promptDungeon() {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("You see the entrance to a dungeon. Do you approach?"))
+            .setButtonAccessory(button => button
+                .setCustomId("dungeon")
+                .setLabel("Take a Look")
+                .setStyle(ButtonStyle.Danger));
         await this.ponderAndDescribe({
             components: [section],
             flags: MessageFlags.IsComponentsV2

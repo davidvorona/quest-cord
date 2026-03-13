@@ -1,7 +1,7 @@
 import { ButtonStyle, ContainerBuilder } from "discord.js";
 import Encounter from "../encounters/Encounter";
 import PlayerCharacter from "../PlayerCharacter";
-import { EncounterType, Biome } from "../../constants";
+import { EncounterType, Biome, Dungeon } from "../../constants";
 import CombatEncounter from "../encounters/combat/CombatEncounter";
 import MerchantEncounter from "../encounters/merchant/MerchantEncounter";
 import SocialEncounter from "../encounters/social/SocialEncounter";
@@ -16,7 +16,11 @@ const encounterTypeColor: Record<EncounterType, number> = {
     [EncounterType.Rest]: 0x00ff00,         // Green
 };
 
-export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?: PlayerCharacter) {
+export default function EncounterDisplay(
+    encounter: Encounter,
+    setting: Biome | Dungeon,
+    pc?: PlayerCharacter
+) {
     const encounterDesc = encounter.getDescription() || "Exploring...";
     const names = encounter.getCharacterNames();
     const components = [];
@@ -65,8 +69,8 @@ export default function EncounterDisplay(encounter: Encounter, biome: Biome, pc?
                 ),
             (textDisplay) => textDisplay
                 .setContent(`### :map: ${
-                    biome === "beach" ? "At" : "In"
-                } the ${biome}`))
+                    setting === "beach" ? "At" : "In"
+                } the ${setting}`))
                 .setButtonAccessory(button => button
                     .setCustomId("quest")
                     .setLabel("See Quest")
