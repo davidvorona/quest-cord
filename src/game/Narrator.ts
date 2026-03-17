@@ -231,6 +231,34 @@ class Narrator {
         });
     }
 
+    async promptDungeonContinue(dungeonType: Dungeon) {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`The path winds deeper into the ${dungeonType}. Continue?`))
+            .setButtonAccessory(button => button
+                .setCustomId("continue-dungeon")
+                .setLabel("Continue")
+                .setStyle(ButtonStyle.Danger));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
+    async promptDungeonLeave() {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("You braved the dungeon and claimed its prize. Leave?"))
+            .setButtonAccessory(button => button
+                .setCustomId("leave-dungeon")
+                .setLabel("Leave Dungeon")
+                .setStyle(ButtonStyle.Success));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
     async describeEncounterOver(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
             await this.ponderAndDescribe("Combat is over!");

@@ -12,6 +12,7 @@
     ],
     "zones": [
         "desert",
-        "mountains"
+        "mountains",
+        "temple"
     ]
 }

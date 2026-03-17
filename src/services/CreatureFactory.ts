@@ -13,7 +13,7 @@ import {
 import { randKey } from "../util";
 import CompendiumReader from "./CompendiumReader";
 import ItemFactory from "./ItemFactory";
-import CombatBalancingService from "./CombatBalancingService";
+import CombatBalancingService, { BossBalancingService } from "./CombatBalancingService";
 import Weapon from "../game/things/Weapon";
 import Item from "../game/things/Item";
 import SpellFactory from "./SpellFactory";
@@ -192,6 +192,13 @@ class CreatureFactory {
         return monsters;
     }
 
+    createLeveledBiomeTypeBossList(characters: Character[], biome: string, totalLvl: number) {
+        const monsterData = this.createBiomeTypeMonsterList(biome);
+        const balancingService = new BossBalancingService(characters, monsterData, totalLvl);
+        console.info(`Balancing boss encounter via '${balancingService.strategy}' strategy`);
+        const bosses = balancingService.createMonsterList().map((m) => this.createMonster(m.id));
+        return bosses;
+    }
 
     /** Non-player Characters */
 

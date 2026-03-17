@@ -128,3 +128,11 @@ export default class CombatBalancingService {
         return new Array(count).fill(monster);
     }
 }
+
+export const BossBalancingService = class BossBalancingService extends CombatBalancingService {
+    strategy = BalancingStrategy.BossAndMinions;
+
+    constructor(characters: Character[], monsterData: MonsterData, totalLvl: number) {
+        super(characters, monsterData, totalLvl);
+    }
+};

@@ -389,6 +389,22 @@ export default class QuestLord {
                 await this.promptDungeon(interaction.guildId, interaction.channelId);
             }
 
+            if (interaction.customId === "continue-dungeon") {
+                await interaction.reply({
+                    content: "Delving deeper...",
+                    flags: MessageFlags.Ephemeral
+                });
+                await this.handleContinueDungeon(interaction.guildId, interaction.channelId);
+            }
+
+            if (interaction.customId === "leave-dungeon") {
+                await interaction.reply({
+                    content: "Heading out...",
+                    flags: MessageFlags.Ephemeral
+                });
+                await this.handleLeaveDungeon(interaction.guildId, interaction.channelId);
+            }
+
             if (interaction.customId === "move") {
                 await this.handleMove(interaction);
             }
@@ -972,18 +988,11 @@ export default class QuestLord {
                     const dungeon = world.assertAndGetDungeon(coordinates);
                     quest.enterDungeon();
 
-                    // TODO: Once we enter a dungeon, it spawns a combat encounter. We should be
-                    // more intentional about the kind of combat encounter generated. For example,
-                    // the final room should use the BossAndMinions strategy. When the encounter
-                    // ends, the results handler needs to know that the party is in a dungeon, and
-                    // move them forward in the dungeon instead of sending a world travel prompt.
-                    // After any encounter, the party should have the option to leave the dungeon.
-                    const encounter = this.encounterBuilder.build(
-                        dungeon.type,
-                        quest.getPlayerCharacters(),
-                        narrator,
-                        EncounterType.Combat
-                    );
+                    const pcs = quest.getPlayerCharacters();
+                    // Scale up dungeon encounter by +1 per player
+                    const dungeonLvl = quest.getPartyTotalLevel() + pcs.length;
+                    const encounter = this.encounterBuilder
+                        .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
 
                     await quest.startEncounter(encounter, dungeon.type);
                 } else {
@@ -991,6 +1000,53 @@ export default class QuestLord {
                 }
             }
         );
+    }
+
+    private async handleContinueDungeon(guildId: string, channelId: string) {
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const narrator = quest.getNarrator();
+
+        const world = this.worlds[guildId];
+        const coordinates = quest.getPartyCoordinates();
+
+        if (world.hasDungeon(coordinates) && quest.isInDungeon()) {
+            quest.setDungeonIdx(quest.dungeonIdx + 1);
+
+            const dungeon = world.assertAndGetDungeon(coordinates);
+            const pcs = quest.getPlayerCharacters();
+            // Scale up dungeon encounter by +1 per player
+            const dungeonLvl = quest.getPartyTotalLevel() + pcs.length;
+
+            const encounter = dungeon.isLastRoom(quest.dungeonIdx)
+                ? this.encounterBuilder
+                    .buildBossEncounter(dungeon.type, pcs, narrator, dungeonLvl)
+                : this.encounterBuilder
+                    .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
+
+            await quest.startEncounter(encounter, dungeon.type);
+        }
+    }
+
+    private async handleLeaveDungeon(guildId: string, channelId: string) {
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const narrator = quest.getNarrator();
+
+        const world = this.worlds[guildId];
+        const coordinates = quest.getPartyCoordinates();
+
+        if (world.hasDungeon(coordinates) && quest.isInDungeon()) {
+            quest.leaveDungeon();
+
+            // Maybe award more loot here?
+            await narrator.ponderAndDescribe("The party leaves the dungeon.");
+
+            // After leaving the dungeon, prompt the party to travel somewhere new in the world
+            await this.promptTravel(guildId, channelId);
+        }
     }
 
     private async handleSneak(
@@ -1605,13 +1661,6 @@ export default class QuestLord {
         quest.setTravelPromptReference(message);
     }
 
-    // TODO: How do dungeons work?. A party enters a tile with a dungeon and rolls for an
-    // encounter as per usual (we can add a narrative hint that there's a dungeon nearby).
-    // Once the encounter is complete, instead of just a travel prompt, first there's a
-    // poll to "Enter" the dungeon, or "Move On". Voting "Enter" will generate a dungeon
-    // map and move the party through its encounters, whereas voting "Move On" will send
-    // the normal travel prompt for the party to vote on. When a party leaves the dungeon,
-    // they should get sent the normal travel prompt again so they can easily travel.
     private async promptDungeon(guildId: string, channelId: string) {
         this.assertQuestStarted(channelId);
 
@@ -1619,11 +1668,23 @@ export default class QuestLord {
         const quest = this.quests[channelId];
 
         const coordinates = quest.getPartyCoordinates();
-        if (world.hasDungeon(coordinates)) {
-            const dungeon = world.getDungeon(coordinates);
+        const narrator = quest.getNarrator();
+        if (quest.isInDungeon()) {
+            const dungeon = world.assertAndGetDungeon(coordinates);
+            // TODO: What prompts within the dungeon should be votes, what shouldn't?
+            // Entering/leaving the dungeon should be voted on, but should continuing?
+            // What about leaving after the dungeon is complete?
+            // Either way, there should be some sort of chest to open at the end.
+            if (dungeon.isLastRoom(quest.dungeonIdx)) {
+                await narrator.promptDungeonLeave();
+            } else {
+                await narrator.promptDungeonContinue(dungeon.type);
+            }
+        } else if (world.hasDungeon(coordinates)) {
+            const dungeon = world.assertAndGetDungeon(coordinates);
             const narrator = quest.getNarrator();
             await narrator.ponderAndDescribe(
-                `In the distance, you see an ominous ${dungeon} entrance...`
+                `In the distance, you see an ominous ${dungeon.type} entrance...`
             );
             await narrator.describe({
                 components: [DungeonPrompt()],

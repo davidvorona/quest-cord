@@ -175,6 +175,10 @@ export default class Quest {
         return this.route[this.route.length - 2] || [0, 0];
     }
 
+    getPartyTotalLevel() {
+        return this.getPlayerCharacters().reduce((total, pc) => total + pc.lvl, 0);
+    }
+
     getEncounter() {
         return this.encounter;
     }
@@ -200,7 +204,7 @@ export default class Quest {
         return this.encounter;
     }
 
-    isInDungeon() {
+    isInDungeon(): this is { dungeonIdx: number } {
         return this.dungeonIdx !== null;
     }
 

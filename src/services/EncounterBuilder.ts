@@ -10,7 +10,7 @@ import RestEncounter from "../game/encounters/rest/RestEncounter";
 import CreatureFactory from "./CreatureFactory";
 import { randInList } from "../util";
 import config from "../config";
-import { EncounterType } from "../constants";
+import { Biome, Dungeon, EncounterType } from "../constants";
 
 const encounterTypes = Object.keys(EncounterType) as (keyof typeof EncounterType)[];
 
@@ -21,7 +21,12 @@ class EncounterBuilder {
         this.creatureFactory = creatureFactory;
     }
 
-    build(biome: string, pcs: PlayerCharacter[], narrator: Narrator, forceType?: string) {
+    build(
+        setting: Dungeon | Biome,
+        pcs: PlayerCharacter[],
+        narrator: Narrator,
+        forceType?: EncounterType
+    ) {
         const characters = pcs.map(pc => pc.getCharacter());
         const totalLvl = pcs.reduce((prev, curr) => prev + curr.lvl, 0);
         // Quest-specific forced type > instance-specific forced type > random type
@@ -30,12 +35,12 @@ class EncounterBuilder {
         switch (encounterType) {
         case (EncounterType.Combat): {
             const monsters = this.creatureFactory
-                .createLeveledBiomeTypeMonsterList(characters, biome, totalLvl);
+                .createLeveledBiomeTypeMonsterList(characters, setting, totalLvl);
             return new CombatEncounter(characters, narrator, monsters);
         }
         case (EncounterType.Stealth): {
             const monsters = this.creatureFactory
-                .createLeveledBiomeTypeMonsterList(characters, biome, totalLvl);
+                .createLeveledBiomeTypeMonsterList(characters, setting, totalLvl);
             return new StealthEncounter(characters, narrator, monsters);
         }
         case (EncounterType.Social): {
@@ -55,6 +60,32 @@ class EncounterBuilder {
         default:
             return new Encounter(characters, narrator);
         }
+    }
+
+    buildCombatEncounter(
+        setting: Dungeon | Biome,
+        pcs: PlayerCharacter[],
+        narrator: Narrator,
+        totalLvl?: number
+    ) {
+        const characters = pcs.map(pc => pc.getCharacter());
+        const encounterLvl = totalLvl || pcs.reduce((prev, curr) => prev + curr.lvl, 0);
+        const monsters = this.creatureFactory
+            .createLeveledBiomeTypeMonsterList(characters, setting, encounterLvl);
+        return new CombatEncounter(characters, narrator, monsters);
+    }
+
+    buildBossEncounter(
+        setting: Dungeon | Biome,
+        pcs: PlayerCharacter[],
+        narrator: Narrator,
+        totalLvl?: number
+    ) {
+        const characters = pcs.map(pc => pc.getCharacter());
+        const encounterLvl = totalLvl || pcs.reduce((prev, curr) => prev + curr.lvl, 0);
+        const monsters = this.creatureFactory
+            .createLeveledBiomeTypeBossList(characters, setting, encounterLvl);
+        return new CombatEncounter(characters, narrator, monsters);
     }
 }
 
