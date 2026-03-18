@@ -7,8 +7,6 @@ enum DungeonSize {
     Large = 7
 };
 
-const sizes = new Set(Object.values(DungeonSize)) as Set<DungeonSize>;
-
 export default class Dungeon {
     type: DungeonType;
 
@@ -18,7 +16,7 @@ export default class Dungeon {
 
     constructor(dungeonType: DungeonType) {
         this.type = dungeonType;
-        this.size = randInList(Object.values(sizes));
+        this.size = randInList([DungeonSize.Small, DungeonSize.Medium, DungeonSize.Large]);
         this.rooms = new Array(this.size).fill(0);
     }
 

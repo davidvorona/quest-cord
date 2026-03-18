@@ -35,6 +35,7 @@ export default class Quest {
     pcs: Record<string, PlayerCharacter | null> = {};
 
     travelPromptRef?: Message<true>;
+    dungeonPromptRef?: Message<true>;
     route: [number, number][] = [];
     dungeonIdx: number | null = null;
 
@@ -71,6 +72,14 @@ export default class Quest {
 
     setTravelPromptReference(message: Message<true>) {
         this.travelPromptRef = message;
+    }
+
+    getDungeonPromptReference() {
+        return this.dungeonPromptRef;
+    }
+
+    setDungeonPromptReference(message: Message<true>) {
+        this.dungeonPromptRef = message;
     }
 
     getNarrator() {

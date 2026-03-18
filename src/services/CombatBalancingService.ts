@@ -72,12 +72,23 @@ export default class CombatBalancingService {
         const bossV = 2;
         const avgLvl = this.totalLvl / this.characters.length;
         const bossLvl = avgLvl + bossV;
-        const bosses = this.monsters.filter((m) => m.lvl === bossLvl);
-        const boss = randInList(bosses);
+        const monsters = [...this.monsters];
+        // Sort by variance from target level
+        monsters.sort((a, b) => {
+            const varianceA = Math.abs(a.lvl - bossLvl);
+            const varianceB = Math.abs(b.lvl - bossLvl);
+            return varianceA - varianceB;
+        });
+        const boss = randInList(monsters);
         // Minion level can't be below 1
         const minionLvl = avgLvl - bossV < 1 ? 1 : avgLvl - bossV;
-        const minions = this.monsters.filter((m) => m.lvl === minionLvl);
-        const minion = randInList(minions);
+        // Sort by variance from minion level
+        monsters.sort((a, b) => {
+            const varianceA = Math.abs(a.lvl - minionLvl);
+            const varianceB = Math.abs(b.lvl - minionLvl);
+            return varianceA - varianceB;
+        });
+        const minion = randInList(monsters);
         // Boss + minion count equals player count
         return [boss, ...new Array(this.characters.length - 1).fill(minion)];
     }

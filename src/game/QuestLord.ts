@@ -939,6 +939,28 @@ export default class QuestLord {
         }
     }
 
+    private async editQuestDungeonPrompt(quest: Quest) {
+        const dungeonPoll = quest.getPollBooth().getPoll(PollType.Dungeon);
+        if (!dungeonPoll) {
+            console.warn("Unable to find dungeon poll, ignoring");
+            return;
+        }
+        const dungeonVotes = dungeonPoll.votes as Record<string, DungeonVote>;
+        const displayedVotes = Object.entries(dungeonVotes).map(([userId, vote]) => {
+            const pc = quest.assertAndGetPlayerCharacter(userId);
+            const voteKey = vote as DungeonVote;
+            return `${pc.getName()}: **${DungeonVote[voteKey]}** `
+                + `:${voteKey === DungeonVote.Enter ? "door" : "stop_sign"}:`;
+        }).join("\n");
+        const dungeonPrompt = DungeonPrompt(displayedVotes);
+        const dungeonPromptRef = quest.getDungeonPromptReference();
+        if (dungeonPromptRef) {
+            await dungeonPromptRef.edit({
+                components: [dungeonPrompt]
+            });
+        }
+    }
+
     private async handleDungeon(
         interaction: SelectMenuInteraction,
         dungeonParam: string
@@ -1000,6 +1022,8 @@ export default class QuestLord {
                 }
             }
         );
+
+        await this.editQuestDungeonPrompt(quest);
     }
 
     private async handleContinueDungeon(guildId: string, channelId: string) {
@@ -1686,10 +1710,12 @@ export default class QuestLord {
             await narrator.ponderAndDescribe(
                 `In the distance, you see an ominous ${dungeon.type} entrance...`
             );
-            await narrator.describe({
+            const message = await narrator.describe({
                 components: [DungeonPrompt()],
                 flags: MessageFlags.IsComponentsV2
             });
+            // Save a reference to this message so we can edit it
+            quest.setDungeonPromptReference(message);
         }
     }
 

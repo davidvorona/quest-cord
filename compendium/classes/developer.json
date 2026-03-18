@@ -38,7 +38,7 @@
         {
             "hp": 15,
             "damage": 2,
-            "spells": ["fireball"]
+            "spells": ["lay_on_hands"]
         },
         {
             "hp": 15,
