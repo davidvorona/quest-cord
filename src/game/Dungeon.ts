@@ -2,9 +2,9 @@ import { Dungeon as DungeonType } from "../constants";
 import { randInList } from "../util";
 
 enum DungeonSize {
-    Small = 3,
+    Short = 3,
     Medium = 5,
-    Large = 7
+    Long = 7
 };
 
 export default class Dungeon {
@@ -14,9 +14,14 @@ export default class Dungeon {
 
     rooms: number[];
 
+    static getSizeText(size: DungeonSize) {
+        return Object.keys(DungeonSize).find(key =>
+            DungeonSize[key as keyof typeof DungeonSize] === size) as keyof typeof DungeonSize;
+    }
+
     constructor(dungeonType: DungeonType) {
         this.type = dungeonType;
-        this.size = randInList([DungeonSize.Small, DungeonSize.Medium, DungeonSize.Large]);
+        this.size = randInList([DungeonSize.Short, DungeonSize.Medium, DungeonSize.Long]);
         this.rooms = new Array(this.size).fill(0);
     }
 

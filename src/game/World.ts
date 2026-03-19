@@ -233,7 +233,9 @@ class World {
                     worldStr += "🧑";
                 }  else if (cell.dungeon !== undefined) {
                     const dungeonType = cell.dungeon.type;
-                    worldStr += dungeonsData[dungeonType].emoji;
+                    const emoji = dungeonsData[dungeonType].emoji;
+                    const isEmoji = /\p{Extended_Pictographic}/u.test(emoji);
+                    worldStr += isEmoji ? emoji : "❓";
                 } else {
                     const biome = cell.biome;
                     worldStr += biomesData[biome].emoji;

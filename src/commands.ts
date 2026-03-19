@@ -234,7 +234,7 @@ export const getHelpText = () => {
     const debugCommands: CommandHelp = {
         forcefail: "Force a quest to fail",
         forceencounter: "Force an encounter type in a quest",
-        enaablefastxp: "Enable fast (5x) experience gain",
+        enablefastxp: "Enable fast (5x) experience gain",
         disabledeath: "Disable death for your player character"
     };
     const joinCommands = (c: CommandHelp) => {

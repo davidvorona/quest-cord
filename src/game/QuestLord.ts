@@ -940,6 +940,12 @@ export default class QuestLord {
     }
 
     private async editQuestDungeonPrompt(quest: Quest) {
+        const world = this.worlds[quest.guildId];
+        const coords = quest.getPartyCoordinates();
+        if (!world.hasDungeon(coords)) {
+            console.warn("No dungeon at party coordinates, ignoring");
+            return;
+        }
         const dungeonPoll = quest.getPollBooth().getPoll(PollType.Dungeon);
         if (!dungeonPoll) {
             console.warn("Unable to find dungeon poll, ignoring");
@@ -952,7 +958,8 @@ export default class QuestLord {
             return `${pc.getName()}: **${DungeonVote[voteKey]}** `
                 + `:${voteKey === DungeonVote.Enter ? "door" : "stop_sign"}:`;
         }).join("\n");
-        const dungeonPrompt = DungeonPrompt(displayedVotes);
+        const dungeon = world.assertAndGetDungeon(coords);
+        const dungeonPrompt = DungeonPrompt(dungeon, displayedVotes);
         const dungeonPromptRef = quest.getDungeonPromptReference();
         if (dungeonPromptRef) {
             await dungeonPromptRef.edit({
@@ -1004,9 +1011,10 @@ export default class QuestLord {
             PollType.Dungeon,
             dungeonParam,
             async (vote: string) => {
-                await narrator.ponderAndDescribe(`The party chooses to ${vote} the dungeon.`);
+                await this.editQuestDungeonPrompt(quest);
 
                 if (vote === DungeonVote.Enter) {
+                    await narrator.ponderAndDescribe("The party chooses to enter the dungeon.");
                     const dungeon = world.assertAndGetDungeon(coordinates);
                     quest.enterDungeon();
 
@@ -1018,6 +1026,7 @@ export default class QuestLord {
 
                     await quest.startEncounter(encounter, dungeon.type);
                 } else {
+                    await narrator.ponderAndDescribe("The party decides to continue traveling.");
                     await this.promptTravel(guildId, channelId);
                 }
             }
@@ -1711,7 +1720,7 @@ export default class QuestLord {
                 `In the distance, you see an ominous ${dungeon.type} entrance...`
             );
             const message = await narrator.describe({
-                components: [DungeonPrompt()],
+                components: [DungeonPrompt(dungeon)],
                 flags: MessageFlags.IsComponentsV2
             });
             // Save a reference to this message so we can edit it

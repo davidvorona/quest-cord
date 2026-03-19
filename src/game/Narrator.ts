@@ -304,8 +304,9 @@ class Narrator {
     }
 
     async describeSurroundings(biome: string) {
+        const biomePhrase = biome === "beach" ? "at the beach" : `in the ${biome}`;
         await this.ponderAndDescribe("You take stock of your surroundings - currently you're "
-            + `in the ${biome}.`);
+            + `${biomePhrase}.`);
     }
 
     async describePollResults(method: PollingMethod) {
