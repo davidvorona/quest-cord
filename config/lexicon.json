@@ -1,13 +1,21 @@
 {
-    "scene": {
-        "forest": [
-            "The trees grow oppressively around you as you continue on your journey. This forest is dark and looming, and not for the first time you feel like you are being watched.",
-            "The path leads throw a maze of trees, the sun shining between the branches. It is noon, and you can hear the gentle gurgling of a stream somewhere nearby.",
-            "The howl of a wolf in the distance knocks you out of your reverie as you traverse the winding path through the forest at night."
+    "dungeon": {
+        "describe": [
+            "$1, you see $2. Do you approach?"
+        ]
+    },
+    "travel": {
+        "currentBiome": [
+            "You take stock of your surroundings - currently, you're $1 the $2.",
+            "You are currently $1 the $2, the region stretching out for miles.",
+            "You're still $1 the $2, though what comes next is unclear."
         ],
-        "cave": [
-            "A bat rushes past you into the inky darkness of the cave. You walk past a stalagmite and see the eyes of hundreds of bats peering down from their roosts on the cave ceiling.",
-            "You climb ever downward, passing the occasional crystal structure jutting out of the deep stone walls of the cave. In the distance you can hear a furtive scratching."
+        "sameBiome": [
+            "You remain $1 in $2. $3.",
+            "Your journey through the $2 continues. $3."
+        ],
+        "newBiome": [
+            "You are now $1 the $2. $3."
         ]
     },
     "encounter": {

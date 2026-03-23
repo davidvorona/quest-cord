@@ -1,6 +1,8 @@
 export enum TextActivity {
     Encounter = "encounter",
-    Attack = "attack"
+    Attack = "attack",
+    Dungeon = "dungeon",
+    Travel = "travel"
 }
 
 export enum CompendiumSection {

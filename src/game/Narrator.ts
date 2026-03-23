@@ -14,6 +14,7 @@ import {
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
 import { TextActivity, Biome, Dungeon } from "../constants";
+import World from "./World";
 import { CombatPosition } from "./encounters/combat/CombatPositionCache";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
@@ -162,7 +163,7 @@ class Narrator {
         }
     }
 
-    async describeEncounter(encounter: Encounter, setting: Biome | Dungeon) {
+    async describeEncounter(encounter: Encounter, region: Biome | Dungeon) {
         if (encounter instanceof CombatEncounter) {
             // Get names of monsters in encounter
             const monsterNames = encounter.getMonsterNames();
@@ -196,7 +197,7 @@ class Narrator {
             await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
         }
 
-        const encounterDisplay = EncounterDisplay(encounter, setting);
+        const encounterDisplay = EncounterDisplay(encounter, region);
         await this.describe({
             components: encounterDisplay,
             flags: MessageFlags.IsComponentsV2
@@ -217,10 +218,16 @@ class Narrator {
         });
     }
 
-    async promptDungeon() {
+    async promptDungeon(biome: Biome, dungeonType: Dungeon) {
+        const biomePhrase = World.getBiomeData(biome)?.phrase || "In the distance";
+        const dungeonDesc = World.getDungeonData(dungeonType)?.description
+            || "you see the entrance to a dungeon";
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Dungeon).setSubActivity("describe");
+        const text = textBuilder.build(biomePhrase, dungeonDesc);
         const section = new SectionBuilder()
             .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent("You see the entrance to a dungeon. Do you approach?"))
+                textDisplay.setContent(text))
             .setButtonAccessory(button => button
                 .setCustomId("dungeon")
                 .setLabel("Take a Look")
@@ -270,43 +277,22 @@ class Narrator {
         }
     }
 
-    async describeTravel(oldBiome: string, newBiome: string) {
-        const newBiomeSentence = oldBiome === newBiome
-            ? `You make your way further into the ${newBiome}.`
-            : `You find yourself in the ${newBiome}.`;
-        let description = "";
-        switch (newBiome) {
-        case "forest":
-            description = "The trees are green and critters run between their roots.";
-            break;
-        case "desert":
-            description = "The sun beats down on your back as you traverse sand dunes.";
-            break;
-        case "mountains":
-            description = "The path is steep and treacherous, the great peaks high above you "
-                + "still.";
-            break;
-        case "jungle":
-            description = "Jungle vines tug at your ankles as you hack your way through the "
-                + "thick foliage.";
-            break;
-        case "beach":
-            description = "The sand feels good between your toes, a vast and endless ocean "
-                + "in front of you.";
-            break;
-        case "ocean":
-            description = "Oh dear, you're swimming for dear life!";
-            break;
-        default:
-            break;
-        }
-        await this.ponderAndDescribe(`${newBiomeSentence} ${description}`);
+    async describeTravel(oldBiome: string, newBiome: Biome) {
+        const biomeData = World.getBiomeData(newBiome);
+        const { preposition = "in", description } = biomeData || {};
+        const travelType = oldBiome === newBiome ? "sameBiome" : "newBiome";
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Travel).setSubActivity(travelType);
+        const text = textBuilder.build(preposition, newBiome, description);
+        await this.ponderAndDescribe(text);
     }
 
-    async describeSurroundings(biome: string) {
-        const biomePhrase = biome === "beach" ? "at the beach" : `in the ${biome}`;
-        await this.ponderAndDescribe("You take stock of your surroundings - currently you're "
-            + `${biomePhrase}.`);
+    async describeSurroundings(biome: Biome) {
+        const { preposition = "in" } = World.getBiomeData(biome) || {};
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Travel).setSubActivity("currentBiome");
+        const text = textBuilder.build(preposition, biome);
+        await this.ponderAndDescribe(text);
     }
 
     async describePollResults(method: PollingMethod) {

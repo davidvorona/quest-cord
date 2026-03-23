@@ -2,27 +2,40 @@
     "beach": {
         "region": false,
         "depth": 1,
-        "emoji": "🏖 "
+        "emoji": "🏖 ",
+        "preposition": "at",
+        "phrase": "On the sandy knolls of the beach",
+        "description": "The sand feels good between your toes, a vast and endless ocean in front of you"
     },
     "desert": {
         "region": true,
-        "emoji": "🏜 "
+        "emoji": "🏜 ",
+        "phrase": "Under the scorching sun of the desert",
+        "description": "The sun beats down on your back as you traverse sand dunes"
     },
     "forest": {
         "region": true,
-        "emoji": "🌲"
+        "emoji": "🌲",
+        "phrase": "Through thick foliage and towering trees",
+        "description": "The trees are green and critters run between their roots"
     },
     "jungle": {
         "region": true,
-        "emoji": "🌴"
+        "emoji": "🌴",
+        "phrase": "Within the dense and humid jungle",
+        "description": "Vines tug at your ankles as you hack your way through the thick foliage"
     },
     "mountains": {
         "region": true,
-        "emoji": "⛰ "
+        "emoji": "⛰ ",
+        "phrase": "Amidst the towering peaks of the mountains",
+        "description": "The path is steep and treacherous, the great peaks high above you still"
     },
     "ocean": {
         "region": false,
         "depth": 0,
-        "emoji": "🌊"
+        "emoji": "🌊",
+        "phrase": "On the vast ocean",
+        "description": "The waves crash against the shore as furtive fish dart beneath the surface"
     }
 }

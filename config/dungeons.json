@@ -1,11 +1,14 @@
 {
     "cave": {
-        "emoji": "1484289539903193180"
+        "emoji": "1484289539903193180",
+        "description": "the mouth of a dark cave"
     },
     "temple": {
-        "emoji": "🏛 "
+        "emoji": "🏛 ",
+        "description": "the entrance to an ancient temple"
     },
     "crypt": {
-        "emoji": "🪦 "
+        "emoji": "🪦 ",
+        "description": "the pale mausoleum of a silent crypt"
     }
 }

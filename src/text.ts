@@ -1,6 +1,7 @@
 import path from "path";
 import { parseJson, readFile, rand } from "./util";
 import { AnyObject } from "./types";
+import { TextActivity } from "./constants";
 
 const lexiconPath = path.join(__dirname, "../config/lexicon.json");
 const lexicon = parseJson(readFile(lexiconPath)) as AnyObject;
@@ -10,7 +11,7 @@ export default class TextBuilder {
 
     subActivity = "";
 
-    setActivity(activity: string) {
+    setActivity(activity: TextActivity) {
         if (!lexicon[activity]) {
             throw new Error(`Invalid activity: ${activity}`);
         }

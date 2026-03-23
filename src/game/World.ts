@@ -14,6 +14,9 @@ export interface BiomeData {
     depth?: number;
     region: boolean;
     emoji: string;
+    preposition?: string;
+    phrase: string;
+    description: string;
 }
 
 /* Structure of JSON file with biome data */
@@ -29,6 +32,7 @@ function getRegionBiomes() {
 const dungeonsPath = path.join(__dirname, "../../config/dungeons.json");
 export interface DungeonData {
     emoji: string;
+    description: string;
 }
 
 export type DungeonsJson = Record<DungeonType, DungeonData>;
@@ -82,6 +86,14 @@ class World {
 
         this.matrix = this.simpleGenerate();
         console.info(this.stringify());
+    }
+
+    static getBiomeData(biome: Biome) {
+        return biomesData[biome];
+    }
+
+    static getDungeonData(dungeonType: DungeonType) {
+        return dungeonsData[dungeonType];
     }
 
     private static isDepth(depth: number, x: number, y: number) {

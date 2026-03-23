@@ -844,7 +844,12 @@ export default class QuestLord {
             const dirKey = vote as Direction;
             return `${pc.getName()}: **${Direction[dirKey]}** ${DirectionEmoji[dirKey]}`;
         }).join("\n");
-        const travelPrompt = TravelPrompt(displayedVotes);
+
+        const world = this.worlds[quest.guildId];
+        const coordinates = quest.getPartyCoordinates();
+        const biome = world.getBiome(coordinates);
+
+        const travelPrompt = TravelPrompt(biome, displayedVotes);
         const travelPromptRef = quest.getTravelPromptReference();
         if (travelPromptRef) {
             await travelPromptRef.edit({
@@ -930,8 +935,8 @@ export default class QuestLord {
                     const encounter = this.encounterBuilder
                         .build(newBiome, quest.getPlayerCharacters(), narrator, forceType);
 
-                    const hasDungeon = world.hasDungeon(newCoordinates);
-                    await quest.startEncounter(encounter, newBiome, hasDungeon);
+                    const dungeon = world.getDungeon(newCoordinates);
+                    await quest.startEncounter(encounter, newBiome, dungeon?.type);
                 }
             );
 
@@ -1024,7 +1029,8 @@ export default class QuestLord {
                     const encounter = this.encounterBuilder
                         .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
 
-                    await quest.startEncounter(encounter, dungeon.type);
+                    const biome = world.getBiome(coordinates);
+                    await quest.startEncounter(encounter, biome, dungeon.type);
                 } else {
                     await narrator.ponderAndDescribe("The party decides to continue traveling.");
                     await this.promptTravel(guildId, channelId);
@@ -1058,7 +1064,8 @@ export default class QuestLord {
                 : this.encounterBuilder
                     .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
 
-            await quest.startEncounter(encounter, dungeon.type);
+            const biome = world.getBiome(coordinates);
+            await quest.startEncounter(encounter, biome, dungeon.type);
         }
     }
 
@@ -1152,9 +1159,11 @@ export default class QuestLord {
                 await quest.endEncounter();
                 // Start the combat encounter
                 const world = this.worlds[quest.guildId];
-                const biome = world.getBiome(quest.getPartyCoordinates());
+                const coordinates = quest.getPartyCoordinates();
+                const biome = world.getBiome(coordinates);
+                const dungeon = world.getDungeon(coordinates);
 
-                await quest.startEncounter(cmbEncounter, biome);
+                await quest.startEncounter(cmbEncounter, biome, dungeon?.type);
             }
         );
     }
@@ -1687,7 +1696,7 @@ export default class QuestLord {
         await narrator.describeSurroundings(partyBiome);
 
         const message = await narrator.ponderAndDescribe({
-            components: [TravelPrompt()],
+            components: [TravelPrompt(partyBiome)],
             flags: MessageFlags.IsComponentsV2
         });
         // Save a reference to this message so we can edit it
@@ -1716,9 +1725,7 @@ export default class QuestLord {
         } else if (world.hasDungeon(coordinates)) {
             const dungeon = world.assertAndGetDungeon(coordinates);
             const narrator = quest.getNarrator();
-            await narrator.ponderAndDescribe(
-                `In the distance, you see an ominous ${dungeon.type} entrance...`
-            );
+            await narrator.ponderAndDescribe(`You approach the ${dungeon.type}...`);
             const message = await narrator.describe({
                 components: [DungeonPrompt(dungeon)],
                 flags: MessageFlags.IsComponentsV2
@@ -1794,8 +1801,11 @@ export default class QuestLord {
         // If success, continue quest
         if (results.success) {
             const world = this.worlds[guildId];
-            if (world.hasDungeon(quest.getPartyCoordinates())) {
-                await this.promptDungeon(guildId, channelId);
+            const coordinates = quest.getPartyCoordinates();
+            if (world.hasDungeon(coordinates)) {
+                const dungeon = world.assertAndGetDungeon(coordinates);
+                const biome = world.getBiome(coordinates);
+                await narrator.promptDungeon(biome, dungeon.type);
             } else {
                 await this.promptTravel(guildId, channelId);
             }

@@ -1,27 +1,17 @@
-import path from "path";
 import {
     ButtonStyle,
     ContainerBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder
 } from "discord.js";
-import { DungeonVote, Dungeon as DungeonType } from "../../constants";
-import { parseJson, readFile } from "../../util";
+import { DungeonVote } from "../../constants";
 import Dungeon from "../Dungeon";
-
-const dungeonsPath = path.join(__dirname, "../../../config/dungeons.json");
-export interface DungeonData {
-    emoji: string;
-}
-
-export type DungeonsJson = Record<DungeonType, DungeonData>;
-
-const dungeonsData = parseJson(readFile(dungeonsPath)) as DungeonsJson;
+import World from "../World";
 
 export default function DungeonPrompt(dungeon: Dungeon, votesDisplayText?: string) {
     const formattedDungeonType = dungeon.type.charAt(0).toUpperCase() + dungeon.type.slice(1);
     const formattedSize = Dungeon.getSizeText(dungeon.size);
-    const emoji = dungeonsData[dungeon.type].emoji;
+    const { emoji } = World.getDungeonData(dungeon.type);
     const emojiDisplay = /\p{Extended_Pictographic}/u.test(emoji)
         ? emoji
         : `<:${dungeon.type}:${emoji}>`;

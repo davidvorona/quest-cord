@@ -229,10 +229,11 @@ export default class Quest {
         this.dungeonIdx = idx;
     }
 
-    async startEncounter(encounter: Encounter, setting: Biome | Dungeon, hasDungeon = false) {
+    async startEncounter(encounter: Encounter, biome: Biome, dungeon?: Dungeon) {
         this.encounter = encounter;
 
-        await this.narrator.describeEncounter(encounter, setting);
+        const region = dungeon || biome;
+        await this.narrator.describeEncounter(encounter, region);
 
         // If it's a turn-based encounter, then prompt for or handle the first turn
         if (encounter instanceof TurnBasedEncounter) {
@@ -243,8 +244,8 @@ export default class Quest {
 
         // Prompt the party to travel/dungeon if it's a free encounter
         if (encounter instanceof FreeEncounter) {
-            if (hasDungeon) {
-                await this.narrator.promptDungeon();
+            if (dungeon) {
+                await this.narrator.promptDungeon(biome, dungeon);
             } else {
                 await this.narrator.promptFreeTravel();
             }
