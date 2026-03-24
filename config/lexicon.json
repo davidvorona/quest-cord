@@ -11,7 +11,7 @@
             "You're still $1 the $2, though what comes next is unclear."
         ],
         "sameBiome": [
-            "You remain $1 in $2. $3.",
+            "You remain $1 the $2. $3.",
             "Your journey through the $2 continues. $3."
         ],
         "newBiome": [

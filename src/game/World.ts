@@ -161,7 +161,7 @@ class World {
                     && matrix[y - 1][x].dungeon === undefined
                     && matrix[y][x - 1].dungeon === undefined
                     // If above conditions are met, 5% chance to spawn a dungeon tile
-                    && rand(20) === 0
+                    && rand(0) === 0
                 ) {
                     const dungeons = getDungeonTypes();
                     matrix[y][x].dungeon = new Dungeon(randInList(Array.from(dungeons)));

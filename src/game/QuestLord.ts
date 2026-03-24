@@ -386,7 +386,7 @@ export default class QuestLord {
                     content: "Approaching the dungeon...",
                     flags: MessageFlags.Ephemeral
                 });
-                await this.promptDungeon(interaction.guildId, interaction.channelId);
+                await this.promptDungeon(interaction);
             }
 
             if (interaction.customId === "continue-dungeon") {
@@ -973,6 +973,35 @@ export default class QuestLord {
         }
     }
 
+    private async promptDungeon(interaction: ButtonPressInteraction) {
+        const { guildId, channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const world = this.worlds[guildId];
+        const quest = this.quests[channelId];
+
+        const coordinates = quest.getPartyCoordinates();
+        const narrator = quest.getNarrator();
+
+        if (!world.hasDungeon(coordinates)) {
+            await interaction.reply({
+                content: "There is no dungeon to enter here.",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        const dungeon = world.assertAndGetDungeon(coordinates);
+        await narrator.ponderAndDescribe(`You approach the ${dungeon.type}...`);
+
+        const message = await narrator.describe({
+            components: [DungeonPrompt(dungeon)],
+            flags: MessageFlags.IsComponentsV2
+        });
+        // Save a reference to this message so we can edit it
+        quest.setDungeonPromptReference(message);
+    }
+
     private async handleDungeon(
         interaction: SelectMenuInteraction,
         dungeonParam: string
@@ -1019,8 +1048,9 @@ export default class QuestLord {
                 await this.editQuestDungeonPrompt(quest);
 
                 if (vote === DungeonVote.Enter) {
-                    await narrator.ponderAndDescribe("The party chooses to enter the dungeon.");
                     const dungeon = world.assertAndGetDungeon(coordinates);
+                    await narrator.ponderAndDescribe(
+                        `The party chooses to enter the ${dungeon.type}.`);
                     quest.enterDungeon();
 
                     const pcs = quest.getPlayerCharacters();
@@ -1703,7 +1733,21 @@ export default class QuestLord {
         quest.setTravelPromptReference(message);
     }
 
-    private async promptDungeon(guildId: string, channelId: string) {
+    private async promptDungeonStart(guildId: string, channelId: string) {
+        this.assertQuestStarted(channelId);
+
+        const world = this.worlds[guildId];
+        const quest = this.quests[channelId];
+
+        const coordinates = quest.getPartyCoordinates();
+        const narrator = quest.getNarrator();
+
+        const biome = world.getBiome(coordinates);
+        const dungeon = world.assertAndGetDungeon(coordinates);
+        await narrator.promptDungeon(biome, dungeon.type);
+    }
+
+    private async promptDungeonContinue(guildId: string, channelId: string) {
         this.assertQuestStarted(channelId);
 
         const world = this.worlds[guildId];
@@ -1713,25 +1757,12 @@ export default class QuestLord {
         const narrator = quest.getNarrator();
         if (quest.isInDungeon()) {
             const dungeon = world.assertAndGetDungeon(coordinates);
-            // TODO: What prompts within the dungeon should be votes, what shouldn't?
-            // Entering/leaving the dungeon should be voted on, but should continuing?
-            // What about leaving after the dungeon is complete?
-            // Either way, there should be some sort of chest to open at the end.
             if (dungeon.isLastRoom(quest.dungeonIdx)) {
+                // TODO: Create dungeon loot here!
                 await narrator.promptDungeonLeave();
             } else {
                 await narrator.promptDungeonContinue(dungeon.type);
             }
-        } else if (world.hasDungeon(coordinates)) {
-            const dungeon = world.assertAndGetDungeon(coordinates);
-            const narrator = quest.getNarrator();
-            await narrator.ponderAndDescribe(`You approach the ${dungeon.type}...`);
-            const message = await narrator.describe({
-                components: [DungeonPrompt(dungeon)],
-                flags: MessageFlags.IsComponentsV2
-            });
-            // Save a reference to this message so we can edit it
-            quest.setDungeonPromptReference(message);
         }
     }
 
@@ -1803,9 +1834,11 @@ export default class QuestLord {
             const world = this.worlds[guildId];
             const coordinates = quest.getPartyCoordinates();
             if (world.hasDungeon(coordinates)) {
-                const dungeon = world.assertAndGetDungeon(coordinates);
-                const biome = world.getBiome(coordinates);
-                await narrator.promptDungeon(biome, dungeon.type);
+                if (quest.isInDungeon()) {
+                    await this.promptDungeonContinue(guildId, channelId);
+                } else {
+                    await this.promptDungeonStart(guildId, channelId);
+                }
             } else {
                 await this.promptTravel(guildId, channelId);
             }
