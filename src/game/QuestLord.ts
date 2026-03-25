@@ -41,7 +41,7 @@ import World from "./World";
 import Narrator from "./Narrator";
 import SpellFactory from "../services/SpellFactory";
 import FreeEncounter from "./encounters/FreeEncounter";
-import { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
+import Encounter, { EncounterResults as EncounterResultsType } from "./encounters/Encounter";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { Direction, EncounterType, DirectionEmoji, DungeonVote } from "../constants";
@@ -53,6 +53,7 @@ import LootDisplay from "./ui/LootDisplay";
 import TravelPrompt from "./ui/TravelPrompt";
 import InventoryDisplay from "./ui/InventoryDisplay";
 import DungeonPrompt from "./ui/DungeonPrompt";
+import DungeonResults from "./ui/DungeonResults";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -685,11 +686,7 @@ export default class QuestLord {
                 const partyBiome = world.getBiome(quest.getPartyCoordinates());
                 await narrator.describeSurroundings(partyBiome);
 
-                const forceType = this.forceEncounters[channelId];
-                const encounter = this.encounterBuilder
-                    .build(partyBiome, quest.getPlayerCharacters(), narrator, forceType);
-
-                await quest.startEncounter(encounter, partyBiome);
+                await this.handleNewEncounter(guildId, channelId);
             }
         }
     }
@@ -931,12 +928,7 @@ export default class QuestLord {
                     await narrator.describeTravel(biome, newBiome);
 
                     // Now that the party has reached a new location, start the next encounter
-                    const forceType = this.forceEncounters[channelId];
-                    const encounter = this.encounterBuilder
-                        .build(newBiome, quest.getPlayerCharacters(), narrator, forceType);
-
-                    const dungeon = world.getDungeon(newCoordinates);
-                    await quest.startEncounter(encounter, newBiome, dungeon?.type);
+                    await this.handleNewEncounter(guildId, channelId);
                 }
             );
 
@@ -1051,7 +1043,7 @@ export default class QuestLord {
                     const dungeon = world.assertAndGetDungeon(coordinates);
                     await narrator.ponderAndDescribe(
                         `The party chooses to enter the ${dungeon.type}.`);
-                    quest.enterDungeon();
+                    quest.enterDungeon(dungeon);
 
                     const pcs = quest.getPlayerCharacters();
                     // Scale up dungeon encounter by +1 per player
@@ -1059,8 +1051,7 @@ export default class QuestLord {
                     const encounter = this.encounterBuilder
                         .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
 
-                    const biome = world.getBiome(coordinates);
-                    await quest.startEncounter(encounter, biome, dungeon.type);
+                    await this.handleNewEncounter(guildId, channelId, encounter);
                 } else {
                     await narrator.ponderAndDescribe("The party decides to continue traveling.");
                     await this.promptTravel(guildId, channelId);
@@ -1081,21 +1072,20 @@ export default class QuestLord {
         const coordinates = quest.getPartyCoordinates();
 
         if (world.hasDungeon(coordinates) && quest.isInDungeon()) {
-            quest.setDungeonIdx(quest.dungeonIdx + 1);
+            quest.continueDungeon();
 
-            const dungeon = world.assertAndGetDungeon(coordinates);
+            const dungeon = quest.assertAndGetDungeon();
             const pcs = quest.getPlayerCharacters();
             // Scale up dungeon encounter by +1 per player
             const dungeonLvl = quest.getPartyTotalLevel() + pcs.length;
 
-            const encounter = dungeon.isLastRoom(quest.dungeonIdx)
+            const encounter = dungeon.isLastRoom()
                 ? this.encounterBuilder
                     .buildBossEncounter(dungeon.type, pcs, narrator, dungeonLvl)
                 : this.encounterBuilder
                     .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
 
-            const biome = world.getBiome(coordinates);
-            await quest.startEncounter(encounter, biome, dungeon.type);
+            await this.handleNewEncounter(guildId, channelId, encounter);
         }
     }
 
@@ -1111,7 +1101,6 @@ export default class QuestLord {
         if (world.hasDungeon(coordinates) && quest.isInDungeon()) {
             quest.leaveDungeon();
 
-            // Maybe award more loot here?
             await narrator.ponderAndDescribe("The party leaves the dungeon.");
 
             // After leaving the dungeon, prompt the party to travel somewhere new in the world
@@ -1152,7 +1141,7 @@ export default class QuestLord {
     private async handleSurprise(
         interaction: CommandInteraction | ButtonPressInteraction
     ): Promise<void> {
-        const { channelId } = interaction;
+        const { guildId, channelId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
@@ -1188,12 +1177,7 @@ export default class QuestLord {
                 // End the stealth encounter
                 await quest.endEncounter();
                 // Start the combat encounter
-                const world = this.worlds[quest.guildId];
-                const coordinates = quest.getPartyCoordinates();
-                const biome = world.getBiome(coordinates);
-                const dungeon = world.getDungeon(coordinates);
-
-                await quest.startEncounter(cmbEncounter, biome, dungeon?.type);
+                await this.handleNewEncounter(guildId, channelId, cmbEncounter);
             }
         );
     }
@@ -1757,8 +1741,20 @@ export default class QuestLord {
         const narrator = quest.getNarrator();
         if (quest.isInDungeon()) {
             const dungeon = world.assertAndGetDungeon(coordinates);
-            if (dungeon.isLastRoom(quest.dungeonIdx)) {
-                // TODO: Create dungeon loot here!
+            if (dungeon.isLastRoom()) {
+                // TODO: We need to register loot boxes for each player after the dungeon.
+                // Typically, loot is associated with an encounter, which allows us to track
+                // loot rolls for each player in that encounter. We could have the Dungeon
+                // instance handle tracking loot rolls, but currently it's very simple and
+                // does not track state at all. Other options: track loot rolls on the Quest
+                // instance, or simply reward dungeon-tier loot after the final boss combat
+                // encounter and leverage the typical encounter loot mechanism.
+                const dungeonResults = DungeonResults(dungeon.type);
+                await narrator.describe({
+                    components: dungeonResults,
+                    flags: MessageFlags.IsComponentsV2
+                });
+
                 await narrator.promptDungeonLeave();
             } else {
                 await narrator.promptDungeonContinue(dungeon.type);
@@ -1791,6 +1787,34 @@ export default class QuestLord {
             }
         }
         return xpReward;
+    }
+
+    private async handleNewEncounter(guildId: string, channelId: string, encounter?: Encounter) {
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const narrator = quest.getNarrator();
+
+        const world = this.worlds[guildId];
+        const partyBiome = world.getBiome(quest.getPartyCoordinates());
+        await narrator.describeSurroundings(partyBiome);
+
+        const forceType = this.forceEncounters[channelId];
+        const newEncounter = encounter || this.encounterBuilder
+            .build(partyBiome, quest.getPlayerCharacters(), narrator, forceType);
+        await quest.startEncounter(newEncounter, partyBiome);
+
+        // Prompt the party to travel/dungeon if it's a free encounter
+        if (newEncounter instanceof FreeEncounter) {
+            const coordinates = quest.getPartyCoordinates();
+            // If there is a dungeon in this cell, but the party has not approached it...
+            if (world.hasDungeon(coordinates) && !quest.isInDungeon()) {
+                const dungeon = world.assertAndGetDungeon(coordinates);
+                await narrator.promptDungeon(partyBiome, dungeon.type);
+            } else {
+                await narrator.promptFreeTravel();
+            }
+        }
     }
 
     private async handleEncounterResults(

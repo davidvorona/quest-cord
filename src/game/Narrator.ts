@@ -259,7 +259,7 @@ class Narrator {
             .setButtonAccessory(button => button
                 .setCustomId("leave-dungeon")
                 .setLabel("Leave Dungeon")
-                .setStyle(ButtonStyle.Success));
+                .setStyle(ButtonStyle.Danger));
         await this.ponderAndDescribe({
             components: [section],
             flags: MessageFlags.IsComponentsV2

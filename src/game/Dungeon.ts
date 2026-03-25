@@ -25,15 +25,17 @@ export default class Dungeon {
         this.rooms = new Array(this.size).fill(0);
     }
 
-    getRoom(idx: number) {
-        return this.rooms[idx];
+    getCurrentIdx = () => this.rooms.findIndex(val => val === 0);
+
+    nextRoom() {
+        this.rooms[this.getCurrentIdx()] = 1;
     }
 
-    clearRoom(idx: number) {
-        this.rooms[idx] = 1;
+    isFirstRoom() {
+        return this.getCurrentIdx() === 0;
     }
 
-    isLastRoom(idx: number) {
-        return idx === this.size - 1;
+    isLastRoom() {
+        return this.getCurrentIdx() === this.size - 1;
     }
 }

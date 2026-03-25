@@ -6,7 +6,7 @@ import CompendiumReader from "./CompendiumReader";
 import Weapon from "../game/things/Weapon";
 import Offhand from "../game/things/Offhand";
 import Armor from "../game/things/Armor";
-import { randKey } from "../util";
+import { randInList, randKey, sortByVariance } from "../util";
 
 class ItemFactory {
     compendium: CompendiumReader;
@@ -52,6 +52,38 @@ class ItemFactory {
             list.push(this.createRandomItem());
         }
         return list;
+    }
+
+    createRandomItemType(type: ItemType) {
+        const items = Object.values(this.data).filter(item => item.type === type);
+        const itemData = randInList(items) as BaseItem;
+        return this.create(itemData.id);
+    }
+
+    createRandomWeapon() {
+        return this.createRandomItemType(ItemType.Weapon) as Weapon;
+    }
+
+    createRandomArmor() {
+        return this.createRandomItemType(ItemType.Armor) as Armor;
+    }
+
+    createRandomConsumable() {
+        return this.createRandomItemType(ItemType.Consumable) as Consumable;
+    }
+
+    createRandomScaledWeapon(damage: number) {
+        const weapons = Object.values(this.data)
+            .filter(item => item.type === ItemType.Weapon) as BaseWeapon[];
+        sortByVariance(weapons, "damage", damage);
+        return new Weapon(weapons[0]);
+    }
+
+    createRandomScaledArmor(ac: number) {
+        const armors = Object.values(this.data)
+            .filter(item => item.type === ItemType.Armor) as BaseArmor[];
+        sortByVariance(armors, "ac", ac);
+        return new Armor(armors[0]);
     }
 }
 
