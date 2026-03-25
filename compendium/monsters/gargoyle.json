@@ -13,6 +13,7 @@
     "zones": [
         "beach",
         "mountains",
-        "desert"
+        "desert",
+        "temple"
     ]
 }

@@ -141,3 +141,12 @@ export const getEncounterInteractionName = (
     interaction.isCommand()
         ? interaction.options.getSubcommand()
         : interaction.customId;
+
+export const sortByVariance = <T, K extends keyof T>(list: T[], field: K, value: number) =>
+    list.sort((a, b) => {
+        const aVal = a[field] as number;
+        const bVal = b[field] as number;
+        const varianceA = Math.abs(aVal - value);
+        const varianceB = Math.abs(bVal - value);
+        return varianceA - varianceB;
+    });

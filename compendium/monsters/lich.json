@@ -12,6 +12,7 @@
     ],
     "zones": [
         "mountains",
-        "beach"
+        "beach",
+        "crypt"
     ]
 }

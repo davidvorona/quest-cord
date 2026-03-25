@@ -2,7 +2,7 @@
     "id": "fireball",
     "name": "Fireball",
     "damage": 6,
-    "properties": ["range"],
+    "properties": ["range", "aoe"],
     "effects": {
         "status": "burning"
     }

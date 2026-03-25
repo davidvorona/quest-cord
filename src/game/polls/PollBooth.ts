@@ -1,4 +1,5 @@
 import Narrator from "../Narrator";
+import DungeonPoll from "./DungeonPoll";
 import Poll from "./Poll";
 import StealthPoll from "./StealthPoll";
 import TravelPoll from "./TravelPoll";
@@ -9,7 +10,8 @@ type ResultCallback = (voteResult: any) => Promise<void>;
 export enum PollType {
     Travel = "Travel",
     Stealth = "Stealth",
-    Social = "Social"
+    Social = "Social",
+    Dungeon = "Dungeon"
 }
 
 // RuneScape
@@ -53,6 +55,9 @@ export default class PollBooth {
             break;
         case PollType.Social:
             this.polls[type] = new StealthPoll(this.voters, resultCallback);
+            break;
+        case PollType.Dungeon:
+            this.polls[type] = new DungeonPoll(this.voters, resultCallback);
             break;
         default:
             throw new Error(`Invalid poll type: ${type}`);

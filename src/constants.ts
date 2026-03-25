@@ -1,6 +1,8 @@
 export enum TextActivity {
     Encounter = "encounter",
-    Attack = "attack"
+    Attack = "attack",
+    Dungeon = "dungeon",
+    Travel = "travel"
 }
 
 export enum CompendiumSection {
@@ -28,6 +30,17 @@ export enum Biome {
     Mountains = "mountains"
 }
 
+export enum Dungeon {
+    Cave = "cave",
+    Temple = "temple",
+    Crypt = "crypt"
+}
+
+export enum DungeonVote {
+    Enter = "Enter",
+    Leave = "Leave"
+}
+
 export enum Direction {
     North = "North",
     South = "South",
@@ -53,4 +66,26 @@ export enum EncounterType {
     Merchant = "Merchant",  // WIP: An encounter with a traveling merchant with goods for sale
     Lookout = "Lookout",    // WIP: Get to a vantage point for greater map visibility
     Rest = "Rest"           // A day where nothing happens, characters can rest
+}
+
+export enum WeaponProperty {
+    Range = "range",
+    AOE = "aoe",
+    TwoHanded = "two-handed"
+}
+
+export enum ArmorSlot {
+    Helm = "helm",
+    Body = "body",
+    Boots = "boots",
+    Cape = "cape"
+}
+
+export enum ArmorProperty {
+    Heavy = "heavy"
+}
+
+export enum SpellProperty {
+    AOE = "aoe",
+    Range = "range"
 }

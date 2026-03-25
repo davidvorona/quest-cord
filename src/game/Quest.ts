@@ -2,6 +2,7 @@ import { Message, Snowflake } from "discord.js";
 import { createRandomId, isEmpty } from "../util";
 import { Biome } from "../constants";
 import PlayerCharacter, { LevelUp } from "./PlayerCharacter";
+import Dungeon from "./Dungeon";
 import Encounter from "./encounters/Encounter";
 import Character from "./creatures/Character";
 import Narrator from "./Narrator";
@@ -17,7 +18,6 @@ import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
 import Profession from "./things/Profession";
 import EncounterButtonRows from "./ui/EncounterButtonRows";
-import FreeEncounter from "./encounters/FreeEncounter";
 
 export default class Quest {
     readonly id: string;
@@ -36,6 +36,9 @@ export default class Quest {
 
     travelPromptRef?: Message<true>;
     route: [number, number][] = [];
+
+    dungeonPromptRef?: Message<true>;
+    dungeon?: Dungeon;
 
     encounter?: Encounter;
     lastEncounter?: Encounter;
@@ -70,6 +73,14 @@ export default class Quest {
 
     setTravelPromptReference(message: Message<true>) {
         this.travelPromptRef = message;
+    }
+
+    getDungeonPromptReference() {
+        return this.dungeonPromptRef;
+    }
+
+    setDungeonPromptReference(message: Message<true>) {
+        this.dungeonPromptRef = message;
     }
 
     getNarrator() {
@@ -174,6 +185,10 @@ export default class Quest {
         return this.route[this.route.length - 2] || [0, 0];
     }
 
+    getPartyTotalLevel() {
+        return this.getPlayerCharacters().reduce((total, pc) => total + pc.lvl, 0);
+    }
+
     getEncounter() {
         return this.encounter;
     }
@@ -199,10 +214,34 @@ export default class Quest {
         return this.encounter;
     }
 
+    isInDungeon(): this is { dungeon: Dungeon } {
+        return this.dungeon !== undefined;
+    }
+
+    enterDungeon(dungeon: Dungeon) {
+        this.dungeon = dungeon;
+    }
+
+    leaveDungeon() {
+        this.dungeon = undefined;
+    }
+
+    continueDungeon() {
+        this.dungeon?.nextRoom();
+    }
+
+    assertAndGetDungeon() {
+        if (!this.isInDungeon()) {
+            throw new Error("Dungeon is not started, aborting");
+        }
+        return this.dungeon;
+    }
+
     async startEncounter(encounter: Encounter, biome: Biome) {
         this.encounter = encounter;
 
-        await this.narrator.describeEncounter(encounter, biome);
+        const region = this.isInDungeon() ? this.dungeon.type : biome;
+        await this.narrator.describeEncounter(encounter, region);
 
         // If it's a turn-based encounter, then prompt for or handle the first turn
         if (encounter instanceof TurnBasedEncounter) {
@@ -210,11 +249,6 @@ export default class Quest {
         }
 
         await this.narrator.describe({ components: EncounterButtonRows(encounter.buttons) });
-
-        // Prompt the party to travel if it's a free encounter
-        if (encounter instanceof FreeEncounter) {
-            await this.narrator.promptFreeTravel();
-        }
     }
 
     async endEncounter() {

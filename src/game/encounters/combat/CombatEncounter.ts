@@ -225,7 +225,29 @@ export default class CombatEncounter extends TurnBasedEncounter {
                 components: []
             });
 
-            await this.handleSpell(character, this.getAliveMonsters()[0], spellId);
+            await this.handleSpell(character, [this.getAliveMonsters()[0]], spellId);
+        } else if (spell.isAoe()) {
+            const targets = this.getAliveMonsters();
+            const targetsAtRangeCount = targets
+                .filter(t => this.positions.isInRangePosition(t.id)).length;
+            const targetsInMeleeCount = targets.length - targetsAtRangeCount;
+            const embed = new EmbedBuilder()
+                .setColor(0x0099FF)
+                .setDescription(`You choose to cast **${spell.name}**. `
+                    + "Do you want to hit the enemies in melee, or the enemies at range?");
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+                .addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId("spell:target")
+                        .setPlaceholder("Nothing selected")
+                        .addOptions(
+                            { label: `In melee (${targetsInMeleeCount} targets)`, value: "melee" },
+                            { label: `At range (${targetsAtRangeCount} targets)`, value: "range" })
+                );
+            await this.narrator.ponderAndUpdate(interaction, {
+                components: [row],
+                embeds: [embed]
+            });
         } else {
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
@@ -259,10 +281,19 @@ export default class CombatEncounter extends TurnBasedEncounter {
             components: []
         });
 
-        const targetIdx = Number(interaction.values[0]);
-        const target = this.getMonsterByIndex(targetIdx);
+        const targetVal = interaction.values[0];
+        const targets = [];
+        if (targetVal === "melee") {
+            targets.push(...this.getAliveMonsters()
+                .filter(t => !this.positions.isInRangePosition(t.id)));
+        } else if (targetVal === "range") {
+            targets.push(...this.getAliveMonsters()
+                .filter(t => this.positions.isInRangePosition(t.id)));
+        } else {
+            targets.push(this.getMonsterByIndex(Number(targetVal)));
+        }
 
-        await this.handleSpell(character, target, this.heldSpell);
+        await this.handleSpell(character, targets, this.heldSpell);
     };
 
     handlePlayerUseSelection = async (interaction: SelectMenuInteraction, character: Character) => {
@@ -532,30 +563,38 @@ export default class CombatEncounter extends TurnBasedEncounter {
         this.heldSpell = undefined;
     }
 
-    private async handleSpell(caster: Creature, target: Creature, spellId: string) {
+    private async handleSpell(caster: Creature, targets: Creature[], spellId: string) {
         const heldSpell = caster.getSpell(spellId);
         if (!heldSpell) {
             throw new Error("You are not holding this spell...");
         }
-
+        if (targets.length > 1 && !heldSpell.isAoe()) {
+            throw new Error("You can only target multiple enemies with an AOE spell!");
+        }
         const isRangedSpell = heldSpell.isRanged();
-        this.validateAttackRange(caster, target, isRangedSpell);
+        for (const target of targets) {
+            this.validateAttackRange(caster, target, isRangedSpell);
+        }
 
-        if (this.mustMoveBeforeAttack(caster, target, isRangedSpell)) {
+        if (this.mustMoveBeforeAttack(caster, targets[0], isRangedSpell)) {
             await this.handleMove(caster);
         }
 
         const spellDamage = heldSpell.damage || 0;
-        const damage = this.calculateDamage(target, spellDamage);
-        target.setHp(target.hp - damage);
+        for (const target of targets) {
 
-        this.combatLog.appendSpell(
-            spellId,
-            damage,
-            [this.turnOrder.getIdx(caster.id), this.turnOrder.getIdx(target.id)]
-        );
+            const damage = this.calculateDamage(target, spellDamage);
+            target.setHp(target.hp - damage);
 
-        await this.narrator.describeCastSpell(caster, heldSpell, damage);
+            this.combatLog.appendSpell(
+                spellId,
+                damage,
+                [this.turnOrder.getIdx(caster.id), this.turnOrder.getIdx(target.id)]
+            );
+        }
+
+        const logEntries = this.combatLog.log.slice(-targets.length);
+        await this.narrator.describeCastSpell(caster, heldSpell, logEntries);
 
         if (this.heldMovement) {
             await this.handleMove(caster);
@@ -563,8 +602,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
         this.releaseSpell();
 
-        if (target.isDead()) {
-            await this.narrator.describeDeath(target);
+        for (const target of targets) {
+            if (target.isDead()) {
+                await this.narrator.describeDeath(target);
+            }
         }
     }
 
@@ -652,7 +693,7 @@ export default class CombatEncounter extends TurnBasedEncounter {
     private async handleMonsterAttack(monster: Monster, attackOption: AttackOption) {
         const { target, attack } = attackOption;
         if (attack instanceof Spell) {
-            await this.handleSpell(monster, target, attack.id);
+            await this.handleSpell(monster, [target], attack.id);
         } else {
             await this.handleAttack(monster, target);
         }
@@ -660,7 +701,10 @@ export default class CombatEncounter extends TurnBasedEncounter {
 
     private listMonsterAttacks(monster: Monster) {
         const weapon = monster.getWeapon();
-        const attacks = [...monster.getMeleeAttackSpells(), ...monster.getRangedAttackSpells()];
+        const attacks: (AttackSpell<Spell> | Weapon)[] = [
+            ...monster.getMeleeAttackSpells(),
+            ...monster.getRangedAttackSpells()
+        ];
         if (weapon) {
             attacks.push(weapon);
         }

@@ -1,6 +1,6 @@
 import Character from "../game/creatures/Character";
 import { BaseMonster, MonsterData } from "../types";
-import { rand, randInList } from "../util";
+import { rand, randInList, sortByVariance } from "../util";
 
 enum BalancingStrategy {
     BossAndMinions = "BossAndMinions",
@@ -72,12 +72,15 @@ export default class CombatBalancingService {
         const bossV = 2;
         const avgLvl = this.totalLvl / this.characters.length;
         const bossLvl = avgLvl + bossV;
-        const bosses = this.monsters.filter((m) => m.lvl === bossLvl);
-        const boss = randInList(bosses);
+        const monsters = [...this.monsters];
+        // Sort by variance from target level
+        sortByVariance(monsters, "lvl", bossLvl);
+        const boss = randInList(monsters);
         // Minion level can't be below 1
         const minionLvl = avgLvl - bossV < 1 ? 1 : avgLvl - bossV;
-        const minions = this.monsters.filter((m) => m.lvl === minionLvl);
-        const minion = randInList(minions);
+        // Sort by variance from minion level
+        sortByVariance(monsters, "lvl", minionLvl);
+        const minion = randInList(monsters);
         // Boss + minion count equals player count
         return [boss, ...new Array(this.characters.length - 1).fill(minion)];
     }
@@ -89,12 +92,7 @@ export default class CombatBalancingService {
         const seedHp = totalPartyHp / count;
         const monsters = [...this.monsters];
         // Sort by variance from seedHp
-        monsters.sort((a, b) => {
-            const varianceA = Math.abs(a.hp - seedHp);
-            const varianceB = Math.abs(b.hp - seedHp);
-            return varianceA - varianceB;
-        });
-        // Pick the monster with the least variance
+        sortByVariance(monsters, "hp", seedHp);
         const monster = monsters[0];
         return new Array(count).fill(monster);
     }
@@ -105,11 +103,7 @@ export default class CombatBalancingService {
         const seedDamage = totalPartyDamage / count;
         const monsters = [...this.monsters];
         // Sort by variance from seedDamage
-        monsters.sort((a, b) => {
-            const varianceA = Math.abs(a.damage - seedDamage);
-            const varianceB = Math.abs(b.damage - seedDamage);
-            return varianceA - varianceB;
-        });
+        sortByVariance(monsters, "damage", seedDamage);
         const monster = monsters[0];
         return new Array(count).fill(monster);
     }
@@ -119,12 +113,16 @@ export default class CombatBalancingService {
         const seedLevel = this.totalLvl / count;
         const monsters = [...this.monsters];
         // Sort by variance from seedLevel
-        monsters.sort((a, b) => {
-            const varianceA = Math.abs(a.lvl - seedLevel);
-            const varianceB = Math.abs(b.lvl - seedLevel);
-            return varianceA - varianceB;
-        });
+        sortByVariance(monsters, "lvl", seedLevel);
         const monster = monsters[0];
         return new Array(count).fill(monster);
     }
 }
+
+export const BossBalancingService = class BossBalancingService extends CombatBalancingService {
+    strategy = BalancingStrategy.BossAndMinions;
+
+    constructor(characters: Character[], monsterData: MonsterData, totalLvl: number) {
+        super(characters, monsterData, totalLvl);
+    }
+};

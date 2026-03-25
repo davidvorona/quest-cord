@@ -12,6 +12,7 @@
     ],
     "zones": [
         "forest",
-        "mountains"
+        "mountains",
+        "crypt"
     ]
 }

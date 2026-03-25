@@ -11,6 +11,7 @@
         "holy_fabric"
     ],
     "zones": [
-        "mountains"
+        "mountains",
+        "temple"
     ]
 }

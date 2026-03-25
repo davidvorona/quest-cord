@@ -190,21 +190,20 @@ class CommandBuilder {
                                 .keys(EncounterType)
                                 .map(type => ({ name: type, value: type }))
                         );
-                }),
+                })
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
             new SlashCommandBuilder()
                 .setName("enablefastxp")
-                .setDescription("Enable fast experience gain for testing purposes"),
+                .setDescription("Enable fast experience gain for testing purposes")
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
             new SlashCommandBuilder()
                 .setName("disabledeath")
                 .setDescription("Disable death for testing purposes")
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         ];
     }
 }
 
-// NOTE: It seems (at least for guild commands) that Discord rate-limits requests to the
-// PUT endpoint. The limit of clustered requests seems to be as low as 2, with the 3rd
-// hanging for some time before a response is returned.
-// TODO: is this true if the target guilds are different?
 export default async function setGuildCommands(guildId: string, args?: CommandBuilderArgs) {
     const builder = new CommandBuilder(args);
     const commands = builder.build();
@@ -234,7 +233,9 @@ export const getHelpText = () => {
     };
     const debugCommands: CommandHelp = {
         forcefail: "Force a quest to fail",
-        forceencounter: "Force an encounter type in a quest"
+        forceencounter: "Force an encounter type in a quest",
+        enablefastxp: "Enable fast (5x) experience gain",
+        disabledeath: "Disable death for your player character"
     };
     const joinCommands = (c: CommandHelp) => {
         const commandKeys = Object.keys(c);

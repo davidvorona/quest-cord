@@ -13,7 +13,8 @@ import {
 } from "discord.js";
 import Encounter from "./encounters/Encounter";
 import TextBuilder from "../text";
-import { TextActivity, Biome } from "../constants";
+import { TextActivity, Biome, Dungeon } from "../constants";
+import World from "./World";
 import { CombatPosition } from "./encounters/combat/CombatPositionCache";
 import CombatEncounter from "./encounters/combat/CombatEncounter";
 import { sendTypingAndWaitRandom, delay, rand } from "../util";
@@ -28,6 +29,7 @@ import Spell from "./things/Spell";
 import { PollingMethod } from "./polls/Poll";
 import { ButtonPressInteraction } from "../types";
 import EncounterDisplay from "./ui/EncounterDisplay";
+import { CombatLogEntry } from "./encounters/combat/SmartCombatLog";
 
 /**
  * Each quest has a narrator, the thing responsible for crafting the messages
@@ -141,18 +143,27 @@ class Narrator {
         }
     }
 
-    async describeCastSpell(attacker: Creature, spell: Spell, damage: number) {
-        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} at the enemy.`);
-        if (damage === 0) {
-            await this.ponderAndDescribe("The attack is blocked!");
-        } else if (spell.damage && (spell.damage > damage)) {
-            await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+    async describeCastSpell(attacker: Creature, spell: Spell, logEntries: CombatLogEntry[]) {
+        const targetCount = logEntries.length;
+        await this.ponderAndDescribe(`${attacker.getName()} casts ${spell.name} `
+            + `at ${targetCount} ${targetCount === 1 ? "target" : "targets"}.`);
+        const sortedDamage = logEntries.map(e => e.value).sort((a, b) => b - a);
+        if (sortedDamage.length === 1) {
+            const damage = sortedDamage[0];
+            if (damage === 0) {
+                await this.ponderAndDescribe("The attack is blocked!");
+            } else if (spell.damage && (spell.damage > damage)) {
+                await this.ponderAndDescribe(`It's a glancing blow! It deals ${damage} damage.`);
+            } else {
+                await this.ponderAndDescribe(`It deals ${damage} damage.`);
+            }
         } else {
-            await this.ponderAndDescribe(`It deals ${damage} damage.`);
+            await this.ponderAndDescribe(`It deals up to ${sortedDamage[0]} damage `
+                + `to ${targetCount} ${targetCount === 1 ? "target" : "targets"}.`);
         }
     }
 
-    async describeEncounter(encounter: Encounter, biome: Biome) {
+    async describeEncounter(encounter: Encounter, region: Biome | Dungeon) {
         if (encounter instanceof CombatEncounter) {
             // Get names of monsters in encounter
             const monsterNames = encounter.getMonsterNames();
@@ -186,7 +197,7 @@ class Narrator {
             await this.ponderAndDescribe("Woah! You run into the craziest encounter!");
         }
 
-        const encounterDisplay = EncounterDisplay(encounter, biome);
+        const encounterDisplay = EncounterDisplay(encounter, region);
         await this.describe({
             components: encounterDisplay,
             flags: MessageFlags.IsComponentsV2
@@ -207,6 +218,54 @@ class Narrator {
         });
     }
 
+    async promptDungeon(biome: Biome, dungeonType: Dungeon) {
+        const biomePhrase = World.getBiomeData(biome)?.phrase || "In the distance";
+        const dungeonDesc = World.getDungeonData(dungeonType)?.description
+            || "you see the entrance to a dungeon";
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Dungeon).setSubActivity("describe");
+        const text = textBuilder.build(biomePhrase, dungeonDesc);
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(text))
+            .setButtonAccessory(button => button
+                .setCustomId("dungeon")
+                .setLabel("Take a Look")
+                .setStyle(ButtonStyle.Danger));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
+    async promptDungeonContinue(dungeonType: Dungeon) {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`The path winds deeper into the ${dungeonType}. Continue?`))
+            .setButtonAccessory(button => button
+                .setCustomId("continue-dungeon")
+                .setLabel("Continue")
+                .setStyle(ButtonStyle.Danger));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
+    async promptDungeonLeave() {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent("You braved the dungeon and claimed its prize. Leave?"))
+            .setButtonAccessory(button => button
+                .setCustomId("leave-dungeon")
+                .setLabel("Leave Dungeon")
+                .setStyle(ButtonStyle.Danger));
+        await this.ponderAndDescribe({
+            components: [section],
+            flags: MessageFlags.IsComponentsV2
+        });
+    }
+
     async describeEncounterOver(encounter: Encounter) {
         if (encounter instanceof CombatEncounter) {
             await this.ponderAndDescribe("Combat is over!");
@@ -218,42 +277,22 @@ class Narrator {
         }
     }
 
-    async describeTravel(oldBiome: string, newBiome: string) {
-        const newBiomeSentence = oldBiome === newBiome
-            ? `You make your way further into the ${newBiome}.`
-            : `You find yourself in the ${newBiome}.`;
-        let description = "";
-        switch (newBiome) {
-        case "forest":
-            description = "The trees are green and critters run between their roots.";
-            break;
-        case "desert":
-            description = "The sun beats down on your back as you traverse sand dunes.";
-            break;
-        case "mountains":
-            description = "The path is steep and treacherous, the great peaks high above you "
-                + "still.";
-            break;
-        case "jungle":
-            description = "Jungle vines tug at your ankles as you hack your way through the "
-                + "thick foliage.";
-            break;
-        case "beach":
-            description = "The sand feels good between your toes, a vast and endless ocean "
-                + "in front of you.";
-            break;
-        case "ocean":
-            description = "Oh dear, you're swimming for dear life!";
-            break;
-        default:
-            break;
-        }
-        await this.ponderAndDescribe(`${newBiomeSentence} ${description}`);
+    async describeTravel(oldBiome: string, newBiome: Biome) {
+        const biomeData = World.getBiomeData(newBiome);
+        const { preposition = "in", description } = biomeData || {};
+        const travelType = oldBiome === newBiome ? "sameBiome" : "newBiome";
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Travel).setSubActivity(travelType);
+        const text = textBuilder.build(preposition, newBiome, description);
+        await this.ponderAndDescribe(text);
     }
 
-    async describeSurroundings(biome: string) {
-        await this.ponderAndDescribe("You take stock of your surroundings - currently you're "
-            + `in the ${biome}.`);
+    async describeSurroundings(biome: Biome) {
+        const { preposition = "in" } = World.getBiomeData(biome) || {};
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Travel).setSubActivity("currentBiome");
+        const text = textBuilder.build(preposition, biome);
+        await this.ponderAndDescribe(text);
     }
 
     async describePollResults(method: PollingMethod) {
