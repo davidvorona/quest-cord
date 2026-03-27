@@ -16,7 +16,8 @@ export default function TravelPrompt(biome: Biome, votesDisplayText?: string) {
             .setContent("# Where would you like to go? :person_walking_facing_right:"))
         .addSeparatorComponents((separator) => separator)
         .addTextDisplayComponents((textDisplay) => textDisplay
-            .setContent(`Currently: ${emoji} **${biomeFormatted}**`))
+            .setContent("Currently"),
+        (textDisplay) => textDisplay.setContent(`${emoji} **${biomeFormatted}**`))
         .addSeparatorComponents((separator) => separator)
         .addActionRowComponents((actionRow) =>
             actionRow.setComponents(

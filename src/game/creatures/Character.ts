@@ -62,4 +62,10 @@ export default class Character extends Creature {
             super.setHp(hp);
         }
     }
+
+    getAverageAcPerPiece() {
+        // Filter out empty equipment slots
+        const armorPieces = Object.values(this.equipment).filter(equip => !!equip);
+        return this.getArmorClass() / armorPieces.length;
+    }
 }

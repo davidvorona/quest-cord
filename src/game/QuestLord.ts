@@ -54,6 +54,8 @@ import TravelPrompt from "./ui/TravelPrompt";
 import InventoryDisplay from "./ui/InventoryDisplay";
 import DungeonPrompt from "./ui/DungeonPrompt";
 import DungeonResults from "./ui/DungeonResults";
+import LootGenerator from "../services/LootGenerator";
+import { LootType } from "../services/LootBox";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -68,6 +70,8 @@ export default class QuestLord {
 
     encounterBuilder: EncounterBuilder;
 
+    lootGenerator: LootGenerator;
+
     forceEncounters: Record<string, EncounterType> = {};
 
     compendium: CompendiumReader;
@@ -78,6 +82,7 @@ export default class QuestLord {
         this.spellFactory = new SpellFactory(compendium);
         this.creatureFactory = new CreatureFactory(compendium, this.itemFactory, this.spellFactory);
         this.encounterBuilder = new EncounterBuilder(this.creatureFactory);
+        this.lootGenerator = new LootGenerator(this.itemFactory);
         this.compendium = compendium;
     }
 
@@ -458,7 +463,7 @@ export default class QuestLord {
                 await this.handleRest(interaction);
             }
 
-            if (interaction.customId === "loot") {
+            if (interaction.customId.includes("loot")) {
                 await this.rollForLoot(interaction);
             }
         } catch (err) {
@@ -1048,6 +1053,7 @@ export default class QuestLord {
                     const pcs = quest.getPlayerCharacters();
                     // Scale up dungeon encounter by +1 per player
                     const dungeonLvl = quest.getPartyTotalLevel() + pcs.length;
+
                     const encounter = this.encounterBuilder
                         .buildCombatEncounter(dungeon.type, pcs, narrator, dungeonLvl);
 
@@ -1656,27 +1662,10 @@ export default class QuestLord {
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
-
-        const lastEncounter = quest.getLastEncounter();
-        if (!lastEncounter || !(lastEncounter instanceof CombatEncounter)) {
-            await interaction.reply({
-                content: "There is no loot to roll for!",
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-
-        const results = lastEncounter.getResults();
-        if (results.loot.length === 0) {
-            await interaction.reply({
-                content: "The party found no loot.",
-                flags: [MessageFlags.Ephemeral]
-            });
-            return;
-        }
+        const lootType = Number(interaction.customId.split("-")[1]) as LootType;
 
         const pc = quest.assertAndGetPlayerCharacter(interaction.user.id);
-        const loot = lastEncounter.handlePlayerLoot(pc.lvl, pc.getCharacter());
+        const loot = quest.handlePlayerLoot(interaction.user.id, lootType);
 
         const attachment = new AttachmentBuilder("assets/inventory.png");
         await interaction.reply({
@@ -1742,13 +1731,10 @@ export default class QuestLord {
         if (quest.isInDungeon()) {
             const dungeon = world.assertAndGetDungeon(coordinates);
             if (dungeon.isLastRoom()) {
-                // TODO: We need to register loot boxes for each player after the dungeon.
-                // Typically, loot is associated with an encounter, which allows us to track
-                // loot rolls for each player in that encounter. We could have the Dungeon
-                // instance handle tracking loot rolls, but currently it's very simple and
-                // does not track state at all. Other options: track loot rolls on the Quest
-                // instance, or simply reward dungeon-tier loot after the final boss combat
-                // encounter and leverage the typical encounter loot mechanism.
+                const loot = this.lootGenerator
+                    .generateDungeonLoot(quest.getPlayerCharacters(), dungeon.size);
+                quest.cacheLoot(...loot);
+
                 const dungeonResults = DungeonResults(dungeon.type);
                 await narrator.describe({
                     components: dungeonResults,
@@ -1842,7 +1828,9 @@ export default class QuestLord {
 
         // Initialize loot boxes for combat encounter loot
         if (encounter instanceof CombatEncounter && results.loot) {
-            encounter.createLootBoxes(results.loot);
+            const loot = this.lootGenerator
+                .generateEncounterLoot(quest.getPlayerCharacters(), results.loot);
+            quest.cacheLoot(...loot);
         }
 
         const encounterResults = EncounterResults(encounter.type, results);
