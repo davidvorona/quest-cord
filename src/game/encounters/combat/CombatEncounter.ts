@@ -448,8 +448,13 @@ export default class CombatEncounter extends TurnBasedEncounter {
         if (!currentTurn) {
             throw new Error("Invalid ID at current turn index, aborting");
         }
-        if (currentTurn.isDead()) {
+        // If the encounter is over, abort the turn loop
+        if (this.isOver()) {
+            return;
+        // If the current turn creature is dead, skip to the next turn
+        } else if (currentTurn.isDead()) {
             await this.handleNextTurn();
+        // Otherwise, handle the next turn normally
         } else {
             await this.narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
             // If its a monster's turn, invoke its handler

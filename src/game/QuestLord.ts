@@ -687,10 +687,6 @@ export default class QuestLord {
                     flags: MessageFlags.IsComponentsV2
                 });
 
-                const world = this.worlds[guildId];
-                const partyBiome = world.getBiome(quest.getPartyCoordinates());
-                await narrator.describeSurroundings(partyBiome);
-
                 await this.handleNewEncounter(guildId, channelId);
             }
         }
@@ -1457,13 +1453,15 @@ export default class QuestLord {
     private async handleSkipTurn(
         interaction: CommandInteraction | ButtonPressInteraction
     ): Promise<void> {
-        const { channelId } = interaction;
+        const { channelId, guildId } = interaction;
         this.assertQuestStarted(channelId);
 
         const quest = this.quests[channelId];
         if (quest.isInEncounter()) {
             const command = quest.validateEncounterInteraction(interaction);
-            await quest.handleEncounterInteraction(interaction, command);
+            const results = await quest.handleEncounterInteraction(interaction, command);
+
+            await this.handleEncounterResults(guildId, channelId, results);
         } else {
             throw new Error("Invalid quest state for skipping turn, aborting");
         }
@@ -1783,7 +1781,12 @@ export default class QuestLord {
 
         const world = this.worlds[guildId];
         const partyBiome = world.getBiome(quest.getPartyCoordinates());
-        await narrator.describeSurroundings(partyBiome);
+        if (!quest.isInDungeon()) {
+            await narrator.describeSurroundings(partyBiome);
+        } else {
+            const dungeon = quest.assertAndGetDungeon();
+            await narrator.describeDungeonSurroundings(dungeon.type);
+        }
 
         const forceType = this.forceEncounters[channelId];
         const newEncounter = encounter || this.encounterBuilder
@@ -1817,32 +1820,31 @@ export default class QuestLord {
         const quest = this.quests[channelId];
 
         const encounter = quest.assertAndGetEncounter();
-
         await quest.endEncounter();
-
-        // Award XP from encounter results to party
-        if (results.success && results.xp) {
-            const xpReward = await this.awardExperience(channelId, results.xp);
-            results.xp = xpReward;
-        }
-
-        // Initialize loot boxes for combat encounter loot
-        if (encounter instanceof CombatEncounter && results.loot) {
-            const loot = this.lootGenerator
-                .generateEncounterLoot(quest.getPlayerCharacters(), results.loot);
-            quest.cacheLoot(...loot);
-        }
-
-        const encounterResults = EncounterResults(encounter.type, results);
-
-        const narrator = quest.getNarrator();
-        await narrator.describe({
-            components: encounterResults,
-            flags: MessageFlags.IsComponentsV2
-        });
 
         // If success, continue quest
         if (results.success) {
+            // Award XP from encounter results to party
+            if (results.success && results.xp) {
+                const xpReward = await this.awardExperience(channelId, results.xp);
+                results.xp = xpReward;
+            }
+
+            // Initialize loot boxes for combat encounter loot
+            if (encounter instanceof CombatEncounter && results.loot) {
+                const loot = this.lootGenerator
+                    .generateEncounterLoot(quest.getPlayerCharacters(), results.loot);
+                quest.cacheLoot(...loot);
+            }
+
+            const encounterResults = EncounterResults(encounter.type, results);
+
+            const narrator = quest.getNarrator();
+            await narrator.describe({
+                components: encounterResults,
+                flags: MessageFlags.IsComponentsV2
+            });
+
             const world = this.worlds[guildId];
             const coordinates = quest.getPartyCoordinates();
             if (world.hasDungeon(coordinates)) {

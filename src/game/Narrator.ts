@@ -295,6 +295,14 @@ class Narrator {
         await this.ponderAndDescribe(text);
     }
 
+    async describeDungeonSurroundings(dungeonType: Dungeon) {
+        const textBuilder = new TextBuilder()
+            .setActivity(TextActivity.Travel).setSubActivity("currentDungeon");
+        const text = textBuilder.build(dungeonType);
+        await this.ponderAndDescribe(text);
+    }
+
+
     async describePollResults(method: PollingMethod) {
         if (method === PollingMethod.Random) {
             await this.describe("Poll result was a tie. QuestLord determining outcome...");

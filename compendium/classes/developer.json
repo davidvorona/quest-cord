@@ -42,8 +42,7 @@
         },
         {
             "hp": 15,
-            "damage": 2,
-            "spells": ["lay_on_hands"]
+            "damage": 2
         }
     ]
 }
