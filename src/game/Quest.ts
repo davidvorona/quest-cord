@@ -16,6 +16,7 @@ import {
 import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
+import LootBox, { LootType } from "../services/LootBox";
 import Profession from "./things/Profession";
 import EncounterButtonRows from "./ui/EncounterButtonRows";
 
@@ -33,6 +34,8 @@ export default class Quest {
     characterCreators: Record<Snowflake, CharacterCreator> = {};
 
     pcs: Record<string, PlayerCharacter | null> = {};
+
+    lootBoxes: LootBox[] = [];
 
     travelPromptRef?: Message<true>;
     route: [number, number][] = [];
@@ -235,6 +238,36 @@ export default class Quest {
             throw new Error("Dungeon is not started, aborting");
         }
         return this.dungeon;
+    }
+
+    cacheLoot(...loot: LootBox[]) {
+        this.lootBoxes.push(...loot);
+    }
+
+    findLastLootByType(userId: string, lootType: LootType) {
+        return this.lootBoxes.findLast(lb => lb.userId === userId && lb.type === lootType);
+    }
+
+    /**
+     * Currently, loot is saved in a simple list of LootBox instances. The 'userId' and 'type'
+     * properties are used by the {@link findLastLootByType} method to search for the most recent
+     * entry - if this entry does not exist, or is already looted, then no more loot can be claimed.
+     * @param userId
+     * @param lootType
+     */
+    handlePlayerLoot(userId: string, lootType: LootType) {
+        const lootBox = this.findLastLootByType(userId, lootType);
+        if (!lootBox) {
+            throw new Error("No loot found!");
+        }
+        if (lootBox.isLooted()) {
+            throw new Error("You have already looted!");
+        }
+        const pc = this.assertAndGetPlayerCharacter(userId);
+        const loot = lootBox.roll(pc.lvl);
+        pc.getCharacter().addToInventory(loot.items);
+        pc.getCharacter().gp += loot.gp;
+        return loot;
     }
 
     async startEncounter(encounter: Encounter, biome: Biome) {

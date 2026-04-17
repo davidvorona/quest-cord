@@ -16,6 +16,10 @@
         ],
         "newBiome": [
             "You are now $1 the $2. $3."
+        ],
+        "currentDungeon": [
+            "You take a cautious glance around, the $1 looming around you.",
+            "All is quiet within the $1, though you can't shake the sense of danger."
         ]
     },
     "encounter": {

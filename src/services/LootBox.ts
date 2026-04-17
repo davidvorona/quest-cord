@@ -37,12 +37,23 @@ export interface Loot {
     items: Item[];
 }
 
+export enum LootType {
+    Encounter,
+    Dungeon
+}
+
 class LootBox {
+    userId: string;
+
+    type: LootType;
+
     lootTable: Item[];
 
     loot?: Loot;
 
-    constructor(lootTable: Item[]) {
+    constructor(userId: string, type: LootType, lootTable: Item[]) {
+        this.userId = userId;
+        this.type = type;
         this.lootTable = lootTable;
     }
 

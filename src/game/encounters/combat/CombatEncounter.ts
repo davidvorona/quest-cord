@@ -36,7 +36,6 @@ import { ButtonPressInteraction, CommandInteraction, SelectMenuInteraction } fro
 import CombatPositionCache from "./CombatPositionCache";
 import TurnOrder from "../TurnOrder";
 import { StringSelectMenuOptionBuilder } from "@discordjs/builders";
-import LootBox from "../../../services/LootBox";
 
 interface AttackOption {
     target: Creature;
@@ -71,8 +70,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
     heldMovement?: boolean;
 
     positions: CombatPositionCache;
-
-    lootCache: Record<string, LootBox> = {};
 
     handlePlayerMove = async (interaction: CommandInteraction | ButtonPressInteraction) => {
         this.toggleMovement();
@@ -451,8 +448,13 @@ export default class CombatEncounter extends TurnBasedEncounter {
         if (!currentTurn) {
             throw new Error("Invalid ID at current turn index, aborting");
         }
-        if (currentTurn.isDead()) {
+        // If the encounter is over, abort the turn loop
+        if (this.isOver()) {
+            return;
+        // If the current turn creature is dead, skip to the next turn
+        } else if (currentTurn.isDead()) {
             await this.handleNextTurn();
+        // Otherwise, handle the next turn normally
         } else {
             await this.narrator.ponderAndDescribe(`It is ${currentTurn.getName()}'s turn.`);
             // If its a monster's turn, invoke its handler
@@ -622,26 +624,6 @@ export default class CombatEncounter extends TurnBasedEncounter {
             itemValue,
             [this.turnOrder.getIdx(character.id)]
         );
-    }
-
-    public createLootBoxes(lootTable: Item[]) {
-        this.characters.forEach((character) => {
-            this.lootCache[character.id] = new LootBox(lootTable);
-        });
-    }
-
-    public handlePlayerLoot(lvl: number, character: Character) {
-        const lootBox = this.lootCache[character.id];
-        if (!lootBox) {
-            throw new Error("No loot found!");
-        }
-        if (lootBox.isLooted()) {
-            throw new Error("You have already looted!");
-        }
-        const loot = lootBox.roll(lvl);
-        character.addToInventory(loot.items);
-        character.gp += loot.gp;
-        return loot;
     }
 
     /* ENEMY AI METHODS */

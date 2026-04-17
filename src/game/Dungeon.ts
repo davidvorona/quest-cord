@@ -1,7 +1,7 @@
 import { Dungeon as DungeonType } from "../constants";
 import { randInList } from "../util";
 
-enum DungeonSize {
+export enum DungeonSize {
     Short = 3,
     Medium = 5,
     Long = 7

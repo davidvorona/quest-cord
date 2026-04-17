@@ -1,4 +1,5 @@
 import { ButtonStyle, ContainerBuilder } from "discord.js";
+import { LootType } from "../../services/LootBox";
 import { Dungeon } from "../../constants";
 
 export default function DungeonResults(dungeonType: Dungeon) {
@@ -15,7 +16,7 @@ export default function DungeonResults(dungeonType: Dungeon) {
             (textDisplay) => textDisplay
                 .setContent("*At the end of the dungeon, you find a chest of valuables...*"))
                 .setButtonAccessory(button => button
-                    .setCustomId("loot")
+                    .setCustomId(`loot-${LootType.Dungeon}`)
                     .setLabel("🎲 Loot the Chest")
                     .setStyle(ButtonStyle.Success)));
     components.push(container);

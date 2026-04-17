@@ -1,5 +1,6 @@
 import { ButtonStyle, ContainerBuilder } from "discord.js";
 import { EncounterResults } from "../encounters/Encounter";
+import { LootType } from "../../services/LootBox";
 import { EncounterType } from "../../constants";
 
 export default function EncounterResults(
@@ -24,7 +25,7 @@ export default function EncounterResults(
                 (textDisplay) => textDisplay
                     .setContent("*You find some random loot on the monster...*"))
                     .setButtonAccessory(button => button
-                        .setCustomId("loot")
+                        .setCustomId(`loot-${LootType.Encounter}`)
                         .setLabel("🎲 Roll for Loot")
                         .setStyle(ButtonStyle.Success)));
     }
