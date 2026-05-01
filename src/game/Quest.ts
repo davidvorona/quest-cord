@@ -17,6 +17,7 @@ import TurnBasedEncounter from "./encounters/TurnBasedEncounter";
 import PollBooth from "./polls/PollBooth";
 import CharacterCreator from "../services/CharacterCreator";
 import LootBox, { LootType } from "../services/LootBox";
+import TradeService from "../services/TradeService";
 import Profession from "./things/Profession";
 import EncounterButtonRows from "./ui/EncounterButtonRows";
 
@@ -36,6 +37,7 @@ export default class Quest {
     pcs: Record<string, PlayerCharacter | null> = {};
 
     lootBoxes: LootBox[] = [];
+    trades: Record<Snowflake, TradeService> = {};
 
     travelPromptRef?: Message<true>;
     route: [number, number][] = [];
@@ -170,6 +172,17 @@ export default class Quest {
             if (pc) characters.push(pc.getCharacter());
         });
         return characters;
+    }
+
+    createTrade(requester: PlayerCharacter, recipient: PlayerCharacter) {
+        const tradeId = [requester.userId, recipient.userId].sort().join(":");
+        this.trades[tradeId] = new TradeService(requester, recipient);
+        return this.trades[tradeId];
+    }
+
+    getTrade(userId1: Snowflake, userId2: Snowflake) {
+        const tradeId = [userId1, userId2].sort().join(":");
+        return this.trades[tradeId];
     }
 
     getRoute() {

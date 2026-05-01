@@ -9,7 +9,6 @@ import World from "../World";
 
 export default function TravelPrompt(biome: Biome, votesDisplayText?: string) {
     const { emoji } = World.getBiomeData(biome);
-    const biomeFormatted = biome.charAt(0).toUpperCase() + biome.slice(1);
     const container = new ContainerBuilder()
         .setAccentColor(0x0099ff)
         .addTextDisplayComponents((textDisplay) => textDisplay
@@ -17,7 +16,9 @@ export default function TravelPrompt(biome: Biome, votesDisplayText?: string) {
         .addSeparatorComponents((separator) => separator)
         .addTextDisplayComponents((textDisplay) => textDisplay
             .setContent("Currently"),
-        (textDisplay) => textDisplay.setContent(`${emoji} **${biomeFormatted}**`))
+        (textDisplay) => textDisplay.setContent(
+            `### ${emoji} ${biome === "beach" ? "At" : "In"} the ${biome}`)
+        )
         .addSeparatorComponents((separator) => separator)
         .addActionRowComponents((actionRow) =>
             actionRow.setComponents(

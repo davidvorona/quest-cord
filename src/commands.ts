@@ -168,6 +168,9 @@ class CommandBuilder {
             new SlashCommandBuilder()
                 .setName("move")
                 .setDescription("Move in or out of melee range"),
+            new SlashCommandBuilder()
+                .setName("trade")
+                .setDescription("Request to trade with another player"),
             // /action - Used for encounter-specific subcommands
             this.buildActionSubcommands(
                 new SlashCommandBuilder()

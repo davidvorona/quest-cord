@@ -13,10 +13,8 @@ import {
     MessageFlags,
     ButtonInteraction,
     ButtonBuilder,
-    ContainerBuilder,
     ButtonStyle,
-    SectionBuilder,
-    TextDisplayBuilder
+    SectionBuilder
 } from "discord.js";
 import CompendiumReader from "../services/CompendiumReader";
 import ItemFactory from "../services/ItemFactory";
@@ -47,6 +45,8 @@ import StealthEncounter from "./encounters/stealth/StealthEncounter";
 import { Direction, EncounterType, DirectionEmoji, DungeonVote } from "../constants";
 import { getHelpText } from "../commands";
 import { defaultXpService } from "../services/ExperienceCalculator";
+import LootGenerator from "../services/LootGenerator";
+import { LootType } from "../services/LootBox";
 import EncounterDisplay from "./ui/EncounterDisplay";
 import EncounterResults from "./ui/EncounterResults";
 import LootDisplay from "./ui/LootDisplay";
@@ -54,8 +54,9 @@ import TravelPrompt from "./ui/TravelPrompt";
 import InventoryDisplay from "./ui/InventoryDisplay";
 import DungeonPrompt from "./ui/DungeonPrompt";
 import DungeonResults from "./ui/DungeonResults";
-import LootGenerator from "../services/LootGenerator";
-import { LootType } from "../services/LootBox";
+import CharStatusDisplay from "./ui/CharStatusDisplay";
+import QuestDisplay from "./ui/QuestDisplay";
+import TradeWindow from "./ui/TradeWindow";
 
 export default class QuestLord {
     worlds: Record<string, World> = {};
@@ -234,6 +235,10 @@ export default class QuestLord {
                 await this.displayStatus(interaction);
             }
 
+            if (interaction.commandName === "trade") {
+                await this.handleTradeRequest(interaction);
+            }
+
             // User wants to look at the map
             if (interaction.commandName === "map") {
                 await this.displayLocalMap(interaction);
@@ -302,6 +307,11 @@ export default class QuestLord {
             // Choosing an item to sell
             if (interaction.customId === "sell") {
                 await this.handleSell(interaction);
+            }
+
+            if (interaction.customId === "trade:target") {
+                const target = interaction.values[0];
+                await this.handleTradeTarget(interaction, target);
             }
 
             if (interaction.customId === "choose-direction") {
@@ -465,6 +475,10 @@ export default class QuestLord {
 
             if (interaction.customId.includes("loot")) {
                 await this.rollForLoot(interaction);
+            }
+
+            if (interaction.customId.includes("trade:respond")) {
+                await this.handleTradeRespond(interaction);
             }
         } catch (err) {
             const errMessage = err instanceof Error
@@ -1478,56 +1492,10 @@ export default class QuestLord {
         const file = new AttachmentBuilder(`assets/${className}.png`);
 
         const world = this.worlds[guildId];
-        const coords = quest.getPartyCoordinates();
-        const direction = world.getDirectionFromTwoCoordinates(
-            quest.getPartyLastCoordinates(), coords) || "nowhere";
-        const biome = world.getBiome(coords);
-        const encounterDesc = quest.getEncounter()?.getDescription() || "Exploring...";
-
-        const container = new ContainerBuilder()
-            .setAccentColor(0x0099ff)
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent("# Questing - *Day 1*"))
-            .addSeparatorComponents(separator => separator)
-            .addSectionComponents((section) =>
-                section.addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent(":scroll: *Character*"),
-                (textDisplay) => textDisplay.setContent(`## ${pc.getName()}`),
-                (textDisplay) => textDisplay.setContent(`### Level ${pc.lvl} ${className}`))
-                    .setThumbnailAccessory((thumbnail) =>
-                        thumbnail
-                            .setURL(`attachment://${className}.png`)
-                            .setDescription(`alt text ${className}`)))
-            .addSeparatorComponents(separator => separator)
-            .addSectionComponents((section) =>
-                section.addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent(":map: *Bearings*"),
-                (textDisplay) => textDisplay
-                    .setContent(`### ${
-                        biome === "beach" ? "At" : "In"
-                    } the ${biome}, heading ${direction}`),
-                (textDisplay) => textDisplay.setContent(encounterDesc))
-                    .setButtonAccessory(button => button
-                        .setCustomId("map")
-                        .setLabel("See Local Map")
-                        .setStyle(ButtonStyle.Secondary)));
-        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-                .setCustomId("character")
-                .setLabel("See Character")
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId("inventory")
-                .setLabel("View Inventory")
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId("encounter")
-                .setLabel("View Encounter")
-                .setStyle(ButtonStyle.Danger)
-        );
+        const questDisplay = QuestDisplay(world, quest, pc);
 
         await interaction.reply({
-            components: [container, buttonRow],
+            components: questDisplay,
             files: [file],
             flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
         });
@@ -1560,57 +1528,112 @@ export default class QuestLord {
 
         const className = pc.getCharacter().baseId;
         const thumbnail = new AttachmentBuilder(`assets/${className}.png`);
-        const xpToLvl = defaultXpService.getExperienceForNextLevel(pc.lvl);
-
-        const equipmentTextDisplay = [];
-        const equipment = pc.getEquipment();
-        if (equipment.weapon) {
-            equipmentTextDisplay.push(`Weapon: *${equipment.weapon.name}*`);
-        }
-        if (equipment.offhand) {
-            equipmentTextDisplay.push(`Offhand: *${equipment.offhand.name}*`);
-        }
-        if (equipment.body) {
-            equipmentTextDisplay.push(`Body: *${equipment.body.name}*`);
-        }
-        if (equipment.helm) {
-            equipmentTextDisplay.push(`Helm: *${equipment.helm.name}*`);
-        }
-        if (equipment.boots) {
-            equipmentTextDisplay.push(`Boots: *${equipment.boots.name}*`);
-        }
-        if (equipment.cape) {
-            equipmentTextDisplay.push(`Cape: *${equipment.cape.name}*`);
-        }
-        const container = new ContainerBuilder()
-            .setAccentColor(0x0099ff)
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(`# ${pc.getName()}`))
-            .addSeparatorComponents(separator => separator)
-            .addSectionComponents((section) =>
-                section.addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent(`### :bar_chart: Level ${pc.lvl} ${className}`),
-                (textDisplay) => textDisplay.setContent(
-                    `### :fireworks: *${pc.xp} / ${xpToLvl}* xp to level`),
-                (textDisplay) => textDisplay.setContent(`### :hammer_pick: ${pc.profession.name}`))
-                    .setThumbnailAccessory((thumbnail) =>
-                        thumbnail
-                            .setURL(`attachment://${className}.png`)
-                            .setDescription(`alt text ${className}`)))
-            .addSeparatorComponents(separator => separator)
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent(
-                    `### :heart: *${pc.getCharacter().hp} / ${pc.getCharacter().maxHp}*`))
-            .addSeparatorComponents(separator => separator)
-            .addTextDisplayComponents((textDisplay) =>
-                textDisplay.setContent("### :crossed_swords: Equipment"),
-            ...equipmentTextDisplay.map(d =>
-                (textDisplay: TextDisplayBuilder) => textDisplay.setContent(d))
-            );
+        const charStatusDisplay = CharStatusDisplay(pc);
         await interaction.reply({
-            components: [container],
+            components: [charStatusDisplay],
             files: [thumbnail],
             flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+        });
+    }
+
+    private async handleTradeRequest(interaction: CommandInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        const party = quest.getParty();
+        const options = [];
+        for (const userId in party) {
+            const partyMember = party[userId];
+            // TODO: Uncomment condition preventing trading with oneself
+            if (partyMember/* && partyMember.userId !== interaction.user.id*/) {
+                options.push({
+                    label: `${partyMember.getCharacter().name}`,
+                    value: partyMember.userId
+                });
+            }
+        }
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId("trade:target")
+                    .setPlaceholder("Who do you want to trade with?")
+                    .addOptions(options)
+            );
+        await interaction.reply({
+            components: [row],
+            flags: MessageFlags.Ephemeral
+        });
+    }
+
+    private async handleTradeTarget(interaction: SelectMenuInteraction, targetUserId: string) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        if (quest.encounter instanceof CombatEncounter) {
+            await interaction.reply({
+                content: "You cannot trade during combat!",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+        const narrator = quest.getNarrator();
+        const guildMember = interaction.guild.members.cache.get(targetUserId);
+        if (guildMember) {
+            const section = new SectionBuilder()
+                .addTextDisplayComponents((textDisplay) =>
+                    textDisplay.setContent(
+                        `${guildMember.user}, ${interaction.user} wants to trade with you!`
+                    ))
+                .setButtonAccessory(button => button
+                    .setCustomId(`trade:respond:${interaction.user.id}`)
+                    .setLabel("Trade")
+                    .setStyle(ButtonStyle.Primary));
+            await narrator.describe({
+                components: [section],
+                flags: MessageFlags.IsComponentsV2
+            });
+            await interaction.update({
+                content: `Trade request sent to ${guildMember.user}.`,
+                components: []
+            });
+        } else {
+            await interaction.reply({
+                content: "Invalid trade target!",
+                flags: MessageFlags.Ephemeral
+            });
+        }
+    }
+
+    private async handleTradeRespond(interaction: ButtonPressInteraction) {
+        const { channelId } = interaction;
+        this.assertQuestStarted(channelId);
+
+        const quest = this.quests[channelId];
+        if (quest.encounter instanceof CombatEncounter) {
+            await interaction.reply({
+                content: "You cannot trade during combat!",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        await interaction.reply({
+            content: "You responded to the trade request.",
+            flags: MessageFlags.Ephemeral
+        });
+
+        const requester = quest.assertAndGetPlayerCharacter(interaction.customId.split(":")[2]);
+        const recipient = quest.assertAndGetPlayerCharacter(interaction.user.id);
+
+        const tradeService = quest.createTrade(requester, recipient);
+        const tradeWindow = TradeWindow(tradeService);
+
+        const narrator = quest.getNarrator();
+        await narrator.describe({
+            components: tradeWindow,
+            flags: MessageFlags.IsComponentsV2
         });
     }
 
