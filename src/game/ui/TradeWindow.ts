@@ -6,6 +6,9 @@ import {
 } from "discord.js";
 import TradeService from "../../services/TradeService";
 
+// TODO: Need to figure out the IDs for each interaction - might be a good idea to use the
+// <userId+userId> trade ID. Then need to implement the logic that adds items to the trade
+// window and allows users to remove items from the trade window.
 export default function TradeWindow(tradeService: TradeService) {
     const [requester, recipient] = tradeService.traders;
 
